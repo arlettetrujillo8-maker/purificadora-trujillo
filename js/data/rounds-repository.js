@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
 
 export const roundsRepository = {
   list: () =>

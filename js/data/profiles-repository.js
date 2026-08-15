@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
-import { selectAll, rpc } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+} from "./supabase-client.js?v=20260815-llenos-solo-sin-ronda";
+import { selectAll, rpc } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

@@ -1,7 +1,7 @@
 import {
   supabase,
   getDeviceId,
-} from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
+} from "./supabase-client.js?v=20260815-llenos-solo-sin-ronda";
 
 const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
 const CENTRAL_SESSION_ERROR = "central_session_expired";
