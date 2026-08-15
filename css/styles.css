@@ -2295,3 +2295,245 @@ details.full summary {
   }
   .container-exception summary strong { text-align: left; }
 }
+
+/* =====================================================================
+   FASE UX · Sistema visual inspirado en apps de consumo (Uber Eats / DiDi Food)
+   Bloque aditivo: no redefine selectores existentes, solo suma capas.
+   ===================================================================== */
+:root {
+  --accent-caja: #0f9d58;
+  --accent-caja-soft: #e5f7ec;
+  --accent-ruta: #ff6a00;
+  --accent-ruta-soft: #fff1e5;
+  --accent-local: #1463ff;
+  --accent-local-soft: #e9f0ff;
+  --accent-fiado: #d33232;
+  --accent-fiado-soft: #fdeaea;
+  --accent-gastos: #8347e0;
+  --accent-gastos-soft: #f2eaff;
+  --shadow-soft: 0 6px 18px rgba(22, 40, 80, 0.06);
+  --shadow-lift: 0 16px 36px rgba(22, 40, 80, 0.14);
+}
+
+/* ---- Tarjetas operativas: ícono + acento de color por tipo ---- */
+.operational-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.operational-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--border);
+}
+.operational-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+.operational-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.card-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 19px;
+  background: var(--surface2);
+}
+.operational-card--caja::before { background: var(--accent-caja); }
+.operational-card--caja .card-icon { background: var(--accent-caja-soft); }
+.operational-card--ruta::before { background: var(--accent-ruta); }
+.operational-card--ruta .card-icon { background: var(--accent-ruta-soft); }
+.operational-card--local::before { background: var(--accent-local); }
+.operational-card--local .card-icon { background: var(--accent-local-soft); }
+.operational-card--fiado::before { background: var(--accent-fiado); }
+.operational-card--fiado .card-icon { background: var(--accent-fiado-soft); }
+.operational-card--gastos::before { background: var(--accent-gastos); }
+.operational-card--gastos .card-icon { background: var(--accent-gastos-soft); }
+
+/* ---- Indicador "en vivo" (punto pulsante), reutilizable ---- */
+.is-live .card-icon,
+.route-state.is-active {
+  position: relative;
+}
+.is-live .operational-card-head h3::before,
+.route-state.is-active::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: middle;
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+.route-state.is-active { color: #12733a; }
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.72); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-live .operational-card-head h3::before,
+  .route-state.is-active::before { animation: none; }
+}
+
+/* ---- Rastreador de ronda (estilo "seguimiento de pedido") ---- */
+.route-progress-track {
+  display: flex;
+  align-items: flex-start;
+  margin: 16px 0 4px;
+}
+.route-progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  width: 84px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.route-progress-step .step-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+.route-progress-step .step-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+.route-progress-step.is-done { color: #fff; }
+.route-progress-step.is-done .step-dot {
+  background: #fff;
+  border-color: #fff;
+}
+.route-progress-step.is-current .step-dot {
+  background: #ffd44d;
+  border-color: #ffd44d;
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+.route-progress-step.is-current { color: #fff; }
+.route-progress-line {
+  flex: 1 1 auto;
+  height: 2px;
+  margin-top: 7px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.route-progress-line.is-done { background: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  .route-progress-step.is-current .step-dot { animation: none; }
+}
+
+/* ---- Chips de forma de pago: más tipo "selector de app" ---- */
+.payment-option {
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+.payment-option:active { transform: scale(0.96); }
+.payment-option.active { box-shadow: 0 6px 14px rgba(20, 99, 255, 0.28); }
+
+/* ---- Botones: micro-interacción táctil ---- */
+.primary-btn,
+.secondary-btn {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
+}
+.primary-btn:active,
+.secondary-btn:active { transform: scale(0.97); }
+.primary-btn { box-shadow: 0 8px 18px rgba(20, 99, 255, 0.22); }
+
+/* ---- Ronda: barra de progreso con extremos redondeados ---- */
+.round-progress span { border-radius: 99px; }
+
+/* ---- Barra flotante de venta (estilo carrito de Uber Eats / DiDi Food) ---- */
+@media (max-width: 850px) {
+  #view-ventas.active #saleForm {
+    padding-bottom: 12px;
+  }
+  #view-ventas.active #saleForm .sale-summary {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(146px + env(safe-area-inset-bottom));
+    z-index: 34;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+    box-shadow: var(--shadow-lift);
+  }
+  #view-ventas.active #saleForm .sale-actions {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 34;
+    background: var(--surface);
+    padding: 10px 12px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: var(--shadow-lift);
+  }
+  #view-ventas.active #saleForm .sale-actions button { min-width: 0; }
+  /* Espacio para que el contenido no quede oculto tras la barra flotante */
+  #view-ventas.active #saleForm::after {
+    content: "";
+    display: block;
+    height: 128px;
+  }
+}
+@media (max-width: 560px) {
+  #view-ventas.active #saleForm .sale-actions { flex-direction: row; }
+  #view-ventas.active #saleForm .sale-actions button { width: auto; }
+}
+
+/* ---- Tarjetas y paneles: elevación sutil al interactuar ---- */
+.route-client-card,
+.mobile-client-card,
+.metric-card {
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
+}
+.route-client-card:hover,
+.mobile-client-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* ---- Navegación inferior: indicador de pestaña activa ---- */
+@media (max-width: 850px) {
+  .bottom-nav button {
+    position: relative;
+    transition: color 0.12s ease;
+  }
+  .bottom-nav button.active::after {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 22px;
+    height: 3px;
+    border-radius: 99px;
+    background: var(--primary);
+  }
+  .bottom-nav button span { transition: transform 0.12s ease; }
+  .bottom-nav button.active span { transform: translateY(-1px) scale(1.08); }
+}
+
+/* ---- Métricas: jerarquía numérica más marcada (estilo total de pedido) ---- */
+.metric-card .value { letter-spacing: -0.01em; }
