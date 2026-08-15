@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
 
 export const roundsRepository = {
   list: () =>

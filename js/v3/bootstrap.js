@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260815-corregir-carga-ronda";
-import { OperationalStore } from "../data/operational-store.js?v=20260815-corregir-carga-ronda";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-corregir-carga-ronda";
-import { clientsRepository } from "../data/clients-repository.js?v=20260815-corregir-carga-ronda";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-corregir-carga-ronda";
+} from "../data/supabase-client.js?v=20260815-permisos-empleado-fix";
+import { OperationalStore } from "../data/operational-store.js?v=20260815-permisos-empleado-fix";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260815-permisos-empleado-fix";
+import { clientsRepository } from "../data/clients-repository.js?v=20260815-permisos-empleado-fix";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-permisos-empleado-fix";
 
-const BOOTSTRAP_BUILD = "20260815-corregir-carga-ronda";
+const BOOTSTRAP_BUILD = "20260815-permisos-empleado-fix";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

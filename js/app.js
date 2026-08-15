@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-corregir-carga-ronda";
+  const APP_SCRIPT_BUILD = "20260815-permisos-empleado-fix";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -5901,8 +5901,9 @@
     $("userPinHint").textContent = user?.pinConfigured
       ? "Déjalo vacío para conservar el PIN actual."
       : "Se solicitará al iniciar turno.";
-    const selected =
-      user?.permissions || ROLE_PERMISSIONS[user?.role || "ventanilla"] || [];
+    const selected = user
+      ? permissionsFor(user)
+      : ROLE_PERMISSIONS.ventanilla || [];
     permissionInputs().forEach(
       (input) => (input.checked = selected.includes(input.value)),
     );

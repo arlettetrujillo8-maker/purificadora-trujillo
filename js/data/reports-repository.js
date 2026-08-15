@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
+import { selectAll } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
 
 export const reportsRepository = {
   listAudit: () =>

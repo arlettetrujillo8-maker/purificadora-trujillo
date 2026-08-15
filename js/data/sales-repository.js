@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
-import { supabase } from "./supabase-client.js?v=20260815-corregir-carga-ronda";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+import { supabase } from "./supabase-client.js?v=20260815-permisos-empleado-fix";
 
 export const salesRepository = {
   list: () =>
