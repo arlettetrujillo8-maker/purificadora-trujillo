@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

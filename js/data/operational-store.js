@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260815-existencias-tocables-v2";
-import { clientsRepository } from "./clients-repository.js?v=20260815-existencias-tocables-v2";
-import { salesRepository } from "./sales-repository.js?v=20260815-existencias-tocables-v2";
-import { ledgerRepository } from "./ledger-repository.js?v=20260815-existencias-tocables-v2";
-import { cashRepository } from "./cash-repository.js?v=20260815-existencias-tocables-v2";
-import { inventoryRepository } from "./inventory-repository.js?v=20260815-existencias-tocables-v2";
-import { roundsRepository } from "./rounds-repository.js?v=20260815-existencias-tocables-v2";
-import { suppliesRepository } from "./supplies-repository.js?v=20260815-existencias-tocables-v2";
-import { settingsRepository } from "./settings-repository.js?v=20260815-existencias-tocables-v2";
-import { reportsRepository } from "./reports-repository.js?v=20260815-existencias-tocables-v2";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-existencias-tocables-v2";
-import { returnsRepository } from "./returns-repository.js?v=20260815-existencias-tocables-v2";
-import { correctionsRepository } from "./corrections-repository.js?v=20260815-existencias-tocables-v2";
+import { profilesRepository } from "./profiles-repository.js?v=20260815-admin-inicio-y-refresco";
+import { clientsRepository } from "./clients-repository.js?v=20260815-admin-inicio-y-refresco";
+import { salesRepository } from "./sales-repository.js?v=20260815-admin-inicio-y-refresco";
+import { ledgerRepository } from "./ledger-repository.js?v=20260815-admin-inicio-y-refresco";
+import { cashRepository } from "./cash-repository.js?v=20260815-admin-inicio-y-refresco";
+import { inventoryRepository } from "./inventory-repository.js?v=20260815-admin-inicio-y-refresco";
+import { roundsRepository } from "./rounds-repository.js?v=20260815-admin-inicio-y-refresco";
+import { suppliesRepository } from "./supplies-repository.js?v=20260815-admin-inicio-y-refresco";
+import { settingsRepository } from "./settings-repository.js?v=20260815-admin-inicio-y-refresco";
+import { reportsRepository } from "./reports-repository.js?v=20260815-admin-inicio-y-refresco";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-admin-inicio-y-refresco";
+import { returnsRepository } from "./returns-repository.js?v=20260815-admin-inicio-y-refresco";
+import { correctionsRepository } from "./corrections-repository.js?v=20260815-admin-inicio-y-refresco";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

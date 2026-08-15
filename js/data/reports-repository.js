@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+import { selectAll } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
 
 export const reportsRepository = {
   listAudit: () =>

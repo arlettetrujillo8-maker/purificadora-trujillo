@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260815-existencias-tocables-v2";
-import { OperationalStore } from "../data/operational-store.js?v=20260815-existencias-tocables-v2";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-existencias-tocables-v2";
-import { clientsRepository } from "../data/clients-repository.js?v=20260815-existencias-tocables-v2";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-existencias-tocables-v2";
+} from "../data/supabase-client.js?v=20260815-admin-inicio-y-refresco";
+import { OperationalStore } from "../data/operational-store.js?v=20260815-admin-inicio-y-refresco";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260815-admin-inicio-y-refresco";
+import { clientsRepository } from "../data/clients-repository.js?v=20260815-admin-inicio-y-refresco";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-admin-inicio-y-refresco";
 
-const BOOTSTRAP_BUILD = "20260815-existencias-tocables-v2";
+const BOOTSTRAP_BUILD = "20260815-admin-inicio-y-refresco";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

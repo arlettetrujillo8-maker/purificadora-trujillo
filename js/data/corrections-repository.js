@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
 
 const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
 

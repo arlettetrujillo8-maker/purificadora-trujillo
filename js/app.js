@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-existencias-tocables-v2";
+  const APP_SCRIPT_BUILD = "20260815-admin-inicio-y-refresco";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -1504,7 +1504,7 @@
     saveState();
     resetAdminActivity();
     renderAll();
-    showView("usuarios");
+    showView("dashboard");
     toast("Acceso de administrador autorizado");
   }
   function lockAdmin(message = "Modo administrador cerrado.") {
@@ -5240,7 +5240,7 @@
       after,
     );
     if (!(await commitState(previousState))) return;
-    renderInventory();
+    renderAll();
     toast("Transferencia registrada");
   }
   async function saveInventoryAdjustment(e) {
@@ -5286,7 +5286,7 @@
       { value: newQty, difference: delta, movementId: movement.id },
     );
     if (!(await commitState(previousState))) return;
-    renderInventory();
+    renderAll();
     form.elements.namedItem("adjustReason").value = "";
     toast("Inventario ajustado");
   }

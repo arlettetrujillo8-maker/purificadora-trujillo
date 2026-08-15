@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
-import { supabase } from "./supabase-client.js?v=20260815-existencias-tocables-v2";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+import { supabase } from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
 
 export const salesRepository = {
   list: () =>
