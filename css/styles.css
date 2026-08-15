@@ -2573,3 +2573,27 @@ details.full summary {
   .channel-options { gap: 6px; }
   .channel-option { padding: 8px 11px; font-size: 12.5px; }
 }
+
+/* ---- Fondo oscuro para cerrar el menú lateral al tocar fuera (móvil) ---- */
+.sidebar-backdrop {
+  display: none;
+}
+@media (max-width: 850px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 16, 32, 0.5);
+    z-index: 39;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  #sidebar.open ~ .sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #sidebar.open {
+    z-index: 40;
+  }
+}

@@ -1872,6 +1872,9 @@
     $("moreNavBtn").addEventListener("click", () =>
       $("sidebar").classList.toggle("open"),
     );
+    $("sidebarBackdrop").addEventListener("click", () =>
+      $("sidebar").classList.remove("open"),
+    );
   }
   function mountSaleFormForView(name) {
     const form = $("saleForm");
