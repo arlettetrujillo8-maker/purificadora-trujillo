@@ -1,0 +1,12 @@
+{
+  "name": "Purificadora Trujillo ERP",
+  "short_name": "Purificadora",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#1463ff",
+  "description": "Control local de ventas, clientes, fiado, caja e inventario.",
+  "icons": [{"src":"assets/logo/logo-trujillo.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

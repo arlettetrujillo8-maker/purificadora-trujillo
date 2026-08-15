@@ -1,0 +1,2520 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="app-build" content="20260814-simplified-container-flow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d6efd" />
+    <title>Purificadora Trujillo · ERP V3.5</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link
+      rel="icon"
+      href="assets/logo/logo-trujillo.svg"
+      type="image/svg+xml"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=20260814-simplified-container-flow" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <img
+            class="brand-logo"
+            src="assets/logo/purificadora-trujillo.png"
+            alt="Purificadora Trujillo"
+          />
+          <small id="modeLabel">Modo operativo · V2.2</small>
+          <small id="mobileUserIdentity" class="mobile-user-identity"></small>
+        </div>
+        <nav id="mainNav">
+          <button class="nav-item active" data-view="dashboard">Inicio</button>
+          <button class="nav-item" data-view="clientes">Clientes</button>
+          <button class="nav-item" data-view="ventas">Nueva venta</button>
+          <button class="nav-item" data-view="ultimas">Últimas ventas</button>
+          <button class="nav-item" data-view="fiado">Fiado y pagos</button>
+          <button class="nav-item" data-view="rutas">Rutas</button>
+          <button class="nav-item" data-view="ventanilla">Ventanilla</button>
+          <button class="nav-item" data-view="caja">Caja</button>
+          <button class="nav-item" data-view="inventario">Inventario</button>
+          <button class="nav-item" data-view="insumos">Insumos</button>
+          <button class="nav-item" data-view="mantenimiento">
+            Mantenimiento
+          </button>
+          <button class="nav-item" data-view="gastos">Gastos</button>
+          <button class="nav-item admin-entry hidden" id="openAdminBtn" type="button">
+            Administración
+          </button>
+          <button class="nav-item" data-view="usuarios">Empleados</button>
+          <button class="nav-item" data-view="reportes">Reportes</button>
+          <button class="nav-item" data-view="configuracion">
+            Configuración
+          </button>
+          <button class="nav-item" data-view="auditoria">Auditoría</button>
+          <button class="nav-item" data-view="diagnostico">Diagnóstico</button>
+          <button
+            class="nav-item mobile-admin-lock hidden"
+            id="mobileLockAdminBtn"
+            type="button"
+          >
+            🔒 Bloquear administración
+          </button>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button
+            id="menuBtn"
+            class="icon-btn mobile-only"
+            aria-label="Abrir menú"
+          >
+            ☰
+          </button>
+          <img
+            class="topbar-logo mobile-only"
+            src="assets/logo/purificadora-trujillo.png"
+            alt="Purificadora Trujillo"
+          />
+          <div>
+            <h1 id="viewTitle">Dashboard</h1>
+            <p id="todayLabel"></p>
+          </div>
+          <div class="topbar-actions">
+            <span id="onlineBadge" class="status-badge">En línea</span>
+            <span id="sessionChip" class="session-chip">Sin sesión</span>
+            <span id="adminModeBadge" class="admin-mode-badge hidden"
+              >Administrador activo</span
+            >
+            <button
+              id="closeAdminBtn"
+              class="secondary-btn hidden"
+              type="button"
+            >
+              Cerrar administrador
+            </button>
+            <button id="logoutEmployeeBtn" class="text-btn" type="button" aria-label="Cerrar turno">
+              Salir
+            </button>
+          </div>
+        </header>
+
+        <div
+          id="operationalStatusBar"
+          class="operational-status-bar"
+          aria-label="Estado de la operación"
+        ></div>
+
+        <div
+          id="toast"
+          class="toast"
+          role="status"
+          aria-live="assertive"
+          aria-atomic="true"
+          popover="manual"
+        ></div>
+
+        <section class="view active" id="view-dashboard">
+          <div class="hero-card">
+            <div>
+              <span class="eyebrow" id="dashboardEyebrow"
+                >RESUMEN DEL NEGOCIO</span
+              >
+              <h2 id="dashboardHeading">
+                Tu operación de hoy
+              </h2>
+              <p id="dashboardIntro">
+                Ventas, rutas, caja e inventario actualizados.
+              </p>
+            </div>
+            <div class="hero-actions">
+              <img
+                class="hero-logo"
+                src="assets/logo/purificadora-trujillo.png"
+                alt="Logotipo de Purificadora Trujillo"
+              />
+              <button class="primary-btn" data-go="ventas">
+                + Registrar venta
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="dashboardPrimaryActions"
+            class="primary-action-grid"
+            aria-label="Acciones principales"
+          ></div>
+
+          <div class="metric-grid dashboard-metrics" id="dashboardMetrics"></div>
+
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Rondas activas</h3>
+                <button class="text-btn" data-go="rutas">Abrir rutas</button>
+              </div>
+              <div id="dashboardRounds"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Últimas ventas</h3>
+                <button class="text-btn" data-go="ultimas">Ver todas</button>
+              </div>
+              <div id="dashboardLatestSales"></div>
+            </div>
+          </div>
+
+          <div class="two-col dashboard-secondary">
+            <div class="panel">
+              <div class="panel-head"><h3>Ventas por canal · hoy</h3></div>
+              <div id="channelBreakdown"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Clientes con deuda</h3>
+                <button class="text-btn" data-go="fiado">Ver todos</button>
+              </div>
+              <div id="debtPreview"></div>
+            </div>
+          </div>
+
+          <div class="two-col dashboard-secondary">
+            <div class="panel">
+              <div class="panel-head"><h3>Alertas</h3></div>
+              <div id="alertsList"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Actividad reciente</h3></div>
+              <div id="recentActivity"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-clientes">
+          <div class="toolbar">
+            <div class="search-wrap">
+              <input
+                id="clientSearch"
+                type="search"
+                placeholder="Buscar por nombre, teléfono o dirección."
+              />
+            </div>
+            <button id="newClientBtn" class="primary-btn">
+              + Nuevo cliente
+            </button>
+          </div>
+          <div id="clientsMobileList" class="mobile-client-list mobile-only"></div>
+          <div class="panel table-panel">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Ruta</th>
+                    <th>Precio</th>
+                    <th>Saldo</th>
+                    <th>Estado</th>
+                    <th>Última compra</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="clientsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-ventas">
+          <div class="form-layout">
+            <form id="saleForm" class="panel form-card">
+              <div class="panel-head">
+                <h3>Nueva venta</h3>
+                <span class="pill">Operación rápida</span>
+              </div>
+              <div id="saleContextBanner" class="sale-context-banner hidden"></div>
+              <div class="form-grid">
+                <label class="full sale-field-client"
+                  >Cliente
+                  <div class="inline-control">
+                    <div class="client-picker">
+                      <input
+                        id="saleClientSearch"
+                        placeholder="Nombre, teléfono o dirección"
+                        autocomplete="off"
+                        aria-controls="saleClientResults"
+                        aria-expanded="false"
+                      />
+                      <input id="saleClientId" name="clientId" type="hidden" />
+                      <div
+                        id="saleClientResults"
+                        class="client-results hidden"
+                        role="listbox"
+                      ></div>
+                    </div>
+                    <button
+                      type="button"
+                      class="secondary-btn"
+                      id="saleNewClientBtn"
+                    >
+                      + Cliente
+                    </button>
+                  </div>
+                  <div
+                    id="selectedSaleClient"
+                    class="selected-client hidden"
+                  ></div>
+                </label>
+                <label class="sale-field-channel"
+                  >Canal
+                  <select id="saleChannel" required>
+                    <option value="ventanilla">Ventanilla</option>
+                    <option value="ruta1">Ruta 1</option>
+                    <option value="ruta2">Ruta 2</option>
+                    <option value="fuera_ruta">? Fuera de ruta</option>
+                    <option value="fuera_horario">Fuera de horario</option>
+                  </select>
+                </label>
+                <label class="sale-field-quantity"
+                  >Cantidad de garrafones
+                  <div class="qty-stepper">
+                    <button
+                      id="saleQtyMinus"
+                      type="button"
+                      aria-label="Disminuir cantidad"
+                    >
+                      −
+                    </button>
+                    <input
+                      id="saleQty"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value="1"
+                      required
+                      inputmode="numeric"
+                    />
+                    <button
+                      id="saleQtyPlus"
+                      type="button"
+                      aria-label="Aumentar cantidad"
+                    >
+                      +
+                    </button>
+                  </div>
+                </label>
+                <label class="sale-field-price"
+                  >Precio unitario
+                  <input
+                    id="salePrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="30"
+                    required
+                  />
+                </label>
+                <label id="salePriceReasonWrap" class="full hidden"
+                  >Motivo de precio especial
+                  <input
+                    id="salePriceReason"
+                    placeholder="Obligatorio si el precio cambia"
+                  />
+                </label>
+                <label class="sale-field-total"
+                  >Total
+                  <input id="saleTotal" type="text" readonly />
+                </label>
+                <label class="full sale-field-payment"
+                  >Forma de pago
+                  <select
+                    id="salePaymentType"
+                    class="visually-hidden"
+                    aria-label="Forma de pago"
+                  >
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="fiado">Fiado</option>
+                    <option value="mixto">Pago mixto</option>
+                  </select>
+                  <div
+                    class="payment-options"
+                    role="group"
+                    aria-label="Forma de pago rápida"
+                  >
+                    <button
+                      type="button"
+                      class="payment-option active"
+                      data-payment="efectivo"
+                    >
+                      Efectivo
+                    </button>
+                    <button
+                      type="button"
+                      class="payment-option"
+                      data-payment="transferencia"
+                    >
+                      Transferencia
+                    </button>
+                    <button
+                      type="button"
+                      class="payment-option"
+                      data-payment="fiado"
+                    >
+                      Fiado
+                    </button>
+                    <button
+                      type="button"
+                      class="payment-option"
+                      data-payment="mixto"
+                    >
+                      Mixto
+                    </button>
+                  </div>
+                </label>
+                <label id="salePaidWrap" class="hidden"
+                  >Cantidad pagada
+                  <input
+                    id="salePaid"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                  />
+                </label>
+                <details class="full container-exception" id="saleContainerException">
+                  <summary>
+                    <span>Envases / excepción</span>
+                    <strong id="saleContainerExchangeSummary">Intercambio normal 1:1</strong>
+                  </summary>
+                  <div class="form-grid container-exception-fields">
+                    <label class="full">Tipo de intercambio
+                      <select id="saleContainerMode">
+                        <option value="normal">Intercambio normal 1:1</option>
+                        <option value="none">Sin devolución de envase</option>
+                        <option value="fewer">Recibió menos vacíos</option>
+                        <option value="more">Recibió más vacíos</option>
+                        <option value="damaged">Garrafón dañado</option>
+                        <option value="new">Envase adicional / nuevo</option>
+                      </select>
+                    </label>
+                    <label id="saleEmptyReturnWrap" class="full hidden">Vacíos recibidos
+                      <input id="saleEmptyReturnQty" type="number" min="0" step="1" value="0" inputmode="numeric" />
+                    </label>
+                    <label id="saleDamagedReturnWrap" class="full hidden">Dañados recibidos
+                      <input id="saleDamagedReturnQty" type="number" min="0" step="1" value="0" inputmode="numeric" />
+                    </label>
+                  </div>
+                </details>
+                <label class="full sale-field-notes"
+                  >Notas
+                  <textarea
+                    id="saleNotes"
+                    rows="2"
+                    placeholder="Opcional"
+                  ></textarea>
+                </label>
+              </div>
+              <div class="sale-summary" id="saleSummary"></div>
+              <div class="sale-actions">
+                <button class="secondary-btn" id="cancelSaleBtn" type="button">
+                  Cancelar
+                </button>
+                <button class="primary-btn" id="saleSubmitBtn" type="submit">
+                  Registrar venta
+                </button>
+              </div>
+            </form>
+
+            <div class="panel sales-list-panel">
+              <div class="panel-head"><h3>Últimas ventas</h3></div>
+              <div id="latestSales"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-ultimas">
+          <div class="toolbar">
+            <div>
+              <h3>Últimas ventas</h3>
+              <p class="muted">
+                Consulta, corrección y anulación sin borrar el historial
+                original.
+              </p>
+            </div>
+            <button class="primary-btn" data-go="ventas">+ Nueva venta</button>
+          </div>
+          <div class="panel sales-list-panel"><div id="allLatestSales"></div></div>
+        </section>
+
+        <section class="view" id="view-fiado">
+          <div class="metric-grid" id="debtMetrics"></div>
+          <div
+            class="filter-chips"
+            id="debtFilters"
+            aria-label="Filtrar deuda por antigüedad"
+          >
+            <button class="active" data-debt-filter="all">Todos</button>
+            <button data-debt-filter="7">0–7 días</button>
+            <button data-debt-filter="15">8–15 días</button>
+            <button data-debt-filter="30">30+ días</button>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Clientes con saldo pendiente</h3></div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Saldo</th>
+                    <th>Antigüedad</th>
+                    <th>último movimiento</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="debtTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-rutas">
+          <div id="routeStatusHeader" class="route-status-stack"></div>
+          <div class="toolbar route-toolbar">
+            <div>
+              <h3>Rondas de reparto</h3>
+              <p class="muted">
+                Carga, venta, regreso y rellenado durante la jornada.
+              </p>
+            </div>
+            <div class="toolbar-actions">
+              <button id="startRoundBtn" class="primary-btn" type="button">
+                Preparar salida</button
+              ><button
+                id="fillContainersBtn"
+                class="secondary-btn"
+                type="button"
+              >
+                Registrar llenado
+              </button>
+            </div>
+          </div>
+          <div class="panel route-clients-panel">
+            <div class="panel-head">
+              <div>
+                <h3>Clientes de la ruta</h3>
+                <p class="muted">Vende o cobra sin salir de esta pantalla.</p>
+              </div>
+            </div>
+            <div id="routeClientsQuick" class="route-client-list"></div>
+          </div>
+          <div class="two-col" id="activeRounds"></div>
+          <div class="two-col">
+            <div class="panel route-card" id="route1Card"></div>
+            <div class="panel route-card" id="route2Card"></div>
+          </div>
+          <div class="panel table-panel">
+            <div class="panel-head"><h3>Movimientos de rutas · hoy</h3></div>
+            <div id="routesActivity"></div>
+          </div>
+          <div class="panel table-panel">
+            <div class="panel-head"><h3>Historial de rondas</h3></div>
+            <div id="roundsHistory"></div>
+          </div>
+          <div id="routeRoundActions" class="route-round-actions"></div>
+        </section>
+
+        <section class="view" id="view-ventanilla">
+          <div class="mobile-section-heading">
+            <span class="eyebrow">VENTANILLA</span>
+            <h2>Venta rápida</h2>
+            <p class="muted">Cliente → Cantidad → Pago → Registrar</p>
+          </div>
+          <div id="windowSaleSlot"></div>
+          <div class="metric-grid window-metrics" id="windowMetrics"></div>
+          <div class="panel">
+            <div class="panel-head"><h3>Últimas ventas</h3></div>
+            <div id="windowSales"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-caja">
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head"><h3>Sesión de caja activa</h3></div>
+              <div id="cashSessionPanel"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h3 id="cashBreakdownTitle">Resumen de esta caja</h3>
+              </div>
+              <div id="cashBreakdown"></div>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head"><h3>Movimiento autorizado</h3></div>
+              <form id="cashMovementForm" class="compact-form">
+                <label
+                  >Tipo<select id="cashMovementType">
+                    <option value="income">Otro ingreso</option>
+                    <option value="withdrawal">Retiro autorizado</option>
+                  </select></label
+                ><label
+                  >Monto<input
+                    id="cashMovementAmount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required /></label
+                ><label>Motivo<input id="cashMovementReason" required /></label
+                ><button class="secondary-btn" type="submit">
+                  Registrar movimiento
+                </button>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Entregar efectivo</h3></div>
+              <form id="cashDeliveryForm" class="compact-form">
+                <label
+                  >Destino<select id="cashDeliveryDestination"></select></label
+                ><label
+                  >Monto<input
+                    id="cashDeliveryAmount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required /></label
+                ><label>Nota<input id="cashDeliveryNotes" /></label
+                ><button class="secondary-btn" type="submit">
+                  Registrar entrega
+                </button>
+              </form>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Hoy calendario</h3>
+                <p class="muted">
+                  Totales de todas las cajas visibles desde las 00:00.
+                </p>
+              </div>
+            </div>
+            <div id="dailyCashSummary"></div>
+          </div>
+          <div class="panel table-panel">
+            <div class="panel-head"><h3>Historial de cortes</h3></div>
+            <div id="cashSessionsHistory"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-inventario">
+          <div class="inventory-grid" id="inventoryCards"></div>
+          <details class="panel advanced-operations">
+            <summary>Más opciones de inventario</summary>
+            <p class="muted">Formularios completos para operaciones excepcionales.</p>
+          <div class="two-col">
+            <form id="transferForm" class="panel form-card">
+              <div class="panel-head"><h3>Transferir garrafones</h3></div>
+              <div class="form-grid">
+                <label>Origen<select id="transferFrom" name="transferFrom"></select></label>
+                <label>Destino<select id="transferTo" name="transferTo"></select></label>
+                <label class="full"
+                  >Cantidad<input
+                    id="transferQty"
+                    name="transferQty"
+                    type="number"
+                    min="1"
+                    value="1"
+                    required
+                /></label>
+              </div>
+              <button
+                class="primary-btn wide"
+                type="submit"
+                form="transferForm"
+                data-inventory-action="transfer">
+                Registrar transferencia
+              </button>
+            </form>
+            <form id="inventoryAdjustForm" class="panel form-card">
+              <div class="panel-head"><h3>Ajuste manual</h3></div>
+              <div class="form-grid">
+                <label>Ubicación<select id="adjustLocation" name="adjustLocation"></select></label>
+                <label
+                  >Nuevo total<input
+                    id="adjustQty"
+                    name="adjustQty"
+                    type="number"
+                    min="0"
+                    value="0"
+                    required
+                /></label>
+                <label class="full"
+                  >Motivo<textarea
+                    id="adjustReason"
+                    name="adjustReason"
+                    rows="2"
+                    required
+                    placeholder="Conteo físico, merma, alta de garrafones."
+                  ></textarea>
+                </label>
+              </div>
+              <button
+                class="secondary-btn wide"
+                type="submit"
+                form="inventoryAdjustForm"
+                data-inventory-action="adjust">
+                Guardar ajuste
+              </button>
+            </form>
+          </div>
+          </details>
+          <div class="panel">
+            <div class="panel-head"><h3>Movimientos de inventario</h3></div>
+            <div id="inventoryMovements"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-insumos">
+          <div class="toolbar">
+            <div>
+              <h3>Insumos</h3>
+              <p class="muted">
+                Consumibles separados del inventario de garrafones.
+              </p>
+            </div>
+            <button id="newSupplyBtn" class="primary-btn" type="button">
+              + Nuevo insumo
+            </button>
+          </div>
+          <div class="metric-grid" id="suppliesMetrics"></div>
+          <div class="panel table-panel">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Insumo</th>
+                    <th>Categoría</th>
+                    <th>Unidad</th>
+                    <th>Existencia</th>
+                    <th>Mínimo</th>
+                    <th>Valor estimado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="suppliesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Movimientos recientes</h3></div>
+            <div id="supplyMovementsHistory"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-mantenimiento">
+          <div class="two-col">
+            <div class="panel maintenance-panel">
+              <span class="eyebrow">CONTADOR DE MANTENIMIENTO</span>
+              <div class="maintenance-count" id="maintenanceCount">0</div>
+              <p>garrafones procesados desde el último mantenimiento</p>
+              <div class="progress">
+                <div id="maintenanceProgress" class="progress-bar"></div>
+              </div>
+              <p id="maintenanceStatus"></p>
+              <button id="resetMaintenanceBtn" class="primary-btn">
+                Registrar mantenimiento realizado
+              </button>
+            </div>
+            <div class="panel form-card">
+              <div class="panel-head"><h3>Configuración</h3></div>
+              <label
+                >Umbral de mantenimiento
+                <input
+                  id="maintenanceThreshold"
+                  type="number"
+                  min="1"
+                  step="1"
+                />
+              </label>
+              <small
+                >Referencia de servicio: 350-400
+                garrafones.</small
+              >
+              <button
+                id="saveMaintenanceThresholdBtn"
+                class="secondary-btn wide"
+              >
+                Guardar umbral
+              </button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Historial de mantenimiento</h3></div>
+            <div id="maintenanceHistory"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-gastos">
+          <div class="two-col">
+            <form id="expenseForm" class="panel form-card">
+              <div class="panel-head"><h3>Registrar gasto</h3></div>
+              <div class="form-grid">
+                <label
+                  >Concepto<input
+                    id="expenseConcept"
+                    required
+                    placeholder="Ej. gasolina, tapas, reparación"
+                /></label>
+                <label
+                  >Monto<input
+                    id="expenseAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                /></label>
+                <label>Centro<select id="expenseCenter"></select></label>
+                <label
+                  >Forma de pago<select id="expenseMethod">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="otro">Otro</option>
+                  </select></label
+                >
+                <label
+                  >¿Salió de caja?<select id="expenseAffectsCash">
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                  </select></label
+                >
+                <label class="full"
+                  >Notas<textarea id="expenseNotes" rows="2"></textarea>
+                </label>
+              </div>
+              <button class="primary-btn wide" type="submit">
+                Registrar gasto
+              </button>
+            </form>
+            <div class="panel">
+              <div class="panel-head"><h3>Gastos del mes</h3></div>
+              <div id="expenseSummary"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Historial de gastos</h3></div>
+            <div id="expenseHistory"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-usuarios">
+          <div class="toolbar">
+            <div>
+              <h3>Empleados</h3>
+              <p class="muted">
+                Consulta usuarios y asigna un PIN nuevo cuando sea necesario.
+              </p>
+            </div>
+            <button id="newUserBtn" class="primary-btn">
+              + Agregar empleado
+            </button>
+          </div>
+          <div class="panel table-panel">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Rol</th>
+                    <th>PIN</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+            <div id="usersCards" class="users-card-list"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-reportes">
+          <div class="toolbar">
+            <div>
+              <h3>Histórico mensual</h3>
+              <p class="muted">
+                Los reportes se calculan desde operaciones guardadas; no se
+                sobrescriben meses anteriores.
+              </p>
+            </div>
+            <input id="reportMonth" type="month" />
+          </div>
+          <div class="metric-grid" id="reportMetrics"></div>
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head"><h3>Ventas por canal</h3></div>
+              <div id="reportChannels"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Fiado</h3></div>
+              <div id="reportDebt"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Clientes del mes</h3></div>
+            <div id="reportClients"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-configuracion">
+          <div class="two-col">
+            <div class="panel form-card">
+              <div class="panel-head"><h3>Datos del negocio</h3></div>
+              <label
+                >Nombre<input id="businessName" value="Purificadora Trujillo"
+              /></label>
+              <label
+                >Precio general por garrafón<input
+                  id="defaultPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+              /></label>
+              <button id="saveSettingsBtn" class="primary-btn wide">
+                Guardar precio y configuración
+              </button>
+            </div>
+            <div class="panel form-card">
+              <div class="panel-head"><h3>Respaldo local</h3></div>
+              <p class="muted">
+                Descarga una copia de consulta en formato JSON.
+              </p>
+              <button id="exportBtn" class="secondary-btn wide">
+                Exportar respaldo
+              </button>
+              <label class="file-label"
+                >Importar respaldo<input
+                  id="importInput"
+                  type="file"
+                  accept="application/json"
+              /></label>
+              <button id="resetAppBtn" class="danger-btn wide">
+                Borrar datos locales
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-auditoria">
+          <div class="toolbar">
+            <div>
+              <h3>Auditoría</h3>
+              <p class="muted">
+                Accesos y operaciones críticas.
+              </p>
+            </div>
+            <input
+              id="auditSearch"
+              type="search"
+              placeholder="Buscar acción, usuario o descripción"
+            />
+          </div>
+          <div class="metric-grid" id="auditMetrics"></div>
+          <div class="panel"><div id="auditList"></div></div>
+        </section>
+
+        <section class="view" id="view-diagnostico">
+          <div class="toolbar">
+            <div>
+              <h3>Diagnóstico central</h3>
+              <p class="muted">Conexión, perfil, sincronización y Realtime.</p>
+            </div>
+          </div>
+          <div id="v3DiagnosticHost" class="diagnostic-host"></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="accessChoiceDialog" class="auth-dialog access-choice-dialog">
+      <div class="dialog-form auth-card access-choice-card">
+        <img
+          src="assets/logo/purificadora-trujillo.png"
+          alt="Purificadora Trujillo"
+          class="auth-logo"
+        />
+        <span class="eyebrow">ACCESO OPERATIVO</span>
+        <h2>¿Cómo deseas entrar?</h2>
+        <div class="access-choice-actions">
+          <button class="primary-btn" id="enterAsAdminBtn" type="button">
+            Entrar como Administrador
+          </button>
+          <button class="secondary-btn" id="enterAsUserBtn" type="button">
+            Entrar como Usuario
+          </button>
+        </div>
+        <button
+          class="central-access-status"
+          id="v3OpenAuthBtn"
+          type="button"
+          data-central-auth-trigger
+          aria-controls="v3AuthDialog"
+          aria-haspopup="dialog"
+        >
+          Verificando central…
+        </button>
+        <p id="centralSessionNotice" class="central-session-notice" aria-live="polite">
+          Verificando la sesión central…
+        </p>
+      </div>
+    </dialog>
+
+    <dialog id="employeeLoginDialog" class="auth-dialog">
+      <form
+        method="dialog"
+        id="employeeLoginForm"
+        class="dialog-form auth-card"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <span></span
+          ><button
+            type="button"
+            class="icon-btn"
+            data-close="employeeLoginDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <img
+          src="assets/logo/purificadora-trujillo.png"
+          alt="Purificadora Trujillo"
+          class="auth-logo"
+        />
+        <span class="eyebrow">INICIO DE TURNO</span>
+        <h2>Selecciona tu nombre</h2>
+        <label>Empleado<select id="employeeLoginUser" required></select></label>
+        <label
+          >PIN<input
+            id="employeeLoginPin"
+            type="password"
+            inputmode="numeric"
+            minlength="4"
+            maxlength="8"
+            autocomplete="current-password"
+            required
+        /></label>
+        <p class="form-error" id="employeeLoginError" aria-live="polite"></p>
+        <button class="primary-btn wide" value="default">Entrar</button>
+        <button class="text-btn wide" id="backToAccessChoiceBtn" type="button">
+          Volver
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="v3AuthDialog" class="auth-dialog">
+      <form id="v3AuthForm" class="dialog-form auth-card">
+        <div class="dialog-head">
+          <h3>Cuenta central</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="v3AuthDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <pre id="v3AuthTrace" class="central-auth-dialog-trace" aria-live="polite" hidden></pre>
+        <img
+          src="assets/logo/purificadora-trujillo.png"
+          alt="Purificadora Trujillo"
+          class="auth-logo"
+        />
+        <p class="muted">
+          Usa la cuenta creada en Supabase. Esta contraseña no se guarda dentro
+          de los datos operativos.
+        </p>
+        <label
+          >Correo<input
+            id="v3AuthEmail"
+            type="email"
+            autocomplete="username"
+            required
+        /></label>
+        <label
+          >Contraseña
+          <span class="password-input-row">
+            <input
+              id="v3AuthPassword"
+              type="password"
+              autocomplete="current-password"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+            />
+            <button
+              class="secondary-btn password-toggle"
+              id="v3TogglePasswordBtn"
+              type="button"
+              aria-controls="v3AuthPassword"
+              aria-pressed="false"
+            >
+              Mostrar
+            </button>
+          </span>
+        </label>
+        <p class="muted remember-device-option">
+          La sesión quedará conectada en este dispositivo.
+        </p>
+        <p class="form-error" id="v3AuthError" aria-live="polite"></p>
+        <p class="form-success hidden" id="v3AuthNotice" aria-live="polite"></p>
+        <button class="primary-btn wide" id="v3AuthSubmitBtn" type="submit">
+          Conectar
+        </button>
+        <button class="text-btn wide" id="v3ForgotPasswordBtn" type="button">
+          Olvidé mi contraseña
+        </button>
+        <button class="text-btn wide" type="button" data-close="v3AuthDialog">
+          Cancelar
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="v3PasswordRecoveryDialog" class="auth-dialog">
+      <form id="v3PasswordRecoveryForm" class="dialog-form auth-card">
+        <div class="dialog-head">
+          <h3>Crear contraseña nueva</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="v3PasswordRecoveryDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <img
+          src="assets/logo/purificadora-trujillo.png"
+          alt="Purificadora Trujillo"
+          class="auth-logo"
+        />
+        <p class="muted">
+          El enlace de recuperación fue validado. Guarda ahora la contraseña que
+          usarás para entrar.
+        </p>
+        <label
+          >Nueva contraseña<input
+            id="v3NewPassword"
+            type="password"
+            minlength="8"
+            autocomplete="new-password"
+            required
+        /></label>
+        <label
+          >Confirmar contraseña<input
+            id="v3ConfirmPassword"
+            type="password"
+            minlength="8"
+            autocomplete="new-password"
+            required
+        /></label>
+        <p
+          class="form-error"
+          id="v3PasswordRecoveryError"
+          aria-live="polite"
+        ></p>
+        <button
+          class="primary-btn wide"
+          id="v3PasswordRecoverySubmitBtn"
+          type="submit"
+        >
+          Guardar contraseña
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="adminLoginDialog" class="auth-dialog">
+      <form
+        method="dialog"
+        id="adminLoginForm"
+        class="dialog-form auth-card"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Administrador</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="adminLoginDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <label id="adminLoginUserWrap"
+          >Administrador<select id="adminLoginUser" required></select
+        ></label>
+        <label
+          >PIN<input
+            id="adminLoginPin"
+            type="password"
+            inputmode="numeric"
+            minlength="4"
+            maxlength="8"
+            autocomplete="off"
+            required
+        /></label>
+        <p class="form-error" id="adminLoginError" aria-live="polite"></p>
+        <button class="primary-btn wide" value="default">Entrar</button>
+        <button
+          class="text-btn wide"
+          id="backFromAdminLoginBtn"
+          type="button"
+        >
+          Cancelar
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="adminReauthDialog" class="auth-dialog">
+      <form id="adminReauthForm" class="dialog-form auth-card">
+        <div class="dialog-head">
+          <h3>Autorizar acción</h3>
+          <button id="cancelAdminReauthIconBtn" type="button" class="icon-btn" aria-label="Cancelar">×</button>
+        </div>
+        <p class="muted" id="adminReauthMessage">
+          Escribe tu PIN para continuar.
+        </p>
+        <label>PIN del administrador<input id="adminReauthPin" type="password" inputmode="numeric" minlength="4" maxlength="8" autocomplete="off" required /></label>
+        <p class="form-error" id="adminReauthError" aria-live="polite"></p>
+        <button class="primary-btn wide" type="submit">Autorizar</button>
+        <button class="text-btn wide" id="cancelAdminReauthBtn" type="button">Cancelar</button>
+      </form>
+    </dialog>
+
+    <dialog id="clientDialog">
+      <form
+        method="dialog"
+        id="clientForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3 id="clientDialogTitle">Nuevo cliente</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="clientDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="clientId" type="hidden" />
+        <div class="form-grid">
+          <label>Nombre<input id="clientName" required /></label>
+          <label>Teléfono<input id="clientPhone" inputmode="tel" /></label>
+          <label class="full">Dirección<input id="clientAddress" /></label>
+          <label
+            >Ruta habitual<select id="clientRoute">
+              <option value="ninguna">Ninguna</option>
+              <option value="ruta1">Ruta 1</option>
+              <option value="ruta2">Ruta 2</option>
+              <option value="ventanilla">Ventanilla</option>
+            </select></label
+          >
+          <label
+            >Tipo<select id="clientType">
+              <option>Hogar</option>
+              <option>Negocio</option>
+              <option>Institución</option>
+              <option>Otro</option>
+            </select></label
+          >
+          <label
+            >Precio por garrafón<input
+              id="clientPrice"
+              type="number"
+              min="0"
+              step="0.01"
+          /></label>
+          <label
+            >Cliente frecuente<select id="clientFrequent">
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select></label
+          >
+          <label
+            >Estado<select id="clientActive">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select></label
+          >
+          <label class="full"
+            >Notas<textarea id="clientNotes" rows="3"></textarea>
+          </label>
+        </div>
+        <div
+          id="clientDuplicateWarning"
+          class="duplicate-warning hidden"
+          role="status"
+        ></div>
+        <button class="primary-btn wide" value="default">
+          Guardar cliente
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="mergeClientsDialog">
+      <form method="dialog" id="mergeClientsForm" class="dialog-form">
+        <div class="dialog-head">
+          <h3>Unir clientes duplicados</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="mergeClientsDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <p class="muted">
+          Selecciona el cliente principal. Su nombre, ruta y precio permanecerán.
+          Las ventas, pagos y movimientos de los demás se conservarán en este cliente.
+        </p>
+        <div id="mergeClientsOptions" class="merge-client-options"></div>
+        <p class="form-error" id="mergeClientsError" aria-live="polite"></p>
+        <button class="primary-btn wide" id="mergeClientsSubmitBtn" value="default">
+          Unir y conservar historial
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="clientDetailDialog">
+      <div class="dialog-form wide-dialog">
+        <div class="dialog-head">
+          <h3>Expediente del cliente</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="clientDetailDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div id="clientDetailContent"></div>
+      </div>
+    </dialog>
+
+    <dialog id="paymentDialog">
+      <form
+        method="dialog"
+        id="paymentForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Registrar pago</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="paymentDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="paymentClientId" type="hidden" />
+        <div id="paymentClientSummary" class="info-box"></div>
+        <label
+          >Monto recibido<input
+            id="paymentAmount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            required
+        /></label>
+        <div class="payment-amount-actions" aria-label="Monto del abono">
+          <button type="button" class="secondary-btn" id="paymentSettleBtn">Liquidar</button>
+          <button type="button" class="text-btn" id="paymentOtherAmountBtn">Otro monto</button>
+        </div>
+        <label
+          >Forma de pago<select id="paymentMethod">
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+          </select></label
+        >
+        <label>Notas<textarea id="paymentNotes" rows="2"></textarea></label>
+        <button class="primary-btn wide" value="default">Registrar pago</button>
+      </form>
+    </dialog>
+
+    <dialog id="inventoryAdjustQuickDialog">
+      <form id="inventoryAdjustQuickForm" class="dialog-form" data-dirty-guard>
+        <div class="dialog-head">
+          <div>
+            <span class="eyebrow">AJUSTAR EXISTENCIAS</span>
+            <h3 id="inventoryAdjustQuickTitle">Inventario</h3>
+          </div>
+          <button type="button" class="icon-btn" data-close="inventoryAdjustQuickDialog" aria-label="Cerrar">×</button>
+        </div>
+        <input id="inventoryAdjustQuickLocation" name="location" type="hidden" />
+        <div class="context-current">Cantidad actual <strong id="inventoryAdjustQuickCurrent">0</strong></div>
+        <label>Nueva cantidad<input id="inventoryAdjustQuickQty" name="quantity" type="number" min="0" step="1" required inputmode="numeric" /></label>
+        <label>Motivo<textarea id="inventoryAdjustQuickReason" name="reason" rows="2" required placeholder="Ej. Conteo físico"></textarea></label>
+        <div id="inventoryAdjustQuickDifference" class="info-box"></div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-btn" data-close="inventoryAdjustQuickDialog">Cancelar</button>
+          <button type="submit" class="primary-btn">Guardar ajuste</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="inventoryTransferQuickDialog">
+      <form id="inventoryTransferQuickForm" class="dialog-form" data-dirty-guard>
+        <div class="dialog-head">
+          <div>
+            <span class="eyebrow">TRANSFERIR</span>
+            <h3 id="inventoryTransferQuickTitle">Inventario</h3>
+          </div>
+          <button type="button" class="icon-btn" data-close="inventoryTransferQuickDialog" aria-label="Cerrar">×</button>
+        </div>
+        <input id="inventoryTransferQuickFrom" name="from" type="hidden" />
+        <label>Destino<select id="inventoryTransferQuickTo" name="to" required></select></label>
+        <label>Cantidad<input id="inventoryTransferQuickQty" name="quantity" type="number" min="1" step="1" value="1" required inputmode="numeric" /></label>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-btn" data-close="inventoryTransferQuickDialog">Cancelar</button>
+          <button type="submit" class="primary-btn">Transferir</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="saleCancelDialog">
+      <div class="dialog-form">
+        <div class="dialog-head">
+          <h3>¿Cancelar esta venta?</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="saleCancelDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <p>Los datos capturados se perderán.</p>
+        <div class="dialog-actions">
+          <button
+            type="button"
+            class="secondary-btn"
+            data-close="saleCancelDialog"
+          >
+            Seguir editando
+          </button>
+          <button type="button" class="danger-btn" id="confirmSaleCancelBtn">
+            Sí, cancelar
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="userDialog">
+      <form method="dialog" id="userForm" class="dialog-form" data-dirty-guard>
+        <div class="dialog-head">
+          <h3 id="userDialogTitle">Nuevo empleado</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="userDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="userId" type="hidden" />
+        <p class="muted user-dialog-hint">
+          El rol asigna los permisos automáticamente.
+        </p>
+        <div class="form-grid">
+          <label class="full">Nombre<input id="userName" autocomplete="name" required /></label>
+          <label class="full"
+            >Rol<select id="userRole">
+              <option value="ventanilla">Ventanilla</option>
+              <option value="repartidor">Repartidor</option>
+              <option value="caja">Caja</option>
+              <option value="inventario">Inventario</option>
+              <option value="administrador">Administrador</option>
+            </select></label
+          >
+          <label id="userRouteField" class="full hidden"
+            >Ruta<select id="userCenter">
+              <option value="ruta1">Ruta 1</option>
+              <option value="ruta2">Ruta 2</option>
+            </select></label
+          >
+          <label class="full"
+            >PIN de acceso
+            <span class="pin-input-row">
+              <input
+                id="userPin"
+                type="password"
+                inputmode="numeric"
+                minlength="4"
+                maxlength="8"
+                autocomplete="new-password"
+                placeholder="4 a 8 números"
+              />
+              <button id="generateUserPinBtn" class="secondary-btn" type="button">
+                Generar
+              </button>
+              <button id="copyUserPinBtn" class="text-btn" type="button" disabled>
+                Copiar
+              </button>
+            </span>
+            <small id="userPinHint" class="muted">Se solicitará al iniciar turno.</small>
+          </label>
+          <details
+            id="userAdvancedSettings"
+            class="full user-permissions-details"
+          >
+            <summary>
+              <span>Opciones avanzadas</span
+              ><span id="userPermissionCount" class="permission-count"
+                >0 permisos</span
+              >
+            </summary>
+            <label class="advanced-username-field"
+              >Alias interno<input id="userUsername" autocomplete="off" />
+              <small class="muted">Se genera automáticamente si lo dejas vacío.</small>
+            </label>
+            <div class="permission-toolbar">
+              <p>Modifica solo las excepciones necesarias.</p>
+              <button
+                id="resetRolePermissionsBtn"
+                class="secondary-btn"
+                type="button"
+              >
+                Usar permisos del rol
+              </button>
+            </div>
+            <div
+              id="userPermissions"
+              class="permission-groups"
+              role="group"
+              aria-label="Permisos del empleado"
+            >
+              <fieldset>
+                <legend>Ventas y clientes</legend>
+                <label class="permission-option"
+                  ><input type="checkbox" value="create_sale" /><span
+                    >Crear ventas</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="correct_sale" /><span
+                    >Corregir ventas recientes</span
+                  ></label
+                >
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="void_sale" /><span
+                    >Anular ventas</span
+                  ></label
+                >
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="override_sale_price" /><span
+                    >Autorizar precio excepcional</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="create_client" /><span
+                    >Crear clientes</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="edit_client" /><span
+                    >Editar clientes</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="view_client_debt" /><span
+                    >Ver deuda de cliente</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="register_payment" /><span
+                    >Registrar pagos</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="create_credit" /><span
+                    >Crear fiado</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="view_global_debt" /><span
+                    >Ver deuda global</span
+                  ></label
+                >
+              </fieldset>
+              <fieldset>
+                <legend>Caja y gastos</legend>
+                <label class="permission-option"
+                  ><input type="checkbox" value="view_own_cash" /><span
+                    >Ver caja propia</span
+                  ></label
+                >
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="view_all_cash" /><span
+                    >Ver todas las cajas</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="open_cash" /><span
+                    >Abrir caja</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="close_cash" /><span
+                    >Cerrar caja</span
+                  ></label
+                >
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="cash_adjustments" /><span
+                    >Ajustes de caja</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="cash_delivery" /><span
+                    >Entregar efectivo</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="create_expense" /><span
+                    >Crear gastos</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="view_expenses" /><span
+                    >Ver gastos</span
+                  ></label
+                >
+              </fieldset>
+              <fieldset>
+                <legend>Operación</legend>
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="adjust_inventory" /><span
+                    >Ajustar inventario</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="transfer_inventory" /><span
+                    >Transferir inventario</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="view_inventory" /><span
+                    >Ver inventario</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="rounds" /><span
+                    >Rondas</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="supplies" /><span
+                    >Insumos</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="maintenance" /><span
+                    >Mantenimiento</span
+                  ></label
+                >
+              </fieldset>
+              <fieldset>
+                <legend>Administración</legend>
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="users" /><span
+                    >Usuarios</span
+                  ></label
+                >
+                <label class="permission-option"
+                  ><input type="checkbox" value="reports" /><span
+                    >Reportes</span
+                  ></label
+                >
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="settings" /><span
+                    >Configuración</span
+                  ></label
+                >
+                <label class="permission-option permission-sensitive"
+                  ><input type="checkbox" value="backups" /><span
+                    >Respaldos</span
+                  ></label
+                >
+                <label class="permission-option permission-danger"
+                  ><input type="checkbox" value="reset_data" /><span
+                    >Borrar datos</span
+                  ></label
+                >
+              </fieldset>
+            </div>
+          </details>
+        </div>
+        <div class="user-dialog-actions">
+          <button id="userSaveBtn" class="primary-btn wide" value="default">
+            Crear empleado
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="deleteUserDialog">
+      <div class="dialog-form compact-dialog">
+        <div class="dialog-head">
+          <h3>Eliminar empleado</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            id="closeDeleteUserBtn"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <p id="deleteUserMessage"></p>
+        <p class="muted">
+          Solo se eliminará si no tiene ventas, cajas u otro historial. Si ya
+          trabajó en la aplicación, desactívalo para conservar los reportes.
+        </p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-btn" id="cancelDeleteUserBtn">
+            Cancelar
+          </button>
+          <button type="button" class="danger-btn" id="confirmDeleteUserBtn">
+            Eliminar empleado
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="cashOpenDialog">
+      <form
+        method="dialog"
+        id="cashOpenForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Abrir caja</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="cashOpenDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <label
+          >Efectivo inicial<input
+            id="cashOpenAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            value="0"
+            required
+        /></label>
+        <button class="primary-btn wide" value="default">
+          Confirmar apertura
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="cashCloseDialog">
+      <form
+        method="dialog"
+        id="cashCloseForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Cerrar caja</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="cashCloseDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div id="cashCloseSummary" class="info-box"></div>
+        <label
+          >Efectivo contado<input
+            id="cashCountedAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            inputmode="decimal"
+            required
+        /></label>
+        <div
+          id="cashCloseComparison"
+          class="info-box hidden"
+          aria-live="polite"
+        ></div>
+        <label
+          >Motivo de diferencia<textarea
+            id="cashDifferenceReason"
+            rows="2"
+            placeholder="Obligatorio si existe diferencia"
+          ></textarea>
+        </label>
+        <button class="primary-btn wide" value="default">Cerrar caja</button>
+      </form>
+    </dialog>
+
+    <dialog id="resetDataDialog">
+      <form
+        method="dialog"
+        id="resetDataForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Borrar datos del sistema</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="resetDataDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div class="danger-box">
+          Esta acción elimina toda la información local del sistema. No se puede
+          deshacer.
+        </div>
+        <label
+          >PIN del administrador actual<input
+            id="resetAdminPin"
+            type="password"
+            inputmode="numeric"
+            maxlength="8"
+            autocomplete="off"
+            required
+        /></label>
+        <label
+          >Escribe BORRAR<input
+            id="resetConfirmText"
+            autocomplete="off"
+            required
+        /></label>
+        <p class="form-error" id="resetDataError" aria-live="polite"></p>
+        <button
+          id="confirmResetBtn"
+          class="danger-btn wide"
+          value="default"
+          disabled
+        >
+          Borrar datos
+        </button>
+        <button
+          class="text-btn wide"
+          type="button"
+          data-close="resetDataDialog"
+        >
+          Cancelar
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="cashRequiredDialog">
+      <div class="dialog-form">
+        <div class="dialog-head">
+          <h3>Caja cerrada</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="cashRequiredDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <p>Para registrar cobros en efectivo primero debes abrir tu caja.</p>
+        <div class="dialog-actions">
+          <button
+            type="button"
+            class="secondary-btn"
+            data-close="cashRequiredDialog"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="primary-btn"
+            id="openCashFromRequiredBtn"
+          >
+            Abrir caja
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="storageConflictDialog">
+      <div class="dialog-form">
+        <div class="dialog-head">
+          <h3>Datos actualizados en otra pestaña</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="storageConflictDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <p>
+          Los datos cambiaron en otra pestaña. Recarga los datos antes de
+          continuar para evitar una sobrescritura.
+        </p>
+        <button
+          type="button"
+          class="primary-btn wide"
+          id="reloadExternalStateBtn"
+        >
+          Recargar datos
+        </button>
+      </div>
+    </dialog>
+
+    <dialog id="recoveryDialog">
+      <div class="dialog-form">
+        <div class="dialog-head">
+          <h3>No se pudo leer la base local</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="recoveryDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div class="danger-box">
+          Tus datos no serán sobrescritos. Descarga el contenido sin procesar
+          antes de decidir cómo continuar.
+        </div>
+        <div class="recovery-actions">
+          <button type="button" class="secondary-btn" id="downloadRawStateBtn">
+            Descargar datos sin procesar
+          </button>
+          <button
+            type="button"
+            class="primary-btn"
+            id="restorePreviousStateBtn"
+          >
+            Restaurar última copia válida
+          </button>
+          <button type="button" class="danger-btn" id="manualRecoveryResetBtn">
+            Reiniciar manualmente
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="discardChangesDialog">
+      <div class="dialog-form">
+        <div class="dialog-head">
+          <h3>¿Cerrar sin guardar?</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="discardChangesDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <p>Los cambios capturados se perderán.</p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-btn" id="keepEditingBtn">
+            Seguir editando</button
+          ><button type="button" class="danger-btn" id="discardDialogBtn">
+            Cerrar sin guardar
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="quickClientDialog">
+      <form
+        method="dialog"
+        id="quickClientForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Registrar cliente nuevo</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="quickClientDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <p class="muted">Se guardará y seleccionará sin abandonar la venta.</p>
+        <div class="form-grid">
+          <label>Nombre *<input id="quickClientName" required /></label>
+          <label>Teléfono<input id="quickClientPhone" inputmode="tel" /></label>
+          <label class="full">Dirección<input id="quickClientAddress" /></label>
+          <label
+            >Ruta habitual<select id="quickClientRoute">
+              <option value="ninguna">Ninguna</option>
+              <option value="ruta1">Ruta 1</option>
+              <option value="ruta2">Ruta 2</option>
+              <option value="ventanilla">Ventanilla</option>
+            </select></label
+          >
+          <label
+            >Precio especial opcional<input
+              id="quickClientPrice"
+              type="number"
+              min="0"
+              step="0.01"
+          /></label>
+        </div>
+        <div
+          id="quickClientDuplicateWarning"
+          class="duplicate-warning hidden"
+          role="status"
+        ></div>
+        <button class="primary-btn wide" value="default">
+          Guardar y seleccionar
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="saleDetailDialog">
+      <div class="dialog-form wide-dialog">
+        <div class="dialog-head">
+          <h3>Detalle de venta</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="saleDetailDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div id="saleDetailContent"></div>
+      </div>
+    </dialog>
+
+    <dialog id="saleCorrectionDialog">
+      <form
+        method="dialog"
+        id="saleCorrectionForm"
+        class="dialog-form wide-dialog"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Corregir venta</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="saleCorrectionDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="correctionSaleId" type="hidden" />
+        <div id="correctionOriginalSummary" class="info-box"></div>
+        <div class="form-grid">
+          <label class="full"
+            >Cliente<select id="correctionClient"></select
+          ></label>
+          <label
+            >Cantidad<input
+              id="correctionQty"
+              type="number"
+              min="1"
+              step="1"
+              required
+          /></label>
+          <label
+            >Precio<input
+              id="correctionPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+          /></label>
+          <label
+            >Forma de pago<select id="correctionPaymentType">
+              <option value="efectivo">Efectivo</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="fiado">Fiado</option>
+              <option value="mixto">Mixto</option>
+            </select></label
+          >
+          <label
+            >Pagado<input id="correctionPaid" type="number" min="0" step="0.01"
+          /></label>
+          <label
+            >Canal<select id="correctionChannel">
+              <option value="ventanilla">Ventanilla</option>
+              <option value="ruta1">Ruta 1</option>
+              <option value="ruta2">Ruta 2</option>
+              <option value="fuera_ruta">Fuera de ruta</option>
+              <option value="fuera_horario">Fuera de horario</option>
+            </select></label
+          >
+          <label class="full"
+            >Notas<textarea id="correctionNotes" rows="2"></textarea>
+          </label>
+          <label class="full"
+            >Motivo de corrección *<textarea
+              id="correctionReason"
+              rows="2"
+              required
+              placeholder="Cantidad, precio, cliente o forma de pago incorrectos"
+            ></textarea>
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="voidSaleBtn" class="danger-btn">
+            Anular venta</button
+          ><button class="primary-btn" value="default">
+            Guardar corrección
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="saleReturnDialog">
+      <form method="dialog" id="saleReturnForm" class="dialog-form" data-dirty-guard>
+        <div class="dialog-head">
+          <h3>Registrar devolución</h3>
+          <button type="button" class="icon-btn" data-close="saleReturnDialog" aria-label="Cerrar">×</button>
+        </div>
+        <input id="returnSaleId" type="hidden" />
+        <div id="returnSaleSummary" class="info-box"></div>
+        <label>Cantidad a devolver
+          <input id="returnSaleQty" type="number" min="1" step="1" required />
+        </label>
+        <div id="returnSaleAmounts" class="info-box"></div>
+        <label>Motivo *
+          <textarea id="returnSaleReason" rows="3" required placeholder="Ej. garrafones devueltos por el cliente"></textarea>
+        </label>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-btn" data-close="saleReturnDialog">Cancelar</button>
+          <button class="primary-btn" value="default">Registrar devolución</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="saleVoidConfirmDialog">
+      <form method="dialog" id="saleVoidConfirmForm" class="dialog-form">
+        <div class="dialog-head"><h3>¿Anular esta venta?</h3></div>
+        <div id="saleVoidSummary" class="warning-box"></div>
+        <p>Esta acción no borra la venta: la marcará como anulada y revertirá sus efectos de inventario, caja y fiado. Quedará registrada en auditoría.</p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-btn" data-close="saleVoidConfirmDialog">Seguir revisando</button>
+          <button class="danger-btn" value="default">Sí, anular venta</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="startRoundDialog">
+      <form
+        method="dialog"
+        id="startRoundForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Preparar salida</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="startRoundDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <label
+          >Ruta<select id="roundRoute">
+            <option value="ruta1">Ruta 1</option>
+            <option value="ruta2">Ruta 2</option>
+          </select></label
+        >
+        <label
+          >Garrafones llenos cargados<input
+            id="roundLoadedQty"
+            type="number"
+            min="1"
+            step="1"
+            required
+        /></label>
+        <label>Notas<textarea id="roundStartNotes" rows="2"></textarea></label>
+        <button class="primary-btn wide" value="default">Iniciar ronda</button>
+      </form>
+    </dialog>
+
+    <dialog id="reloadRoundDialog">
+      <form
+        method="dialog"
+        id="reloadRoundForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Recargar ruta</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="reloadRoundDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="reloadRoundId" type="hidden" />
+        <div id="reloadRoundSummary" class="info-box"></div>
+        <label
+          >Garrafones llenos a recargar<input
+            id="reloadRoundQty"
+            type="number"
+            min="1"
+            step="1"
+            required
+        /></label>
+        <label
+          >Notas<textarea
+            id="reloadRoundNotes"
+            rows="2"
+            placeholder="Ej. segunda carga desde Local"
+          ></textarea>
+        </label>
+        <button class="primary-btn wide" value="default">
+          Registrar recarga
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="returnRoundDialog">
+      <form
+        method="dialog"
+        id="returnRoundForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3 id="returnRoundDialogTitle">Registrar regreso</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="returnRoundDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="returnRoundId" type="hidden" />
+        <div id="roundReturnSummary" class="info-box"></div>
+        <div id="roundReturnWarning" class="danger-box" hidden></div>
+        <div id="roundReturnTrace" class="info-box" role="status" aria-live="polite" hidden></div>
+        <div class="form-grid">
+          <label
+            >Llenos que regresan<input
+              id="roundReturnedFull"
+              type="number"
+              min="0"
+              step="1"
+              required /></label
+          ><label
+            >Vacíos recolectados<input
+              id="roundReturnedEmpty"
+              type="number"
+              min="0"
+              step="1"
+              required /></label
+          ><label
+            >Dañados<input
+              id="roundDamaged"
+              type="number"
+              min="0"
+              step="1"
+              value="0"
+              required /></label
+          ><input id="roundLost" type="hidden" value="0" /><label class="full"
+            >Observación<textarea id="roundReturnNotes" rows="2"></textarea>
+          </label>
+          <label id="roundRecoveryReasonField" class="full" hidden
+            >Motivo de recuperación administrativa<textarea
+              id="roundRecoveryReason"
+              rows="3"
+              placeholder="Explica por qué la carga registrada no coincide con las ventas"
+            ></textarea>
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button id="continueRoundBtn" type="button" class="secondary-btn">Continuar ronda</button>
+          <button id="returnRoundSubmitBtn" class="primary-btn" value="default">Registrar regreso</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="fillContainersDialog">
+      <form
+        method="dialog"
+        id="fillContainersForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Preparar garrafones</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="fillContainersDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div class="availability-card" role="status">
+          <span>Vacíos disponibles en Local</span
+          ><strong id="fillAvailableQty">0</strong>
+        </div>
+        <p id="fillContainersHelp" class="muted">
+          Lavado está incluido en esta preparación.
+        </p>
+        <label
+          >Cantidad<input
+            id="fillContainersQty"
+            type="number"
+            min="1"
+            step="1"
+            required /></label
+        ><label
+          >Notas<textarea id="fillContainersNotes" rows="2"></textarea></label
+        ><button
+          id="fillContainersSubmit"
+          class="primary-btn wide"
+          value="default"
+          >
+          Preparar llenos
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="cashDetailDialog">
+      <div class="dialog-form wide-dialog">
+        <div class="dialog-head">
+          <h3>Detalle del corte</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="cashDetailDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div id="cashDetailContent"></div>
+      </div>
+    </dialog>
+
+    <dialog id="supplyDialog">
+      <form
+        method="dialog"
+        id="supplyForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3 id="supplyDialogTitle">Nuevo insumo</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="supplyDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="supplyId" type="hidden" />
+        <div class="form-grid">
+          <label>Nombre *<input id="supplyName" required /></label
+          ><label>Categoría<input id="supplyCategory" /></label
+          ><label
+            >Unidad *<select id="supplyUnit">
+              <option>pieza</option>
+              <option>kg</option>
+              <option>litro</option>
+              <option>metro</option>
+              <option>paquete</option>
+              <option>caja</option>
+            </select></label
+          ><label
+            >Existencia inicial<input
+              id="supplyInitialStock"
+              type="number"
+              min="0"
+              step="0.01"
+              value="0" /></label
+          ><label
+            >Existencia mínima<input
+              id="supplyMinimumStock"
+              type="number"
+              min="0"
+              step="0.01"
+              value="0" /></label
+          ><label
+            >Costo unitario<input
+              id="supplyCost"
+              type="number"
+              min="0"
+              step="0.01"
+              value="0" /></label
+          ><label>Proveedor<input id="supplySupplier" /></label
+          ><label
+            >Consumo por garrafón<input
+              id="supplyConsumptionPerUnit"
+              type="number"
+              min="0"
+              step="0.01"
+              value="0" /></label
+          ><label class="full"
+            >Notas<textarea id="supplyNotes" rows="2"></textarea>
+          </label>
+        </div>
+        <button class="primary-btn wide" value="default">Guardar insumo</button>
+      </form>
+    </dialog>
+
+    <dialog id="supplyMovementDialog">
+      <form
+        method="dialog"
+        id="supplyMovementForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3 id="supplyMovementTitle">Movimiento de insumo</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="supplyMovementDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="supplyMovementSupplyId" type="hidden" /><label
+          >Tipo<select id="supplyMovementType">
+            <option value="purchase">Compra / entrada</option>
+            <option value="consume">Consumo</option>
+            <option value="adjust">Ajuste por conteo</option>
+          </select></label
+        ><label id="supplyMovementQtyLabel"
+          >Cantidad<input
+            id="supplyMovementQty"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+        /></label>
+        <div id="supplyPurchaseFields">
+          <label
+            >Costo unitario<input
+              id="supplyPurchaseUnitCost"
+              type="number"
+              min="0"
+              step="0.01" /></label
+          ><label>Proveedor<input id="supplyPurchaseSupplier" /></label
+          ><label
+            >Forma de pago<select id="supplyPurchaseMethod">
+              <option value="efectivo">Efectivo</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="otro">Otro</option>
+            </select></label
+          ><label
+            >¿Afecta caja?<select id="supplyPurchaseAffectsCash">
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select></label
+          >
+        </div>
+        <label
+          >Motivo / notas<textarea
+            id="supplyMovementReason"
+            rows="2"
+            required
+          ></textarea></label
+        ><button class="primary-btn wide" value="default">
+          Registrar movimiento
+        </button>
+      </form>
+    </dialog>
+
+    <nav class="bottom-nav" aria-label="Navegación principal móvil">
+      <button class="active" data-view="dashboard"><span>⌂</span>Inicio</button>
+      <button data-view="ventas"><span>＋</span>Venta</button>
+      <button data-view="clientes"><span>◎</span>Clientes</button>
+      <button data-view="fiado"><span>$</span>Fiado</button>
+      <button id="moreNavBtn" type="button"><span>•••</span>Más</button>
+    </nav>
+
+    <script>
+      (() => {
+        const showEarlyBuildError = (message) => {
+          let panel = document.getElementById("centralAuthTracePanel");
+          if (!panel) {
+            panel = document.createElement("aside");
+            panel.id = "centralAuthTracePanel";
+            panel.className = "central-auth-trace";
+            panel.setAttribute("role", "alert");
+            document.body.appendChild(panel);
+          }
+          panel.hidden = false;
+          panel.textContent = `ERROR de carga: ${message}`;
+        };
+        window.addEventListener(
+          "error",
+          (event) => {
+            const target = event.target;
+            if (target?.tagName === "SCRIPT" || target?.tagName === "LINK")
+              showEarlyBuildError(target.src || target.href || "recurso sin URL");
+          },
+          true,
+        );
+        window.setTimeout(() => {
+          if (!window.PurificadoraCentralAuthUi)
+            showEarlyBuildError("central-auth-ui.js no cargado");
+        }, 1200);
+      })();
+    </script>
+    <script src="js/central-auth-ui.js?v=20260814-simplified-container-flow"></script>
+    <script src="js/safe-uuid.js?v=20260814-simplified-container-flow"></script>
+    <script src="js/presentation-labels.js?v=20260814-simplified-container-flow"></script>
+    <script src="js/user-display.js?v=20260814-simplified-container-flow"></script>
+    <script src="js/sale-client-selection.js?v=20260814-simplified-container-flow"></script>
+    <script src="js/app.js?v=20260814-simplified-container-flow"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20260814-simplified-container-flow"></script>
+  </body>
+</html>

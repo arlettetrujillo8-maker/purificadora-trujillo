@@ -1,0 +1,67 @@
+[
+  {
+    "viewport": {
+      "name": "mobile",
+      "width": 390,
+      "height": 844
+    },
+    "metrics": {
+      "horizontalOverflow": false,
+      "widths": {
+        "scroll": 390,
+        "client": 390
+      },
+      "buttonHeights": [
+        44,
+        44,
+        44
+      ],
+      "dialogVisible": true,
+      "duplicateIds": [],
+      "overflowing": [
+        "aside#sidebar.sidebar",
+        "div#.brand",
+        "img#.brand-logo",
+        "small#modeLabel.",
+        "nav#mainNav.",
+        "button#.nav-item",
+        "button#.nav-item",
+        "button#.nav-item active",
+        "button#.nav-item",
+        "button#.nav-item",
+        "button#.nav-item",
+        "button#.nav-item"
+      ],
+      "rightOverflowing": [],
+      "retainedSaleQuantity": 40,
+      "roundRequirementMessage": "Inicia una ronda en Ruta 1 antes de registrar la venta."
+    },
+    "consoleErrors": []
+  },
+  {
+    "viewport": {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    "metrics": {
+      "horizontalOverflow": false,
+      "widths": {
+        "scroll": 1440,
+        "client": 1440
+      },
+      "buttonHeights": [
+        44,
+        44,
+        44
+      ],
+      "dialogVisible": true,
+      "duplicateIds": [],
+      "overflowing": [],
+      "rightOverflowing": [],
+      "retainedSaleQuantity": 40,
+      "roundRequirementMessage": "Inicia una ronda en Ruta 1 antes de registrar la venta."
+    },
+    "consoleErrors": []
+  }
+]
