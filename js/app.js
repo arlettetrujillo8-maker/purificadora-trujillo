@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-icono-ruta-pickup";
+  const APP_SCRIPT_BUILD = "20260815-existencias-tocables-v2";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -97,6 +97,8 @@
         "create_expense",
         "view_expenses",
         "view_inventory",
+        "adjust_inventory",
+        "transfer_inventory",
         "rounds",
         "supplies",
         ...ESSENTIAL_ADMIN_PERMISSIONS,
@@ -992,7 +994,9 @@
     return ageMinutes <= 30 || Boolean(session && !session.closedAt);
   }
   function permissionsFor(user = activeUser()) {
-    return user?.permissions || ROLE_PERMISSIONS[user?.role] || [];
+    return user?.permissions?.length
+      ? user.permissions
+      : ROLE_PERMISSIONS[user?.role] || [];
   }
   function can(permission) {
     const user = activeUser();
@@ -1872,6 +1876,13 @@
         openInventoryTransferQuick(inventoryAction.dataset.location);
       if (inventoryAction?.dataset.inventoryQuick === "fill")
         openFillContainersDialog();
+    });
+    document.body.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const stockFigure = e.target.closest(".route-stock-inline-edit");
+      if (!stockFigure) return;
+      e.preventDefault();
+      stockFigure.click();
     });
     $("menuBtn").addEventListener("click", () =>
       $("sidebar").classList.toggle("open"),
@@ -4135,7 +4146,7 @@
         const trackerLineHtml = (index) =>
           `<div class="route-progress-line${trackerStep >= index ? " is-done" : ""}"></div>`;
         const routeTrackerHtml = `<div class="route-progress-track">${trackerStepHtml(0, "Preparando")}${trackerLineHtml(1)}${trackerStepHtml(1, "En ruta")}${trackerLineHtml(2)}${trackerStepHtml(2, "Regreso")}</div>`;
-        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}">${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}<button class="text-btn" data-inventory-quick="adjust" data-location="${route}">Corregir existencias</button></div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
+        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}${can("adjust_inventory") ? " route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong class="${can("adjust_inventory") ? "route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="empty_${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}<button class="text-btn" data-inventory-quick="adjust" data-location="${route}">Corregir existencias</button></div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
       })
       .join("");
 

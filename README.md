@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si 
 Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
 ```
 
-Build actual: `20260815-icono-ruta-pickup`.
+Build actual: `20260815-existencias-tocables-v2`.

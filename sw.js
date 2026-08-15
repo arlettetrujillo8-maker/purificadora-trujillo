@@ -1,4 +1,4 @@
-const BUILD = "20260815-icono-ruta-pickup";
+const BUILD = "20260815-existencias-tocables-v2";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",

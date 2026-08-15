@@ -2614,3 +2614,23 @@ details.full summary {
   border-radius: 8px;
 }
 .sale-date-divider:first-child { margin-top: 0; }
+
+/* ---- Cifras de Llenos/Vacíos tocables en Rutas (abre Corregir existencias) ---- */
+.route-stock-inline-edit {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.55);
+  transition: background 0.12s ease;
+}
+.route-stock-inline-edit:hover,
+.route-stock-inline-edit:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
+}
+.route-stock-inline-edit:active { transform: scale(0.96); }
