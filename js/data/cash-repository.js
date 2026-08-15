@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
 
 const expensePaymentMethod = (value) => {
   const normalized = String(value || "otro").trim().toLowerCase();

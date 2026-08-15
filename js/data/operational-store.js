@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260815-permisos-empleado-fix";
-import { clientsRepository } from "./clients-repository.js?v=20260815-permisos-empleado-fix";
-import { salesRepository } from "./sales-repository.js?v=20260815-permisos-empleado-fix";
-import { ledgerRepository } from "./ledger-repository.js?v=20260815-permisos-empleado-fix";
-import { cashRepository } from "./cash-repository.js?v=20260815-permisos-empleado-fix";
-import { inventoryRepository } from "./inventory-repository.js?v=20260815-permisos-empleado-fix";
-import { roundsRepository } from "./rounds-repository.js?v=20260815-permisos-empleado-fix";
-import { suppliesRepository } from "./supplies-repository.js?v=20260815-permisos-empleado-fix";
-import { settingsRepository } from "./settings-repository.js?v=20260815-permisos-empleado-fix";
-import { reportsRepository } from "./reports-repository.js?v=20260815-permisos-empleado-fix";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-permisos-empleado-fix";
-import { returnsRepository } from "./returns-repository.js?v=20260815-permisos-empleado-fix";
-import { correctionsRepository } from "./corrections-repository.js?v=20260815-permisos-empleado-fix";
+import { profilesRepository } from "./profiles-repository.js?v=20260815-cierre-modal-seguro";
+import { clientsRepository } from "./clients-repository.js?v=20260815-cierre-modal-seguro";
+import { salesRepository } from "./sales-repository.js?v=20260815-cierre-modal-seguro";
+import { ledgerRepository } from "./ledger-repository.js?v=20260815-cierre-modal-seguro";
+import { cashRepository } from "./cash-repository.js?v=20260815-cierre-modal-seguro";
+import { inventoryRepository } from "./inventory-repository.js?v=20260815-cierre-modal-seguro";
+import { roundsRepository } from "./rounds-repository.js?v=20260815-cierre-modal-seguro";
+import { suppliesRepository } from "./supplies-repository.js?v=20260815-cierre-modal-seguro";
+import { settingsRepository } from "./settings-repository.js?v=20260815-cierre-modal-seguro";
+import { reportsRepository } from "./reports-repository.js?v=20260815-cierre-modal-seguro";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-cierre-modal-seguro";
+import { returnsRepository } from "./returns-repository.js?v=20260815-cierre-modal-seguro";
+import { correctionsRepository } from "./corrections-repository.js?v=20260815-cierre-modal-seguro";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

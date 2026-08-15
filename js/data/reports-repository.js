@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+import { selectAll } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
 
 export const reportsRepository = {
   listAudit: () =>

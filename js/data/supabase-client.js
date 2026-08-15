@@ -1,7 +1,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-permisos-empleado-fix";
+import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-cierre-modal-seguro";
 
-export const SUPABASE_CLIENT_BUILD = "20260815-permisos-empleado-fix";
+export const SUPABASE_CLIENT_BUILD = "20260815-cierre-modal-seguro";
 export const DEVICE_KEY = "purificadora_v3_device_id";
 export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
 export const AUTH_STORAGE_KEY = "purificadora_v3_auth";

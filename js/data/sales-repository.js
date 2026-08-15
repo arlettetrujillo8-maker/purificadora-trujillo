@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
-import { supabase } from "./supabase-client.js?v=20260815-permisos-empleado-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
+import { supabase } from "./supabase-client.js?v=20260815-cierre-modal-seguro";
 
 export const salesRepository = {
   list: () =>

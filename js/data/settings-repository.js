@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

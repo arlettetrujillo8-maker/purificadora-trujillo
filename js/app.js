@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-permisos-empleado-fix";
+  const APP_SCRIPT_BUILD = "20260815-cierre-modal-seguro";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2125,9 +2125,16 @@
   }
   function bindGeneral() {
     $("v3AuthDialog").addEventListener("close", () => {
-      if (centralAccessState === "ready" || !pendingAccessFlow) return;
+      // Si se cierra esta ventana sin completar el login (botón × , ESC,
+      // clic fuera) y no quedó una sesión de empleado válida, siempre se
+      // regresa a la pantalla de acceso limpia. No depende de coordinar
+      // el orden exacto con el listener de central-auth-ui.js: sin
+      // importar la causa, nunca debe quedar la app a medias con el
+      // menú vacío.
       setPendingAccessFlow(null);
-      window.setTimeout(() => openAccessChoice(), 0);
+      if (!employeeSession) {
+        window.setTimeout(() => openAccessChoice({ clearPending: true }), 0);
+      }
     });
     ["cancelAdminReauthBtn", "cancelAdminReauthIconBtn"].forEach((id) =>
       $(id).addEventListener("click", () => finishAdminReauth(false)),

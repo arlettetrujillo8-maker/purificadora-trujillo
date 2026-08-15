@@ -25,7 +25,7 @@ assert.match(
 );
 assert.throws(() => safeRandomUUID({}), /generador criptogr/);
 
-assert.match(html, /safe-uuid\.js\?v=20260815-permisos-empleado-fix/);
+assert.match(html, /safe-uuid\.js\?v=20260815-cierre-modal-seguro/);
 assert.match(sw, /js\/safe-uuid\.js/);
 assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
 assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);

@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
 
 export const suppliesRepository = {
   list: () => selectAll("supplies", "*", (query) => query.order("name")),
