@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-menu-backdrop-fix";
-import { supabase } from "./supabase-client.js?v=20260815-menu-backdrop-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-ventas-separador-fecha";
+import { supabase } from "./supabase-client.js?v=20260815-ventas-separador-fecha";
 
 export const salesRepository = {
   list: () =>

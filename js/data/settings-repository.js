@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-menu-backdrop-fix";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-ventas-separador-fecha";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

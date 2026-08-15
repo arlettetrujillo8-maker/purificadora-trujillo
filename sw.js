@@ -1,4 +1,4 @@
-const BUILD = "20260815-menu-backdrop-fix";
+const BUILD = "20260815-ventas-separador-fecha";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",

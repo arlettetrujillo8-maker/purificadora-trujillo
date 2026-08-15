@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260815-menu-backdrop-fix";
-import { OperationalStore } from "../data/operational-store.js?v=20260815-menu-backdrop-fix";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-menu-backdrop-fix";
-import { clientsRepository } from "../data/clients-repository.js?v=20260815-menu-backdrop-fix";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-menu-backdrop-fix";
+} from "../data/supabase-client.js?v=20260815-ventas-separador-fecha";
+import { OperationalStore } from "../data/operational-store.js?v=20260815-ventas-separador-fecha";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260815-ventas-separador-fecha";
+import { clientsRepository } from "../data/clients-repository.js?v=20260815-ventas-separador-fecha";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-ventas-separador-fecha";
 
-const BOOTSTRAP_BUILD = "20260815-menu-backdrop-fix";
+const BOOTSTRAP_BUILD = "20260815-ventas-separador-fecha";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

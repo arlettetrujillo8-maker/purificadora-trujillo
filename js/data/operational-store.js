@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260815-menu-backdrop-fix";
-import { clientsRepository } from "./clients-repository.js?v=20260815-menu-backdrop-fix";
-import { salesRepository } from "./sales-repository.js?v=20260815-menu-backdrop-fix";
-import { ledgerRepository } from "./ledger-repository.js?v=20260815-menu-backdrop-fix";
-import { cashRepository } from "./cash-repository.js?v=20260815-menu-backdrop-fix";
-import { inventoryRepository } from "./inventory-repository.js?v=20260815-menu-backdrop-fix";
-import { roundsRepository } from "./rounds-repository.js?v=20260815-menu-backdrop-fix";
-import { suppliesRepository } from "./supplies-repository.js?v=20260815-menu-backdrop-fix";
-import { settingsRepository } from "./settings-repository.js?v=20260815-menu-backdrop-fix";
-import { reportsRepository } from "./reports-repository.js?v=20260815-menu-backdrop-fix";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-menu-backdrop-fix";
-import { returnsRepository } from "./returns-repository.js?v=20260815-menu-backdrop-fix";
-import { correctionsRepository } from "./corrections-repository.js?v=20260815-menu-backdrop-fix";
+import { profilesRepository } from "./profiles-repository.js?v=20260815-ventas-separador-fecha";
+import { clientsRepository } from "./clients-repository.js?v=20260815-ventas-separador-fecha";
+import { salesRepository } from "./sales-repository.js?v=20260815-ventas-separador-fecha";
+import { ledgerRepository } from "./ledger-repository.js?v=20260815-ventas-separador-fecha";
+import { cashRepository } from "./cash-repository.js?v=20260815-ventas-separador-fecha";
+import { inventoryRepository } from "./inventory-repository.js?v=20260815-ventas-separador-fecha";
+import { roundsRepository } from "./rounds-repository.js?v=20260815-ventas-separador-fecha";
+import { suppliesRepository } from "./supplies-repository.js?v=20260815-ventas-separador-fecha";
+import { settingsRepository } from "./settings-repository.js?v=20260815-ventas-separador-fecha";
+import { reportsRepository } from "./reports-repository.js?v=20260815-ventas-separador-fecha";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-ventas-separador-fecha";
+import { returnsRepository } from "./returns-repository.js?v=20260815-ventas-separador-fecha";
+import { correctionsRepository } from "./corrections-repository.js?v=20260815-ventas-separador-fecha";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
