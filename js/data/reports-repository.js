@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
+import { selectAll } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
 
 export const reportsRepository = {
   listAudit: () =>

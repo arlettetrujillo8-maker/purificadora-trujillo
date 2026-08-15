@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si 
 Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
 ```
 
-Build actual: `20260815-cierre-modal-seguro`.
+Build actual: `20260815-sesion-fantasma-fix`.

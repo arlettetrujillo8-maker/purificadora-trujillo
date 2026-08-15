@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-cierre-modal-seguro";
+  const APP_SCRIPT_BUILD = "20260815-sesion-fantasma-fix";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2126,13 +2126,18 @@
   function bindGeneral() {
     $("v3AuthDialog").addEventListener("close", () => {
       // Si se cierra esta ventana sin completar el login (botón × , ESC,
-      // clic fuera) y no quedó una sesión de empleado válida, siempre se
-      // regresa a la pantalla de acceso limpia. No depende de coordinar
-      // el orden exacto con el listener de central-auth-ui.js: sin
-      // importar la causa, nunca debe quedar la app a medias con el
-      // menú vacío.
+      // clic fuera) y no quedó una sesión de empleado REAL Y VÁLIDA,
+      // siempre se regresa a la pantalla de acceso limpia. Ojo: no basta
+      // con revisar `employeeSession` -- ese objeto puede seguir en
+      // sessionStorage de un login anterior aunque state.users todavía
+      // no haya sincronizado con la cuenta central, dejando `activeUser()`
+      // en null (sesión "fantasma": no bloquea el acceso, pero tampoco
+      // resuelve a nadie real, y el menú queda vacío). Por eso se revisa
+      // activeUser(), no solo la existencia de employeeSession.
       setPendingAccessFlow(null);
-      if (!employeeSession) {
+      if (!activeUser()) {
+        employeeSession = null;
+        sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
         window.setTimeout(() => openAccessChoice({ clearPending: true }), 0);
       }
     });
