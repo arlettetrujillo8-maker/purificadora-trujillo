@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260814-simplified-container-flow";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-menu-backdrop-fix";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260814-simplified-container-flow";
-import { supabase } from "./supabase-client.js?v=20260814-simplified-container-flow";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-menu-backdrop-fix";
+import { supabase } from "./supabase-client.js?v=20260815-menu-backdrop-fix";
 
 export const salesRepository = {
   list: () =>

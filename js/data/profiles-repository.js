@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260814-simplified-container-flow";
-import { selectAll, rpc } from "./repository-utils.js?v=20260814-simplified-container-flow";
+} from "./supabase-client.js?v=20260815-menu-backdrop-fix";
+import { selectAll, rpc } from "./repository-utils.js?v=20260815-menu-backdrop-fix";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
