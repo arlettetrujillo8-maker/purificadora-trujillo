@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-ventas-separador-fecha";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
 
 const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
 

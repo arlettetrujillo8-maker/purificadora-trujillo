@@ -1,7 +1,7 @@
 import {
   supabase,
   getDeviceId,
-} from "./supabase-client.js?v=20260815-ventas-separador-fecha";
+} from "./supabase-client.js?v=20260815-icono-ruta-pickup";
 
 const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
 const CENTRAL_SESSION_ERROR = "central_session_expired";

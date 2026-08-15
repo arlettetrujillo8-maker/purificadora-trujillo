@@ -1,7 +1,7 @@
 (function exposeCentralAuthUi(globalScope) {
   "use strict";
 
-  const BUILD = "20260815-ventas-separador-fecha";
+  const BUILD = "20260815-icono-ruta-pickup";
   const TRIGGER_SELECTOR =
     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
   const bindings = new WeakMap();
