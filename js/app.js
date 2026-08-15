@@ -2148,6 +2148,9 @@
     $$(".payment-option").forEach((b) =>
       b.addEventListener("click", () => setSalePaymentType(b.dataset.payment)),
     );
+    $$(".channel-option").forEach((b) =>
+      b.addEventListener("click", () => setSaleChannel(b.dataset.channel)),
+    );
     $("cancelSaleBtn").addEventListener("click", cancelSale);
     $("paymentSettleBtn").addEventListener("click", () => {
       $("paymentAmount").value = $("paymentDialog").dataset.balance || "";
@@ -2988,6 +2991,13 @@
     );
     updateSaleSummary();
   }
+  function setSaleChannel(channel) {
+    $("saleChannel").value = channel;
+    $$(".channel-option").forEach((b) =>
+      b.classList.toggle("active", b.dataset.channel === channel),
+    );
+    updateSaleSummary();
+  }
   function defaultSaleChannel() {
     const u = activeUser();
     return u?.role === "repartidor" ? u.center : "ventanilla";
@@ -3227,6 +3237,12 @@
     $("saleContainerExchangeSummary").textContent = labels[mode];
   }
   function updateSaleSummary() {
+    $$(".channel-option").forEach((b) =>
+      b.classList.toggle(
+        "active",
+        b.dataset.channel === $("saleChannel").value,
+      ),
+    );
     const qty = Math.max(0, Number($("saleQty").value || 0)),
       price = Math.max(0, Number($("salePrice").value || 0)),
       total = qty * price,

@@ -265,13 +265,59 @@
                 </label>
                 <label class="sale-field-channel"
                   >Canal
-                  <select id="saleChannel" required>
+                  <select
+                    id="saleChannel"
+                    required
+                    class="visually-hidden"
+                    aria-label="Canal de venta"
+                  >
                     <option value="ventanilla">Ventanilla</option>
                     <option value="ruta1">Ruta 1</option>
                     <option value="ruta2">Ruta 2</option>
                     <option value="fuera_ruta">? Fuera de ruta</option>
                     <option value="fuera_horario">Fuera de horario</option>
                   </select>
+                  <div
+                    class="channel-options"
+                    role="group"
+                    aria-label="Canal de venta rápido"
+                  >
+                    <button
+                      type="button"
+                      class="channel-option active"
+                      data-channel="ventanilla"
+                    >
+                      <span aria-hidden="true">🏠</span>Ventanilla
+                    </button>
+                    <button
+                      type="button"
+                      class="channel-option"
+                      data-channel="ruta1"
+                    >
+                      <span aria-hidden="true">🛵</span>Ruta 1
+                    </button>
+                    <button
+                      type="button"
+                      class="channel-option"
+                      data-channel="ruta2"
+                    >
+                      <span aria-hidden="true">🛵</span>Ruta 2
+                    </button>
+                    <button
+                      type="button"
+                      class="channel-option"
+                      data-channel="fuera_ruta"
+                    >
+                      <span aria-hidden="true">📍</span>Fuera de ruta
+                    </button>
+                    <button
+                      type="button"
+                      class="channel-option"
+                      data-channel="fuera_horario"
+                    >
+                      <span aria-hidden="true">🌙</span>Fuera de horario
+                    </button>
+                  </div>
                 </label>
                 <label class="sale-field-quantity"
                   >Cantidad de garrafones
