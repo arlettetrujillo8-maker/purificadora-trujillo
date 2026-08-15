@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20260815-llenos-solo-sin-ronda" />
+    <meta name="app-build" content="20260815-corregir-carga-ronda" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0d6efd" />
     <title>Purificadora Trujillo · ERP V3.5</title>
@@ -12,7 +12,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20260815-llenos-solo-sin-ronda" />
+    <link rel="stylesheet" href="css/styles.css?v=20260815-corregir-carga-ronda" />
   </head>
   <body>
     <div class="app-shell">
@@ -2262,6 +2262,49 @@
       </form>
     </dialog>
 
+    <dialog id="roundLoadCorrectionDialog">
+      <form
+        method="dialog"
+        id="roundLoadCorrectionForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Corregir carga de la ronda</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="roundLoadCorrectionDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="roundLoadCorrectionId" type="hidden" />
+        <div id="roundLoadCorrectionSummary" class="info-box"></div>
+        <label
+          >Total correcto de disponibles<input
+            id="roundLoadCorrectionQty"
+            type="number"
+            min="0"
+            step="1"
+            required
+        /></label>
+        <div id="roundLoadCorrectionDifference" class="info-box"></div>
+        <label
+          >Motivo *<textarea
+            id="roundLoadCorrectionReason"
+            rows="2"
+            required
+            placeholder="Ej. conteo inicial mal capturado al salir"
+          ></textarea>
+        </label>
+        <button class="primary-btn wide" value="default">
+          Guardar corrección
+        </button>
+      </form>
+    </dialog>
+
     <dialog id="returnRoundDialog">
       <form
         method="dialog"
@@ -2556,12 +2599,12 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20260815-llenos-solo-sin-ronda"></script>
-    <script src="js/safe-uuid.js?v=20260815-llenos-solo-sin-ronda"></script>
-    <script src="js/presentation-labels.js?v=20260815-llenos-solo-sin-ronda"></script>
-    <script src="js/user-display.js?v=20260815-llenos-solo-sin-ronda"></script>
-    <script src="js/sale-client-selection.js?v=20260815-llenos-solo-sin-ronda"></script>
-    <script src="js/app.js?v=20260815-llenos-solo-sin-ronda"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20260815-llenos-solo-sin-ronda"></script>
+    <script src="js/central-auth-ui.js?v=20260815-corregir-carga-ronda"></script>
+    <script src="js/safe-uuid.js?v=20260815-corregir-carga-ronda"></script>
+    <script src="js/presentation-labels.js?v=20260815-corregir-carga-ronda"></script>
+    <script src="js/user-display.js?v=20260815-corregir-carga-ronda"></script>
+    <script src="js/sale-client-selection.js?v=20260815-corregir-carga-ronda"></script>
+    <script src="js/app.js?v=20260815-corregir-carga-ronda"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20260815-corregir-carga-ronda"></script>
   </body>
 </html>

@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { clientsRepository } from "./clients-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { salesRepository } from "./sales-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { ledgerRepository } from "./ledger-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { cashRepository } from "./cash-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { inventoryRepository } from "./inventory-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { roundsRepository } from "./rounds-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { suppliesRepository } from "./supplies-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { settingsRepository } from "./settings-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { reportsRepository } from "./reports-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { returnsRepository } from "./returns-repository.js?v=20260815-llenos-solo-sin-ronda";
-import { correctionsRepository } from "./corrections-repository.js?v=20260815-llenos-solo-sin-ronda";
+import { profilesRepository } from "./profiles-repository.js?v=20260815-corregir-carga-ronda";
+import { clientsRepository } from "./clients-repository.js?v=20260815-corregir-carga-ronda";
+import { salesRepository } from "./sales-repository.js?v=20260815-corregir-carga-ronda";
+import { ledgerRepository } from "./ledger-repository.js?v=20260815-corregir-carga-ronda";
+import { cashRepository } from "./cash-repository.js?v=20260815-corregir-carga-ronda";
+import { inventoryRepository } from "./inventory-repository.js?v=20260815-corregir-carga-ronda";
+import { roundsRepository } from "./rounds-repository.js?v=20260815-corregir-carga-ronda";
+import { suppliesRepository } from "./supplies-repository.js?v=20260815-corregir-carga-ronda";
+import { settingsRepository } from "./settings-repository.js?v=20260815-corregir-carga-ronda";
+import { reportsRepository } from "./reports-repository.js?v=20260815-corregir-carga-ronda";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-corregir-carga-ronda";
+import { returnsRepository } from "./returns-repository.js?v=20260815-corregir-carga-ronda";
+import { correctionsRepository } from "./corrections-repository.js?v=20260815-corregir-carga-ronda";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

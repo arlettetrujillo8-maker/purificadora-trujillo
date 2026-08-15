@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-llenos-solo-sin-ronda";
+  const APP_SCRIPT_BUILD = "20260815-corregir-carga-ronda";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2105,6 +2105,14 @@
     $("saleVoidConfirmForm").addEventListener("submit", confirmVoidSale);
     $("startRoundForm").addEventListener("submit", startRound);
     $("reloadRoundForm").addEventListener("submit", reloadActiveRound);
+    $("roundLoadCorrectionForm").addEventListener(
+      "submit",
+      saveRoundLoadCorrection,
+    );
+    $("roundLoadCorrectionQty").addEventListener(
+      "input",
+      updateRoundLoadCorrectionDifference,
+    );
     $("returnRoundForm").addEventListener("submit", closeRound);
     $("continueRoundBtn").addEventListener("click", () =>
       $("returnRoundDialog").close(),
@@ -4146,7 +4154,7 @@
         const trackerLineHtml = (index) =>
           `<div class="route-progress-line${trackerStep >= index ? " is-done" : ""}"></div>`;
         const routeTrackerHtml = `<div class="route-progress-track">${trackerStepHtml(0, "Preparando")}${trackerLineHtml(1)}${trackerStepHtml(1, "En ruta")}${trackerLineHtml(2)}${trackerStepHtml(2, "Regreso")}</div>`;
-        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}${!round && can("adjust_inventory") ? " route-stock-inline-edit" : ""}" ${!round && can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong class="${can("adjust_inventory") ? "route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="empty_${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}${can("adjust_inventory") ? `<button class="text-btn" data-inventory-quick="adjust" data-location="empty_${route}">Corregir vacíos</button>` : ""}</div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
+        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}${!round && can("adjust_inventory") ? " route-stock-inline-edit" : ""}" ${!round && can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong class="${can("adjust_inventory") ? "route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="empty_${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}${adminMode && !metrics?.inconsistencyQty && round.status !== "regresada" ? `<button class="secondary-btn correct-round-load" data-id="${round.id}">Corregir carga</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}${can("adjust_inventory") ? `<button class="text-btn" data-inventory-quick="adjust" data-location="empty_${route}">Corregir vacíos</button>` : ""}</div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
       })
       .join("");
 
@@ -4247,6 +4255,9 @@
     );
     $$(".reload-round").forEach(
       (b) => (b.onclick = () => openReloadRound(b.dataset.id)),
+    );
+    $$(".correct-round-load").forEach(
+      (b) => (b.onclick = () => openRoundLoadCorrection(b.dataset.id)),
     );
   }
   function openStartRoundDialog(requestedRoute = null) {
@@ -4426,6 +4437,105 @@
     $("reloadRoundDialog").close();
     renderAll();
     toast(`Recarga de ${quantity} garrafones registrada`);
+  }
+  function openRoundLoadCorrection(id) {
+    if (!requirePermission("rounds")) return;
+    const round = state.rounds.find((item) => item.id === id);
+    if (!round || round.status === "cerrada") return;
+    const metrics = roundMetrics(round);
+    if (metrics.inconsistencyQty)
+      return toast(
+        "Esta ronda tiene una inconsistencia; resuélvela con 'Resolver ronda activa'.",
+        "error",
+      );
+    $("roundLoadCorrectionForm").reset();
+    $("roundLoadCorrectionId").value = id;
+    $("roundLoadCorrectionSummary").innerHTML =
+      `Ronda ${int(round.number)} · ${CHANNELS[round.route]}<br>` +
+      `Carga inicial: <strong>${int(metrics.initialLoad)}</strong> · ` +
+      `Recargas: <strong>${int(metrics.reloads)}</strong> · ` +
+      `Vendidos netos: <strong>${int(metrics.netSold)}</strong> · ` +
+      `Disponibles actuales: <strong>${int(metrics.availableFull)}</strong>`;
+    $("roundLoadCorrectionQty").min = String(metrics.netSold);
+    $("roundLoadCorrectionQty").value = String(metrics.availableFull);
+    updateRoundLoadCorrectionDifference();
+    showManagedDialog($("roundLoadCorrectionDialog"));
+  }
+  function updateRoundLoadCorrectionDifference() {
+    const round = state.rounds.find(
+        (item) => item.id === $("roundLoadCorrectionId").value,
+      ),
+      metrics = round ? roundMetrics(round) : null;
+    if (!metrics) return;
+    const current = metrics.availableFull,
+      next = Number($("roundLoadCorrectionQty").value),
+      difference = Number.isFinite(next) ? next - current : 0;
+    $("roundLoadCorrectionDifference").innerHTML =
+      `<strong>${int(current)} → ${Number.isFinite(next) ? int(next) : "—"}</strong> · Diferencia <strong class="${difference < 0 ? "amount-danger" : "amount-success"}">${difference > 0 ? "+" : ""}${int(difference)}</strong>`;
+  }
+  async function saveRoundLoadCorrection(event) {
+    event.preventDefault();
+    if (!requirePermission("rounds")) return;
+    const round = state.rounds.find(
+      (item) => item.id === $("roundLoadCorrectionId").value,
+    );
+    if (!round || round.status === "cerrada")
+      return toast("La ronda ya no está activa.", "error");
+    const metrics = roundMetrics(round);
+    if (metrics.inconsistencyQty)
+      return toast(
+        "Esta ronda tiene una inconsistencia; resuélvela con 'Resolver ronda activa'.",
+        "error",
+      );
+    const newAvailable = Number($("roundLoadCorrectionQty").value),
+      reason = $("roundLoadCorrectionReason").value.trim();
+    if (!Number.isInteger(newAvailable) || newAvailable < metrics.netSold)
+      return toast(
+        `El nuevo total no puede ser menor a lo ya vendido (${int(metrics.netSold)}).`,
+        "error",
+      );
+    if (!reason) return toast("Escribe el motivo de la corrección.", "error");
+    const delta = newAvailable - metrics.availableFull;
+    if (delta === 0) return toast("No hay ningún cambio que guardar.", "error");
+    if (delta > 0 && !validateInventoryMovement("local", -delta).valid)
+      return toast(
+        "No hay suficientes garrafones llenos en Local para esta corrección.",
+        "error",
+      );
+    const previousState = structuredClone(state),
+      before = structuredClone(round);
+    recordInventoryMovement(
+      "local",
+      -delta,
+      "round_load_correction",
+      reason,
+      round.route,
+      { roundId: round.id },
+    );
+    recordInventoryMovement(
+      round.route,
+      delta,
+      "round_load_correction",
+      reason,
+      "local",
+      { roundId: round.id },
+    );
+    round.reloadQty = Number(round.reloadQty || 0) + delta;
+    audit(
+      "round_load_corrected",
+      "round",
+      round.id,
+      reason,
+      before,
+      structuredClone(round),
+    );
+    addActivity(
+      `${CHANNELS[round.route]} · Ronda ${round.number}: carga corregida (${delta > 0 ? "+" : ""}${int(delta)})`,
+    );
+    if (!(await commitState(previousState))) return;
+    $("roundLoadCorrectionDialog").close();
+    renderAll();
+    toast("Carga de la ronda corregida");
   }
   function traceRoundReturn(stage, detail = {}) {
     console.info(stage, detail);
