@@ -259,6 +259,13 @@
       a.getDate() === d.getDate()
     );
   };
+  const relativeDayLabel = (iso) => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (sameDay(iso)) return "HOY";
+    if (sameDay(iso, yesterday)) return "AYER";
+    return fmtDate(iso);
+  };
   const monthKey = (iso) => {
     const d = new Date(iso);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3506,14 +3513,19 @@
   }
   function latestSalesMarkup(limit = 20, actions = true) {
     const arr = scopedLatestSales(limit);
-    return arr.length
-      ? arr
-          .map(
-            (s) =>
-              `<div class="sale-card"><div class="list-main"><strong>${esc(s.folio || s.id)} · ${esc(s.clientName)} · ${int(s.qty)} garrafón(es)</strong><small>${fmtDateTime(s.date)} · ${CHANNELS[s.channel]} · ${esc(s.paymentType)} · ${esc(state.users.find((u) => u.id === s.userId)?.name || "")}</small><span class="status-tag ${s.status === "void" ? "void" : s.status === "superseded" ? "corrected" : ""}">${saleStatusLabel(s)}</span></div><div class="sale-card-actions"><strong>${money(Number(s.total || 0) - Number(s.returnedTotal || 0))}</strong>${actions ? `<button class="text-btn view-sale" data-id="${s.id}">Ver</button>${isEffectiveSale(s) && can("create_sale") ? `<button class="secondary-btn repeat-sale" data-id="${s.id}">Repetir</button>` : ""}${canReturnSale(s) ? `<button class="secondary-btn return-sale" data-id="${s.id}">Devolver</button>` : ""}${canCorrectSale(s) && !Number(s.returnedQty || 0) ? `<button class="secondary-btn correct-sale" data-id="${s.id}">Corregir</button>` : ""}` : ""}</div></div>`,
-          )
-          .join("")
-      : '<div class="empty">Aún no hay ventas.</div>';
+    if (!arr.length) return '<div class="empty">Aún no hay ventas.</div>';
+    let lastDayKey = null;
+    return arr
+      .map((s) => {
+        const dayKey = new Date(s.date).toDateString();
+        const divider =
+          dayKey !== lastDayKey
+            ? `<div class="sale-date-divider">${esc(relativeDayLabel(s.date))}</div>`
+            : "";
+        lastDayKey = dayKey;
+        return `${divider}<div class="sale-card"><div class="list-main"><strong>${esc(s.folio || s.id)} · ${esc(s.clientName)} · ${int(s.qty)} garrafón(es)</strong><small>${fmtDateTime(s.date)} · ${CHANNELS[s.channel]} · ${esc(s.paymentType)} · ${esc(state.users.find((u) => u.id === s.userId)?.name || "")}</small><span class="status-tag ${s.status === "void" ? "void" : s.status === "superseded" ? "corrected" : ""}">${saleStatusLabel(s)}</span></div><div class="sale-card-actions"><strong>${money(Number(s.total || 0) - Number(s.returnedTotal || 0))}</strong>${actions ? `<button class="text-btn view-sale" data-id="${s.id}">Ver</button>${isEffectiveSale(s) && can("create_sale") ? `<button class="secondary-btn repeat-sale" data-id="${s.id}">Repetir</button>` : ""}${canReturnSale(s) ? `<button class="secondary-btn return-sale" data-id="${s.id}">Devolver</button>` : ""}${canCorrectSale(s) && !Number(s.returnedQty || 0) ? `<button class="secondary-btn correct-sale" data-id="${s.id}">Corregir</button>` : ""}` : ""}</div></div>`;
+      })
+      .join("");
   }
   function bindLatestSalesActions(root) {
     root
