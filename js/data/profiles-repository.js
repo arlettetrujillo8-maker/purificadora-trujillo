@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260816-fix-mobile-login";
-import { selectAll, rpc } from "./repository-utils.js?v=20260816-fix-mobile-login";
+} from "./supabase-client.js?v=20260816-reportes-duplicado-fix";
+import { selectAll, rpc } from "./repository-utils.js?v=20260816-reportes-duplicado-fix";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

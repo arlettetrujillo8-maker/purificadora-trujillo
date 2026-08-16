@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260816-fix-mobile-login";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260816-reportes-duplicado-fix";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

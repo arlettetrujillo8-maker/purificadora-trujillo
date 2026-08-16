@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260816-fix-mobile-login";
-import { OperationalStore } from "../data/operational-store.js?v=20260816-fix-mobile-login";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260816-fix-mobile-login";
-import { clientsRepository } from "../data/clients-repository.js?v=20260816-fix-mobile-login";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260816-fix-mobile-login";
+} from "../data/supabase-client.js?v=20260816-reportes-duplicado-fix";
+import { OperationalStore } from "../data/operational-store.js?v=20260816-reportes-duplicado-fix";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260816-reportes-duplicado-fix";
+import { clientsRepository } from "../data/clients-repository.js?v=20260816-reportes-duplicado-fix";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260816-reportes-duplicado-fix";
 
-const BOOTSTRAP_BUILD = "20260816-fix-mobile-login";
+const BOOTSTRAP_BUILD = "20260816-reportes-duplicado-fix";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
