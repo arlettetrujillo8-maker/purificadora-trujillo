@@ -2758,4 +2758,120 @@ details.full summary {
     margin: 0.5in;
   }
 }
+
+/* ---- Reportes ---- */
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.reports-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.report-filters {
+  display: flex;
+  gap: 1rem;
+}
+
+.report-filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.report-filters select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--surface);
+}
+
+.reports-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  background: var(--surface2);
+  border-radius: 10px;
+  border-left: 4px solid var(--primary);
+}
+
+.metric-card .label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.metric-card strong {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.metric-card small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.reports-section {
+  margin-bottom: 2rem;
+}
+
+.reports-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.reports-table thead {
+  background: var(--surface2);
+}
+
+.reports-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+}
+
+.reports-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.reports-table tr:hover {
+  background: var(--surface2);
+}
+
+.reports-table td:last-child,
+.reports-table th:last-child {
+  text-align: right;
+}
 .route-stock-inline-edit:active { transform: scale(0.96); }

@@ -81,6 +81,7 @@
         "inventario",
         "insumos",
         "gastos",
+        "reportes",
       ],
       permissions: [
         "create_sale",
@@ -170,7 +171,7 @@
       ],
     },
     caja: {
-      views: ["dashboard", "caja", "gastos"],
+      views: ["dashboard", "caja", "gastos", "reportes"],
       permissions: [
         "view_own_cash",
         "view_all_cash",
@@ -5104,6 +5105,131 @@
           "",
         )}</div>${s.closedAt ? `<div class="info-box">Contado: <strong>${money(s.countedAmount)}</strong><br>Diferencia: <strong>${money(s.difference)}</strong><br>Motivo: ${esc(s.differenceReason || "Sin diferencia")}</div>` : ""}`;
     showManagedDialog($("cashDetailDialog"));
+  }
+  function renderReports() {
+    const period = $("reportPeriod").value || "dia";
+    const now = new Date();
+    let startDate, endDate = now;
+
+    if (period === "dia") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (period === "semana") {
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 7);
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const sales = todaySales().filter((s) => {
+      const d = new Date(s.date);
+      return d >= startDate && d <= endDate;
+    });
+    const expenses = state.expenses.filter((e) => {
+      const d = new Date(e.date);
+      return d >= startDate && d <= endDate;
+    });
+    const payments = state.ledger.filter((l) => {
+      const d = new Date(l.date);
+      return d >= startDate && d <= endDate && l.type === "payment";
+    });
+
+    const totalSales = sales.reduce((a, s) => a + s.total, 0);
+    const collected = sales.reduce((a, s) => a + s.paid, 0) + payments.reduce((a, p) => a + p.payment, 0);
+    const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0);
+    const totalCredit = sales.reduce((a, s) => a + s.credit, 0);
+
+    const byChannel = Object.keys(CHANNELS).map((k) => ({
+      channel: CHANNELS[k],
+      sales: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.total, 0),
+      units: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.qty, 0),
+    }));
+
+    const clientsWithDebt = state.clients
+      .filter((c) => clientBalance(c.id) > 0.009)
+      .sort((a, b) => clientBalance(b.id) - clientBalance(a.id))
+      .slice(0, 10);
+
+    const clientsWithContainerDebt = state.clients
+      .filter((c) => Number(c.containerDebt || 0) > 0)
+      .sort((a, b) => Number(b.containerDebt || 0) - Number(a.containerDebt || 0))
+      .slice(0, 10);
+
+    const html = `
+      <div class="reports-header">
+        <h2>Reportes</h2>
+        <div class="report-filters">
+          <label>
+            Período:
+            <select id="reportPeriod" onchange="renderReports()">
+              <option value="dia" ${period === "dia" ? "selected" : ""}>Hoy</option>
+              <option value="semana" ${period === "semana" ? "selected" : ""}>Últimos 7 días</option>
+              <option value="mes" ${period === "mes" ? "selected" : ""}>Este mes</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="reports-metrics">
+        <div class="metric-card">
+          <span class="label">Ventas totales</span>
+          <strong>${money(totalSales)}</strong>
+          <small>${int(sales.length)} transacciones</small>
+        </div>
+        <div class="metric-card">
+          <span class="label">Cobrado</span>
+          <strong>${money(collected)}</strong>
+          <small>Efectivo + transferencias</small>
+        </div>
+        <div class="metric-card">
+          <span class="label">Gastos</span>
+          <strong>${money(totalExpenses)}</strong>
+          <small>${int(expenses.length)} registros</small>
+        </div>
+        <div class="metric-card">
+          <span class="label">Fiado generado</span>
+          <strong>${money(totalCredit)}</strong>
+          <small>A recuperar</small>
+        </div>
+      </div>
+
+      <div class="reports-section">
+        <h3>Por canal</h3>
+        <table class="reports-table">
+          <thead>
+            <tr><th>Canal</th><th>Garrafones</th><th>Ventas</th></tr>
+          </thead>
+          <tbody>
+            ${byChannel.map((c) => `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td>${money(c.sales)}</td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="reports-section">
+        <h3>Top 10 - Clientes con deuda</h3>
+        <table class="reports-table">
+          <thead>
+            <tr><th>Cliente</th><th>Deuda</th></tr>
+          </thead>
+          <tbody>
+            ${clientsWithDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${money(clientBalance(c.id))}</td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="reports-section">
+        <h3>Top 10 - Garrafones pendientes por cliente</h3>
+        <table class="reports-table">
+          <thead>
+            <tr><th>Cliente</th><th>Garrafones</th></tr>
+          </thead>
+          <tbody>
+            ${clientsWithContainerDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${int(c.containerDebt || 0)}</td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    $("reportsContent").innerHTML = html;
   }
   async function openCash(e) {
     e.preventDefault();
