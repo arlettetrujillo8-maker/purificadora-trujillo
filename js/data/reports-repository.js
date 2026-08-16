@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+import { selectAll } from "./repository-utils.js?v=20260815-envases-pendientes";
 
 export const reportsRepository = {
   listAudit: () =>

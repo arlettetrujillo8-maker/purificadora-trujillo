@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20260815-sesion-fantasma-fix" />
+    <meta name="app-build" content="20260815-envases-pendientes" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0d6efd" />
     <title>Purificadora Trujillo · ERP V3.5</title>
@@ -12,7 +12,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20260815-sesion-fantasma-fix" />
+    <link rel="stylesheet" href="css/styles.css?v=20260815-envases-pendientes" />
   </head>
   <body>
     <div class="app-shell">
@@ -32,6 +32,7 @@
           <button class="nav-item" data-view="ventas">Nueva venta</button>
           <button class="nav-item" data-view="ultimas">Últimas ventas</button>
           <button class="nav-item" data-view="fiado">Fiado y pagos</button>
+          <button class="nav-item" data-view="envases">Envases pendientes</button>
           <button class="nav-item" data-view="rutas">Rutas</button>
           <button class="nav-item" data-view="ventanilla">Ventanilla</button>
           <button class="nav-item" data-view="caja">Caja</button>
@@ -518,6 +519,29 @@
                   </tr>
                 </thead>
                 <tbody id="debtTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-envases">
+          <div class="metric-grid" id="containerDebtMetrics"></div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Clientes con envases pendientes</h3>
+              <span class="pill">Cuenta desde el 15/08/2026</span>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Envases pendientes</th>
+                    <th>Ruta</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="containerDebtTableBody"></tbody>
               </table>
             </div>
           </div>
@@ -1395,6 +1419,48 @@
         >
         <label>Notas<textarea id="paymentNotes" rows="2"></textarea></label>
         <button class="primary-btn wide" value="default">Registrar pago</button>
+      </form>
+    </dialog>
+
+    <dialog id="containerReturnDialog">
+      <form
+        method="dialog"
+        id="containerReturnForm"
+        class="dialog-form"
+        data-dirty-guard
+      >
+        <div class="dialog-head">
+          <h3>Registrar entrega de envases</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="containerReturnDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <input id="containerReturnClientId" type="hidden" />
+        <div id="containerReturnClientSummary" class="info-box"></div>
+        <label
+          >Garrafones vacíos que trae<input
+            id="containerReturnQty"
+            type="number"
+            min="1"
+            step="1"
+            required
+        /></label>
+        <label
+          >Dónde los entrega<select id="containerReturnLocation">
+            <option value="local">Local</option>
+            <option value="ruta1">Ruta 1</option>
+            <option value="ruta2">Ruta 2</option>
+          </select></label
+        >
+        <label>Notas<textarea id="containerReturnNotes" rows="2"></textarea></label>
+        <button class="primary-btn wide" value="default">
+          Registrar entrega
+        </button>
       </form>
     </dialog>
 
@@ -2599,12 +2665,12 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20260815-sesion-fantasma-fix"></script>
-    <script src="js/safe-uuid.js?v=20260815-sesion-fantasma-fix"></script>
-    <script src="js/presentation-labels.js?v=20260815-sesion-fantasma-fix"></script>
-    <script src="js/user-display.js?v=20260815-sesion-fantasma-fix"></script>
-    <script src="js/sale-client-selection.js?v=20260815-sesion-fantasma-fix"></script>
-    <script src="js/app.js?v=20260815-sesion-fantasma-fix"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20260815-sesion-fantasma-fix"></script>
+    <script src="js/central-auth-ui.js?v=20260815-envases-pendientes"></script>
+    <script src="js/safe-uuid.js?v=20260815-envases-pendientes"></script>
+    <script src="js/presentation-labels.js?v=20260815-envases-pendientes"></script>
+    <script src="js/user-display.js?v=20260815-envases-pendientes"></script>
+    <script src="js/sale-client-selection.js?v=20260815-envases-pendientes"></script>
+    <script src="js/app.js?v=20260815-envases-pendientes"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20260815-envases-pendientes"></script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 (function exposeCentralAuthUi(globalScope) {
   "use strict";
 
-  const BUILD = "20260815-sesion-fantasma-fix";
+  const BUILD = "20260815-envases-pendientes";
   const TRIGGER_SELECTOR =
     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
   const bindings = new WeakMap();

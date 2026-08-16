@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
-import { supabase } from "./supabase-client.js?v=20260815-sesion-fantasma-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+import { supabase } from "./supabase-client.js?v=20260815-envases-pendientes";
 
 export const salesRepository = {
   list: () =>

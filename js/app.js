@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-sesion-fantasma-fix";
+  const APP_SCRIPT_BUILD = "20260815-envases-pendientes";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -73,6 +73,7 @@
         "ventas",
         "ultimas",
         "fiado",
+        "envases",
         "rutas",
         "ventanilla",
         "caja",
@@ -111,6 +112,7 @@
         "ventas",
         "ultimas",
         "fiado",
+        "envases",
         "rutas",
         "caja",
         "inventario",
@@ -138,6 +140,7 @@
         "ventas",
         "ultimas",
         "fiado",
+        "envases",
         "ventanilla",
         "caja",
       ],
@@ -212,6 +215,7 @@
     ventanilla: "create_sale",
     clientes: "view_client_debt",
     fiado: "view_client_debt",
+    envases: "view_client_debt",
     rutas: "rounds",
     caja: "view_own_cash",
     gastos: "view_expenses",
@@ -1954,6 +1958,7 @@
       ventas: "Nueva venta",
       ultimas: "Últimas ventas",
       fiado: "Fiado y pagos",
+      envases: "Envases pendientes",
       rutas: "Rutas",
       ventanilla: "Ventanilla",
       caja: "Caja",
@@ -2081,6 +2086,10 @@
     $("mergeClientsForm").addEventListener("submit", mergeDuplicateClients);
     $("saleForm").addEventListener("submit", saveSale);
     $("paymentForm").addEventListener("submit", savePayment);
+    $("containerReturnForm").addEventListener(
+      "submit",
+      saveContainerReturn,
+    );
     $("userForm").addEventListener("submit", saveUser);
     $("transferForm").addEventListener("submit", saveTransfer);
     $("inventoryAdjustForm").addEventListener(
@@ -2286,6 +2295,7 @@
     renderLatestSales();
     renderAllLatestSales();
     renderDebt();
+    renderContainerDebt();
     renderRoutes();
     renderWindow();
     renderCash();
@@ -2307,6 +2317,7 @@
         ventas: renderLatestSales,
         ultimas: renderAllLatestSales,
         fiado: renderDebt,
+        envases: renderContainerDebt,
         rutas: renderRoutes,
         ventanilla: renderWindow,
         caja: renderCash,
@@ -4149,6 +4160,93 @@
     $$(".detail-client").forEach(
       (b) => (b.onclick = () => openClientDetail(b.dataset.id)),
     );
+  }
+  function renderContainerDebt() {
+    const u = activeUser(),
+      arr = state.clients
+        .filter(
+          (c) => Number(c.containerDebt || 0) > 0 && clientInDebtScope(c, u),
+        )
+        .sort((a, b) => Number(b.containerDebt) - Number(a.containerDebt)),
+      total = arr.reduce((a, c) => a + Number(c.containerDebt || 0), 0);
+    $("containerDebtMetrics").innerHTML = [
+      metric(
+        "Envases pendientes",
+        int(total),
+        `${arr.length} cliente(s)`,
+      ),
+    ].join("");
+    $("containerDebtTableBody").innerHTML = arr.length
+      ? arr
+          .map(
+            (c) =>
+              `<tr><td><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><br><small class="muted">${esc(c.phone || "")}</small></td><td class="amount-danger">${int(c.containerDebt)}</td><td>${esc(CHANNELS[c.route] || c.route || "-")}</td><td><button class="primary-btn return-containers" data-id="${c.id}">Registrar entrega</button></td></tr>`,
+          )
+          .join("")
+      : '<tr><td colspan="4"><div class="empty">Nadie debe envases por ahora.</div></td></tr>';
+    $$(".return-containers").forEach((b) => {
+      b.hidden = !can("view_client_debt");
+      b.onclick = () => openContainerReturnDialog(b.dataset.id);
+    });
+  }
+  function openContainerReturnDialog(id) {
+    if (!requirePermission("view_client_debt")) return;
+    const c = clientById(id);
+    if (!c) return;
+    const debt = Number(c.containerDebt || 0);
+    if (debt <= 0)
+      return toast("Este cliente no tiene envases pendientes.", "error");
+    $("containerReturnForm").reset();
+    $("containerReturnClientId").value = id;
+    $("containerReturnQty").value = debt;
+    $("containerReturnQty").max = String(debt);
+    $("containerReturnLocation").value =
+      c.route === "ruta1" || c.route === "ruta2" ? c.route : "local";
+    $("containerReturnClientSummary").innerHTML =
+      `<strong>${esc(c.name)}</strong><br>Debe: <span class="amount-danger">${int(debt)} garrafón(es)</span>`;
+    showManagedDialog($("containerReturnDialog"));
+  }
+  async function saveContainerReturn(e) {
+    e.preventDefault();
+    if (!requirePermission("view_client_debt")) return;
+    const id = $("containerReturnClientId").value,
+      c = clientById(id),
+      qty = Number($("containerReturnQty").value),
+      location = $("containerReturnLocation").value,
+      notes = $("containerReturnNotes").value.trim();
+    if (!c) return;
+    if (!Number.isInteger(qty) || qty <= 0)
+      return toast("Captura una cantidad válida.", "error");
+    const previousState = structuredClone(state),
+      before = Number(c.containerDebt || 0),
+      applied = Math.min(qty, Math.max(before, 0));
+    recordInventoryMovement(
+      `empty_${location}`,
+      qty,
+      "client_container_return",
+      notes || "Entrega de envases",
+      "client",
+      { clientId: id },
+    );
+    c.containerDebt = Math.max(before - applied, 0);
+    c.lastContainerReturnQty = qty;
+    c.lastContainerReturnLocation = location;
+    c.lastContainerReturnNotes = notes;
+    audit(
+      "client_containers_returned",
+      "client",
+      id,
+      notes || "Entrega de envases",
+      { containerDebt: before },
+      { containerDebt: c.containerDebt, received: qty },
+    );
+    addActivity(
+      `${c.name}: entregó ${qty} garrafón(es) vacío(s) · ${CHANNELS[location] || "Local"}`,
+    );
+    if (!(await commitState(previousState))) return;
+    $("containerReturnDialog").close();
+    renderAll();
+    toast("Entrega de envases registrada");
   }
 
   function renderRoutes() {

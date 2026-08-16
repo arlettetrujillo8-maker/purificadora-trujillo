@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
 
 function payload(client) {
   return {
@@ -43,6 +43,16 @@ export const clientsRepository = {
       commandArgs({
         p_primary_client_id: primaryClientId,
         p_duplicate_client_ids: duplicateClientIds,
+      }),
+    ),
+  returnContainers: ({ clientId, quantity, location, notes }) =>
+    rpc(
+      "return_client_containers",
+      commandArgs({
+        p_client_id: clientId,
+        p_quantity: Number(quantity),
+        p_location: location || "local",
+        p_notes: notes || "",
       }),
     ),
 };

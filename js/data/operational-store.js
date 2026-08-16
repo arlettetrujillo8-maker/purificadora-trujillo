@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260815-sesion-fantasma-fix";
-import { clientsRepository } from "./clients-repository.js?v=20260815-sesion-fantasma-fix";
-import { salesRepository } from "./sales-repository.js?v=20260815-sesion-fantasma-fix";
-import { ledgerRepository } from "./ledger-repository.js?v=20260815-sesion-fantasma-fix";
-import { cashRepository } from "./cash-repository.js?v=20260815-sesion-fantasma-fix";
-import { inventoryRepository } from "./inventory-repository.js?v=20260815-sesion-fantasma-fix";
-import { roundsRepository } from "./rounds-repository.js?v=20260815-sesion-fantasma-fix";
-import { suppliesRepository } from "./supplies-repository.js?v=20260815-sesion-fantasma-fix";
-import { settingsRepository } from "./settings-repository.js?v=20260815-sesion-fantasma-fix";
-import { reportsRepository } from "./reports-repository.js?v=20260815-sesion-fantasma-fix";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-sesion-fantasma-fix";
-import { returnsRepository } from "./returns-repository.js?v=20260815-sesion-fantasma-fix";
-import { correctionsRepository } from "./corrections-repository.js?v=20260815-sesion-fantasma-fix";
+import { profilesRepository } from "./profiles-repository.js?v=20260815-envases-pendientes";
+import { clientsRepository } from "./clients-repository.js?v=20260815-envases-pendientes";
+import { salesRepository } from "./sales-repository.js?v=20260815-envases-pendientes";
+import { ledgerRepository } from "./ledger-repository.js?v=20260815-envases-pendientes";
+import { cashRepository } from "./cash-repository.js?v=20260815-envases-pendientes";
+import { inventoryRepository } from "./inventory-repository.js?v=20260815-envases-pendientes";
+import { roundsRepository } from "./rounds-repository.js?v=20260815-envases-pendientes";
+import { suppliesRepository } from "./supplies-repository.js?v=20260815-envases-pendientes";
+import { settingsRepository } from "./settings-repository.js?v=20260815-envases-pendientes";
+import { reportsRepository } from "./reports-repository.js?v=20260815-envases-pendientes";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-envases-pendientes";
+import { returnsRepository } from "./returns-repository.js?v=20260815-envases-pendientes";
+import { correctionsRepository } from "./corrections-repository.js?v=20260815-envases-pendientes";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
@@ -288,6 +288,7 @@ export class OperationalStore {
         frequent: true,
         active: item.active,
         notes: item.notes,
+        containerDebt: Number(item.container_debt || 0),
         version: item.version,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
@@ -551,6 +552,13 @@ export class OperationalStore {
       : null;
     const newClients = added(before.clients, draft.clients);
     const updatedClient = changedItem(before.clients, draft.clients);
+    const containerReturnClient = draft.clients.find((item) => {
+      const old = before.clients.find((candidate) => candidate.id === item.id);
+      return (
+        old &&
+        Number(item.containerDebt || 0) < Number(old.containerDebt || 0)
+      );
+    });
     const newSales = added(before.sales, draft.sales);
     const newReturn = added(before.returns || [], draft.returns || [])[0];
     const newCorrection = added(before.saleCorrections || [], draft.saleCorrections || [])[0];
@@ -620,6 +628,13 @@ export class OperationalStore {
     else if (newSales[0]) await salesRepository.create(newSales[0]);
     else if (newLedger) await ledgerRepository.registerPayment(newLedger);
     else if (newClients[0]) await clientsRepository.create(newClients[0]);
+    else if (containerReturnClient)
+      await clientsRepository.returnContainers({
+        clientId: containerReturnClient.id,
+        quantity: containerReturnClient.lastContainerReturnQty,
+        location: containerReturnClient.lastContainerReturnLocation,
+        notes: containerReturnClient.lastContainerReturnNotes,
+      });
     else if (updatedClient) await clientsRepository.update(updatedClient);
     else if (newSessions[0]) await cashRepository.open(newSessions[0]);
     else if (closedSession) await cashRepository.close(closedSession);

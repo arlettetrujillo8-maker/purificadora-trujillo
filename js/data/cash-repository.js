@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
 
 const expensePaymentMethod = (value) => {
   const normalized = String(value || "otro").trim().toLowerCase();

@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-envases-pendientes";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),
