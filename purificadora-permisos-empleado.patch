@@ -1,0 +1,542 @@
+From 203c84ed27428bb0325670476cd4b7d1fb289a8c Mon Sep 17 00:00:00 2001
+From: "Mayorga (via Claude)" <mayorga@purificadoratrujillo.local>
+Date: Sat, 15 Aug 2026 22:31:44 +0000
+Subject: [PATCH] Fix: formulario de Empleados no mostraba los permisos
+ heredados del rol
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Mismo bug de 'arreglo vacío es verdadero' que ya se corrigió en
+permissionsFor(), pero duplicado sin el fix en openUserDialog(): al
+editar un empleado con permissions:[] (heredando de su rol por
+defecto), el formulario mostraba TODAS las casillas destapadas en
+vez de reflejar lo que el empleado ya tiene por su rol. Esto hacía
+casi imposible verificar visualmente si un permiso extra (ej.
+Gastos para un Repartidor) ya estaba concedido o no.
+
+openUserDialog ahora reusa permissionsFor(user) en vez de duplicar
+la lógica. Para un empleado nuevo (user null) se mantiene el mismo
+comportamiento de antes (default a permisos de ventanilla), sin
+heredar por accidente los permisos del admin que lo está creando.
+
+Nota: migratePermissions() ya protegía contra pérdida real de datos
+(siempre une los permisos del rol de vuelta al guardar), así que
+este bug no borraba permisos -- pero sí hacía que el panel de
+Empleados mintiera visualmente sobre qué tenía cada quien.
+
+Nuevo test tests/employee-permission-prefill.test.cjs.
+
+Bump de build a 20260815-permisos-empleado-fix.
+
+28/28 tests (tests/*.test.cjs) PASS.
+---
+ README.md                                  |  2 +-
+ index.html                                 | 18 +++++-----
+ js/app.js                                  |  7 ++--
+ js/central-auth-ui.js                      |  2 +-
+ js/data/cash-repository.js                 |  2 +-
+ js/data/clients-repository.js              |  2 +-
+ js/data/corrections-repository.js          |  2 +-
+ js/data/inventory-repository.js            |  2 +-
+ js/data/ledger-repository.js               |  2 +-
+ js/data/maintenance-repository.js          |  2 +-
+ js/data/operational-store.js               | 26 +++++++--------
+ js/data/profiles-repository.js             |  4 +--
+ js/data/reports-repository.js              |  2 +-
+ js/data/repository-utils.js                |  2 +-
+ js/data/returns-repository.js              |  2 +-
+ js/data/rounds-repository.js               |  2 +-
+ js/data/sales-repository.js                |  4 +--
+ js/data/settings-repository.js             |  2 +-
+ js/data/supabase-client.js                 |  4 +--
+ js/data/supplies-repository.js             |  2 +-
+ js/v3/bootstrap.js                         | 12 +++----
+ sw.js                                      |  2 +-
+ tests/central-auth-mobile.test.cjs         |  6 ++--
+ tests/employee-permission-prefill.test.cjs | 38 ++++++++++++++++++++++
+ tests/mobile-auth-qa.cjs                   |  2 +-
+ tests/mobile-ux-v35.test.cjs               |  2 +-
+ tests/presentation-labels.test.cjs         |  2 +-
+ tests/safe-uuid.test.cjs                   |  2 +-
+ tests/simplified-container-flow.test.cjs   |  2 +-
+ tests/supabase-client-uuid-load.test.cjs   |  2 +-
+ 30 files changed, 100 insertions(+), 61 deletions(-)
+ create mode 100644 tests/employee-permission-prefill.test.cjs
+
+diff --git a/README.md b/README.md
+index 061bce3..b6600b5 100644
+--- a/README.md
++++ b/README.md
+@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si
+ Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
+ ```
+ 
+-Build actual: `20260815-corregir-carga-ronda`.
++Build actual: `20260815-permisos-empleado-fix`.
+diff --git a/index.html b/index.html
+index b9526a8..3d2e1a8 100644
+--- a/index.html
++++ b/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+-    <meta name="app-build" content="20260815-corregir-carga-ronda" />
++    <meta name="app-build" content="20260815-permisos-empleado-fix" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta name="theme-color" content="#0d6efd" />
+     <title>Purificadora Trujillo · ERP V3.5</title>
+@@ -12,7 +12,7 @@
+       href="assets/logo/logo-trujillo.svg"
+       type="image/svg+xml"
+     />
+-    <link rel="stylesheet" href="css/styles.css?v=20260815-corregir-carga-ronda" />
++    <link rel="stylesheet" href="css/styles.css?v=20260815-permisos-empleado-fix" />
+   </head>
+   <body>
+     <div class="app-shell">
+@@ -2599,12 +2599,12 @@
+         }, 1200);
+       })();
+     </script>
+-    <script src="js/central-auth-ui.js?v=20260815-corregir-carga-ronda"></script>
+-    <script src="js/safe-uuid.js?v=20260815-corregir-carga-ronda"></script>
+-    <script src="js/presentation-labels.js?v=20260815-corregir-carga-ronda"></script>
+-    <script src="js/user-display.js?v=20260815-corregir-carga-ronda"></script>
+-    <script src="js/sale-client-selection.js?v=20260815-corregir-carga-ronda"></script>
+-    <script src="js/app.js?v=20260815-corregir-carga-ronda"></script>
+-    <script type="module" src="js/v3/bootstrap.js?v=20260815-corregir-carga-ronda"></script>
++    <script src="js/central-auth-ui.js?v=20260815-permisos-empleado-fix"></script>
++    <script src="js/safe-uuid.js?v=20260815-permisos-empleado-fix"></script>
++    <script src="js/presentation-labels.js?v=20260815-permisos-empleado-fix"></script>
++    <script src="js/user-display.js?v=20260815-permisos-empleado-fix"></script>
++    <script src="js/sale-client-selection.js?v=20260815-permisos-empleado-fix"></script>
++    <script src="js/app.js?v=20260815-permisos-empleado-fix"></script>
++    <script type="module" src="js/v3/bootstrap.js?v=20260815-permisos-empleado-fix"></script>
+   </body>
+ </html>
+diff --git a/js/app.js b/js/app.js
+index 5d0ed26..9bbf51c 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1,7 +1,7 @@
+ (() => {
+   "use strict";
+ 
+-  const APP_SCRIPT_BUILD = "20260815-corregir-carga-ronda";
++  const APP_SCRIPT_BUILD = "20260815-permisos-empleado-fix";
+   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
+ 
+   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
+@@ -5901,8 +5901,9 @@
+     $("userPinHint").textContent = user?.pinConfigured
+       ? "Déjalo vacío para conservar el PIN actual."
+       : "Se solicitará al iniciar turno.";
+-    const selected =
+-      user?.permissions || ROLE_PERMISSIONS[user?.role || "ventanilla"] || [];
++    const selected = user
++      ? permissionsFor(user)
++      : ROLE_PERMISSIONS.ventanilla || [];
+     permissionInputs().forEach(
+       (input) => (input.checked = selected.includes(input.value)),
+     );
+diff --git a/js/central-auth-ui.js b/js/central-auth-ui.js
+index db6dfc5..a06ebfd 100644
+--- a/js/central-auth-ui.js
++++ b/js/central-auth-ui.js
+@@ -1,7 +1,7 @@
+ (function exposeCentralAuthUi(globalScope) {
+   "use strict";
+ 
+-  const BUILD = "20260815-corregir-carga-ronda";
++  const BUILD = "20260815-permisos-empleado-fix";
+   const TRIGGER_SELECTOR =
+     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
+   const bindings = new WeakMap();
+diff --git a/js/data/cash-repository.js b/js/data/cash-repository.js
+index 120123b..3c4bd53 100644
+--- a/js/data/cash-repository.js
++++ b/js/data/cash-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ const expensePaymentMethod = (value) => {
+   const normalized = String(value || "otro").trim().toLowerCase();
+diff --git a/js/data/clients-repository.js b/js/data/clients-repository.js
+index 53a3d8d..941745f 100644
+--- a/js/data/clients-repository.js
++++ b/js/data/clients-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ function payload(client) {
+   return {
+diff --git a/js/data/corrections-repository.js b/js/data/corrections-repository.js
+index 408f3bd..3e2bf87 100644
+--- a/js/data/corrections-repository.js
++++ b/js/data/corrections-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
+ 
+diff --git a/js/data/inventory-repository.js b/js/data/inventory-repository.js
+index d9086af..f9e3d9f 100644
+--- a/js/data/inventory-repository.js
++++ b/js/data/inventory-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const inventoryRepository = {
+   listLocations: () => selectAll("inventory_locations"),
+diff --git a/js/data/ledger-repository.js b/js/data/ledger-repository.js
+index 893aff0..e6a7a31 100644
+--- a/js/data/ledger-repository.js
++++ b/js/data/ledger-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const ledgerRepository = {
+   listPayments: () =>
+diff --git a/js/data/maintenance-repository.js b/js/data/maintenance-repository.js
+index 8de8b2a..563b162 100644
+--- a/js/data/maintenance-repository.js
++++ b/js/data/maintenance-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const maintenanceRepository = {
+   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),
+diff --git a/js/data/operational-store.js b/js/data/operational-store.js
+index 49270b7..887719d 100644
+--- a/js/data/operational-store.js
++++ b/js/data/operational-store.js
+@@ -1,16 +1,16 @@
+-import { profilesRepository } from "./profiles-repository.js?v=20260815-corregir-carga-ronda";
+-import { clientsRepository } from "./clients-repository.js?v=20260815-corregir-carga-ronda";
+-import { salesRepository } from "./sales-repository.js?v=20260815-corregir-carga-ronda";
+-import { ledgerRepository } from "./ledger-repository.js?v=20260815-corregir-carga-ronda";
+-import { cashRepository } from "./cash-repository.js?v=20260815-corregir-carga-ronda";
+-import { inventoryRepository } from "./inventory-repository.js?v=20260815-corregir-carga-ronda";
+-import { roundsRepository } from "./rounds-repository.js?v=20260815-corregir-carga-ronda";
+-import { suppliesRepository } from "./supplies-repository.js?v=20260815-corregir-carga-ronda";
+-import { settingsRepository } from "./settings-repository.js?v=20260815-corregir-carga-ronda";
+-import { reportsRepository } from "./reports-repository.js?v=20260815-corregir-carga-ronda";
+-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-corregir-carga-ronda";
+-import { returnsRepository } from "./returns-repository.js?v=20260815-corregir-carga-ronda";
+-import { correctionsRepository } from "./corrections-repository.js?v=20260815-corregir-carga-ronda";
++import { profilesRepository } from "./profiles-repository.js?v=20260815-permisos-empleado-fix";
++import { clientsRepository } from "./clients-repository.js?v=20260815-permisos-empleado-fix";
++import { salesRepository } from "./sales-repository.js?v=20260815-permisos-empleado-fix";
++import { ledgerRepository } from "./ledger-repository.js?v=20260815-permisos-empleado-fix";
++import { cashRepository } from "./cash-repository.js?v=20260815-permisos-empleado-fix";
++import { inventoryRepository } from "./inventory-repository.js?v=20260815-permisos-empleado-fix";
++import { roundsRepository } from "./rounds-repository.js?v=20260815-permisos-empleado-fix";
++import { suppliesRepository } from "./supplies-repository.js?v=20260815-permisos-empleado-fix";
++import { settingsRepository } from "./settings-repository.js?v=20260815-permisos-empleado-fix";
++import { reportsRepository } from "./reports-repository.js?v=20260815-permisos-empleado-fix";
++import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-permisos-empleado-fix";
++import { returnsRepository } from "./returns-repository.js?v=20260815-permisos-empleado-fix";
++import { correctionsRepository } from "./corrections-repository.js?v=20260815-permisos-empleado-fix";
+ 
+ const fromCents = (value) => Number(value || 0) / 100;
+ const locationKey = (row) =>
+diff --git a/js/data/profiles-repository.js b/js/data/profiles-repository.js
+index acf063c..1a39e13 100644
+--- a/js/data/profiles-repository.js
++++ b/js/data/profiles-repository.js
+@@ -2,8 +2,8 @@ import {
+   supabase,
+   getDeviceId,
+   getDeviceName,
+-} from "./supabase-client.js?v=20260815-corregir-carga-ronda";
+-import { selectAll, rpc } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++} from "./supabase-client.js?v=20260815-permisos-empleado-fix";
++import { selectAll, rpc } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ const PUBLIC_PROFILE_FIELDS =
+   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
+diff --git a/js/data/reports-repository.js b/js/data/reports-repository.js
+index 7dfe199..c44ffed 100644
+--- a/js/data/reports-repository.js
++++ b/js/data/reports-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const reportsRepository = {
+   listAudit: () =>
+diff --git a/js/data/repository-utils.js b/js/data/repository-utils.js
+index 699e5e1..d4f12cf 100644
+--- a/js/data/repository-utils.js
++++ b/js/data/repository-utils.js
+@@ -1,7 +1,7 @@
+ import {
+   supabase,
+   getDeviceId,
+-} from "./supabase-client.js?v=20260815-corregir-carga-ronda";
++} from "./supabase-client.js?v=20260815-permisos-empleado-fix";
+ 
+ const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
+ const CENTRAL_SESSION_ERROR = "central_session_expired";
+diff --git a/js/data/returns-repository.js b/js/data/returns-repository.js
+index 4c50383..7fbd970 100644
+--- a/js/data/returns-repository.js
++++ b/js/data/returns-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const returnsRepository = {
+   list: async () => {
+diff --git a/js/data/rounds-repository.js b/js/data/rounds-repository.js
+index a33e692..819ba39 100644
+--- a/js/data/rounds-repository.js
++++ b/js/data/rounds-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const roundsRepository = {
+   list: () =>
+diff --git a/js/data/sales-repository.js b/js/data/sales-repository.js
+index 0b511d6..f717489 100644
+--- a/js/data/sales-repository.js
++++ b/js/data/sales-repository.js
+@@ -1,5 +1,5 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
+-import { supabase } from "./supabase-client.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
++import { supabase } from "./supabase-client.js?v=20260815-permisos-empleado-fix";
+ 
+ export const salesRepository = {
+   list: () =>
+diff --git a/js/data/settings-repository.js b/js/data/settings-repository.js
+index f00f331..1afec90 100644
+--- a/js/data/settings-repository.js
++++ b/js/data/settings-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const settingsRepository = {
+   list: () => selectAll("settings"),
+diff --git a/js/data/supabase-client.js b/js/data/supabase-client.js
+index ec5ec29..902c0fb 100644
+--- a/js/data/supabase-client.js
++++ b/js/data/supabase-client.js
+@@ -1,7 +1,7 @@
+ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
+-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-corregir-carga-ronda";
++import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-permisos-empleado-fix";
+ 
+-export const SUPABASE_CLIENT_BUILD = "20260815-corregir-carga-ronda";
++export const SUPABASE_CLIENT_BUILD = "20260815-permisos-empleado-fix";
+ export const DEVICE_KEY = "purificadora_v3_device_id";
+ export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
+ export const AUTH_STORAGE_KEY = "purificadora_v3_auth";
+diff --git a/js/data/supplies-repository.js b/js/data/supplies-repository.js
+index 0d8a048..8991cab 100644
+--- a/js/data/supplies-repository.js
++++ b/js/data/supplies-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-corregir-carga-ronda";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-permisos-empleado-fix";
+ 
+ export const suppliesRepository = {
+   list: () => selectAll("supplies", "*", (query) => query.order("name")),
+diff --git a/js/v3/bootstrap.js b/js/v3/bootstrap.js
+index b570ed6..846ab47 100644
+--- a/js/v3/bootstrap.js
++++ b/js/v3/bootstrap.js
+@@ -6,13 +6,13 @@ import {
+   getDeviceName,
+   setRememberDevicePreference,
+   REMEMBERED_EMAIL_KEY,
+-} from "../data/supabase-client.js?v=20260815-corregir-carga-ronda";
+-import { OperationalStore } from "../data/operational-store.js?v=20260815-corregir-carga-ronda";
+-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-corregir-carga-ronda";
+-import { clientsRepository } from "../data/clients-repository.js?v=20260815-corregir-carga-ronda";
+-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-corregir-carga-ronda";
++} from "../data/supabase-client.js?v=20260815-permisos-empleado-fix";
++import { OperationalStore } from "../data/operational-store.js?v=20260815-permisos-empleado-fix";
++import { profilesRepository } from "../data/profiles-repository.js?v=20260815-permisos-empleado-fix";
++import { clientsRepository } from "../data/clients-repository.js?v=20260815-permisos-empleado-fix";
++import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-permisos-empleado-fix";
+ 
+-const BOOTSTRAP_BUILD = "20260815-corregir-carga-ronda";
++const BOOTSTRAP_BUILD = "20260815-permisos-empleado-fix";
+ const APP_BUILD =
+   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
+ const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
+diff --git a/sw.js b/sw.js
+index b8c91c3..768a48a 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,4 +1,4 @@
+-const BUILD = "20260815-corregir-carga-ronda";
++const BUILD = "20260815-permisos-empleado-fix";
+ const CACHE = `purificadora-trujillo-${BUILD}`;
+ const ASSETS = [
+   "./",
+diff --git a/tests/central-auth-mobile.test.cjs b/tests/central-auth-mobile.test.cjs
+index a5ed39c..2e2ef5e 100644
+--- a/tests/central-auth-mobile.test.cjs
++++ b/tests/central-auth-mobile.test.cjs
+@@ -17,7 +17,7 @@ const dataModules = fs
+ const moduleGraph = `${bootstrap}\n${dataModules}`;
+ 
+ assert.match(html, /id="v3OpenAuthBtn"[\s\S]*?type="button"[\s\S]*?aria-controls="v3AuthDialog"/);
+-assert.match(html, /meta name="app-build" content="20260815-corregir-carga-ronda"/);
++assert.match(html, /meta name="app-build" content="20260815-permisos-empleado-fix"/);
+ assert.match(html, /id="v3AuthTrace"/);
+ assert.match(html, /central-auth-ui\.js no cargado/);
+ assert.match(authUi, /bindStableAuthDelegation\(document\)/);
+@@ -41,7 +41,7 @@ assert.match(bootstrap, /Bootstrap build:/);
+ assert.match(bootstrap, /Central auth UI build:/);
+ assert.match(bootstrap, /Service-worker\/cache version:/);
+ assert.match(css, /#v3OpenAuthBtn[\s\S]*?touch-action: manipulation/);
+-assert.match(sw, /20260815-corregir-carga-ronda/);
++assert.match(sw, /20260815-permisos-empleado-fix/);
+ assert.match(app, /PurificadoraAppScriptBuild = APP_SCRIPT_BUILD/);
+ assert.match(bootstrap, /APP_SCRIPT_BUILD = window\.PurificadoraAppScriptBuild/);
+ assert.match(sw, /GET_PURIFICADORA_BUILD/);
+@@ -54,7 +54,7 @@ assert.doesNotMatch(
+ );
+ assert.match(
+   bootstrap,
+-  /operational-store\.js\?v=20260815-corregir-carga-ronda/,
++  /operational-store\.js\?v=20260815-permisos-empleado-fix/,
+ );
+ 
+ const submitStart = bootstrap.indexOf('form.addEventListener("submit"');
+diff --git a/tests/employee-permission-prefill.test.cjs b/tests/employee-permission-prefill.test.cjs
+new file mode 100644
+index 0000000..6cd7717
+--- /dev/null
++++ b/tests/employee-permission-prefill.test.cjs
+@@ -0,0 +1,38 @@
++const fs = require("fs");
++const assert = require("assert");
++
++const app = fs.readFileSync("js/app.js", "utf8");
++
++// Bug real reportado: al editar un empleado con permissions: [] (heredando
++// del rol), el formulario de Empleados no marcaba sus casillas heredadas
++// -> se veían todas destapadas -> si el admin solo marcaba "Gastos" y
++// guardaba, el empleado terminaba viéndose como si nunca hubiera recibido
++// el permiso extra (o, en el mejor caso, con una UI engañosa que no refleja
++// lo que el empleado realmente tiene).
++//
++// openUserDialog debe reusar permissionsFor() (ya corregido para no dejar
++// que un arreglo vacío anule los permisos del rol) en vez de duplicar la
++// lógica con el patrón `user?.permissions || ROLE_PERMISSIONS[...]`.
++assert.match(
++  app,
++  /const selected = user\s*\?\s*permissionsFor\(user\)/,
++  "el formulario de Empleados usa permissionsFor(), no la lógica duplicada",
++);
++
++// No debe quedar ningún rastro del patrón defectuoso original.
++assert.doesNotMatch(
++  app,
++  /const selected =\s*\n?\s*user\?\.permissions \|\| ROLE_PERMISSIONS/,
++  "no debe quedar la versión con el bug del arreglo vacío",
++);
++
++// Para un empleado nuevo (user null) debe seguir defaulteando a ventanilla,
++// igual que antes -- no debe heredar accidentalmente los permisos del admin
++// que está creando el registro (activeUser()).
++assert.match(
++  app,
++  /: ROLE_PERMISSIONS\.ventanilla \|\| \[\];/,
++  "un empleado nuevo sigue defaulteando a permisos de ventanilla",
++);
++
++console.log("employee-permission-prefill: 3/3 PASS");
+diff --git a/tests/mobile-auth-qa.cjs b/tests/mobile-auth-qa.cjs
+index 367017f..ee3a8d8 100644
+--- a/tests/mobile-auth-qa.cjs
++++ b/tests/mobile-auth-qa.cjs
+@@ -30,7 +30,7 @@ async function openPage(browser, viewport, withoutNativeUuid = false) {
+     const mobile = await openPage(browser, { width: 390, height: 844 }, true);
+     assert.equal(
+       await mobile.page.locator('meta[name="app-build"]').getAttribute("content"),
+-      "20260815-corregir-carga-ronda",
++      "20260815-permisos-empleado-fix",
+     );
+     assert.match(
+       await mobile.page.evaluate(() => window.PurificadoraCrypto.safeRandomUUID()),
+diff --git a/tests/mobile-ux-v35.test.cjs b/tests/mobile-ux-v35.test.cjs
+index b0ab17b..d47ce13 100644
+--- a/tests/mobile-ux-v35.test.cjs
++++ b/tests/mobile-ux-v35.test.cjs
+@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
+ assert.match(bootstrap, /host\.appendChild\(panel\)/);
+ assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
+ assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
+-assert.match(sw, /20260815-corregir-carga-ronda/);
++assert.match(sw, /20260815-permisos-empleado-fix/);
+ assert.match(html, /class="panel sales-list-panel"/);
+ assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
+ assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);
+diff --git a/tests/presentation-labels.test.cjs b/tests/presentation-labels.test.cjs
+index 99b96da..acdd75d 100644
+--- a/tests/presentation-labels.test.cjs
++++ b/tests/presentation-labels.test.cjs
+@@ -33,6 +33,6 @@ assert.match(
+ assert.match(app, /register\(`\.\/sw\.js\?v=\$\{encodeURIComponent\(appBuild\)\}`\)/);
+ assert.match(bootstrap, /badge\.hidden = centralConnected \|\| noConnection/);
+ assert.match(bootstrap, /\? "Conectar"/);
+-assert.match(html, /presentation-labels\.js\?v=20260815-corregir-carga-ronda/);
++assert.match(html, /presentation-labels\.js\?v=20260815-permisos-empleado-fix/);
+ 
+ console.log("presentation-labels: 17/17 PASS");
+diff --git a/tests/safe-uuid.test.cjs b/tests/safe-uuid.test.cjs
+index f86d24e..811785f 100644
+--- a/tests/safe-uuid.test.cjs
++++ b/tests/safe-uuid.test.cjs
+@@ -25,7 +25,7 @@ assert.match(
+ );
+ assert.throws(() => safeRandomUUID({}), /generador criptogr/);
+ 
+-assert.match(html, /safe-uuid\.js\?v=20260815-corregir-carga-ronda/);
++assert.match(html, /safe-uuid\.js\?v=20260815-permisos-empleado-fix/);
+ assert.match(sw, /js\/safe-uuid\.js/);
+ assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
+ assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);
+diff --git a/tests/simplified-container-flow.test.cjs b/tests/simplified-container-flow.test.cjs
+index 89a78f0..fd38cfc 100644
+--- a/tests/simplified-container-flow.test.cjs
++++ b/tests/simplified-container-flow.test.cjs
+@@ -49,6 +49,6 @@ ok(/finalize_round_close/.test(read("supabase/migrations/20260814153453_round_re
+ ok(/audit_log/.test(migration), "preparar llenos registra auditoría");
+ ok(/can_operate\('rounds'\)/.test(migration), "los permisos se validan en backend");
+ ok(!/drop\s+table|truncate\s+table|delete\s+from\s+public\.(sales|rounds)/i.test(migration), "la migración no es destructiva");
+-ok(/20260815-corregir-carga-ronda/.test(sw), "service worker usa el build nuevo");
++ok(/20260815-permisos-empleado-fix/.test(sw), "service worker usa el build nuevo");
+ 
+ console.log(`simplified-container-flow: ${checks}/${checks} PASS`);
+diff --git a/tests/supabase-client-uuid-load.test.cjs b/tests/supabase-client-uuid-load.test.cjs
+index 9860693..a60c959 100644
+--- a/tests/supabase-client-uuid-load.test.cjs
++++ b/tests/supabase-client-uuid-load.test.cjs
+@@ -6,7 +6,7 @@ const { safeRandomUUID } = require("../js/safe-uuid.js");
+ const root = path.resolve(__dirname, "..");
+ const clientPath = path.join(root, "js/data/supabase-client.js");
+ const source = fs.readFileSync(clientPath, "utf8");
+-const build = "20260815-corregir-carga-ronda";
++const build = "20260815-permisos-empleado-fix";
+ 
+ assert.doesNotMatch(source, /crypto\.randomUUID\s*\(/);
+ assert.doesNotMatch(source, /\.randomUUID\s*\(/);
+-- 
+2.43.0
+

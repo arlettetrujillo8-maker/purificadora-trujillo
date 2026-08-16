@@ -2634,3 +2634,126 @@ details.full summary {
   outline: none;
 }
 .route-stock-inline-edit:active { transform: scale(0.96); }
+
+/* ---- Tarjeta de cierre de jornada ---- */
+.operational-card--workday {
+  border: 1px solid var(--primary);
+  background: linear-gradient(135deg, rgba(20, 99, 255, 0.08), rgba(20, 99, 255, 0.02));
+}
+.operational-card--workday:hover {
+  border-color: var(--primary);
+}
+
+/* ---- Resumen imprimible de jornada ---- */
+.close-work-day-summary {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1a1a1a;
+}
+.close-work-day-summary .summary-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 1rem;
+}
+.close-work-day-summary .summary-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 28px;
+}
+.close-work-day-summary .summary-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  text-transform: capitalize;
+}
+.close-work-day-summary .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.close-work-day-summary .summary-metric {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid var(--primary);
+}
+.close-work-day-summary .summary-metric .label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+.close-work-day-summary .summary-metric strong {
+  font-size: 18px;
+  color: #000;
+  margin-bottom: 0.25rem;
+}
+.close-work-day-summary .summary-metric small {
+  font-size: 12px;
+  color: #999;
+}
+.close-work-day-summary .summary-section {
+  margin-bottom: 2rem;
+}
+.close-work-day-summary .summary-section h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+.close-work-day-summary .summary-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.close-work-day-summary .summary-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+.close-work-day-summary .summary-table td:first-child {
+  font-weight: 500;
+}
+.close-work-day-summary .summary-table td:nth-child(2),
+.close-work-day-summary .summary-table td:nth-child(3) {
+  text-align: right;
+}
+.close-work-day-summary .summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.close-work-day-summary .summary-list li {
+  padding: 0.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.close-work-day-summary .summary-list strong {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+@media print {
+  body * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .close-work-day-summary {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .close-work-day-summary .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+}
+.route-stock-inline-edit:active { transform: scale(0.96); }

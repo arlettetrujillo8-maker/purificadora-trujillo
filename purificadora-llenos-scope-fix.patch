@@ -1,0 +1,563 @@
+From 9ba2ccecc4348b74deb2a8d35edcd76f452cd4ae Mon Sep 17 00:00:00 2001
+From: "Mayorga (via Claude)" <mayorga@purificadoratrujillo.local>
+Date: Sat, 15 Aug 2026 22:18:46 +0000
+Subject: [PATCH] =?UTF-8?q?Fix:=20Llenos=20no=20era=20corregible=20mientra?=
+ =?UTF-8?q?s=20hab=C3=ADa=20ronda=20activa=20(mostraba=20n=C3=BAmero=20equ?=
+ =?UTF-8?q?ivocado)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Causa real de 'no se refleja la cantidad al guardar': durante una
+ronda activa, la cifra de Llenos NO sale de state.inventory[route]
+(que es lo que 'Corregir existencias' ajusta) — sale de
+roundMetrics(round).availableFull = carga inicial + recargas -
+vendidos de ESA ronda. Son dos números completamente distintos.
+Por eso el ajuste sí se guardaba (RPC, auditoría, todo correcto)
+pero nunca se reflejaba en la pantalla de Rutas: se estaba
+corrigiendo un dato que ni siquiera era el que se mostraba.
+
+Este problema ya existía antes de mis cambios (el botón 'Corregir
+existencias' original tenía el mismo defecto), simplemente no era
+tan visible hasta que las cifras se volvieron tocables.
+
+Alcance corregido:
+- Llenos: tocable SOLO cuando no hay ronda activa (ahí sí coincide
+  con state.inventory[route]).
+- Vacíos: sigue siempre tocable — ese sí lee state.inventory
+  [empty_<ruta>] sin importar si hay ronda o no, así que el ajuste
+  siempre se refleja correctamente.
+- El botón de texto que queda visible durante una ronda activa se
+  renombra a 'Corregir vacíos' (antes decía 'Corregir existencias'
+  pero apuntaba a llenos, que no aplica en ese contexto).
+
+Pendiente real y aparte (no resuelto aquí): no existe una forma de
+BAJAR la carga de una ronda activa cuando no hay inconsistencia
+(ej. el admin contó mal al iniciar) — 'Recargar' solo acepta
+cantidades positivas, y 'Resolver ronda activa' solo aplica cuando
+se vendió de más. Si se necesita, es una función aparte a diseñar.
+
+Se actualiza tests/route-inline-stock-edit-v2.test.cjs y el test
+preexistente tests/mobile-ux-v35.test.cjs (esperaba el texto
+original 'Corregir existencias', ahora 'Corregir vacíos').
+
+Bump de build a 20260815-llenos-solo-sin-ronda.
+
+26/26 tests (tests/*.test.cjs) PASS.
+---
+ README.md                                 |  2 +-
+ index.html                                | 18 ++++++++--------
+ js/app.js                                 |  4 ++--
+ js/central-auth-ui.js                     |  2 +-
+ js/data/cash-repository.js                |  2 +-
+ js/data/clients-repository.js             |  2 +-
+ js/data/corrections-repository.js         |  2 +-
+ js/data/inventory-repository.js           |  2 +-
+ js/data/ledger-repository.js              |  2 +-
+ js/data/maintenance-repository.js         |  2 +-
+ js/data/operational-store.js              | 26 +++++++++++------------
+ js/data/profiles-repository.js            |  4 ++--
+ js/data/reports-repository.js             |  2 +-
+ js/data/repository-utils.js               |  2 +-
+ js/data/returns-repository.js             |  2 +-
+ js/data/rounds-repository.js              |  2 +-
+ js/data/sales-repository.js               |  4 ++--
+ js/data/settings-repository.js            |  2 +-
+ js/data/supabase-client.js                |  4 ++--
+ js/data/supplies-repository.js            |  2 +-
+ js/v3/bootstrap.js                        | 12 +++++------
+ sw.js                                     |  2 +-
+ tests/central-auth-mobile.test.cjs        |  6 +++---
+ tests/mobile-auth-qa.cjs                  |  2 +-
+ tests/mobile-ux-v35.test.cjs              |  4 ++--
+ tests/presentation-labels.test.cjs        |  2 +-
+ tests/route-inline-stock-edit-v2.test.cjs | 26 ++++++++++++++---------
+ tests/safe-uuid.test.cjs                  |  2 +-
+ tests/simplified-container-flow.test.cjs  |  2 +-
+ tests/supabase-client-uuid-load.test.cjs  |  2 +-
+ 30 files changed, 77 insertions(+), 71 deletions(-)
+
+diff --git a/README.md b/README.md
+index f27b4ec..210ab53 100644
+--- a/README.md
++++ b/README.md
+@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si
+ Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
+ ```
+ 
+-Build actual: `20260815-admin-inicio-y-refresco`.
++Build actual: `20260815-llenos-solo-sin-ronda`.
+diff --git a/index.html b/index.html
+index dab6e57..0c62f81 100644
+--- a/index.html
++++ b/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+-    <meta name="app-build" content="20260815-admin-inicio-y-refresco" />
++    <meta name="app-build" content="20260815-llenos-solo-sin-ronda" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta name="theme-color" content="#0d6efd" />
+     <title>Purificadora Trujillo · ERP V3.5</title>
+@@ -12,7 +12,7 @@
+       href="assets/logo/logo-trujillo.svg"
+       type="image/svg+xml"
+     />
+-    <link rel="stylesheet" href="css/styles.css?v=20260815-admin-inicio-y-refresco" />
++    <link rel="stylesheet" href="css/styles.css?v=20260815-llenos-solo-sin-ronda" />
+   </head>
+   <body>
+     <div class="app-shell">
+@@ -2556,12 +2556,12 @@
+         }, 1200);
+       })();
+     </script>
+-    <script src="js/central-auth-ui.js?v=20260815-admin-inicio-y-refresco"></script>
+-    <script src="js/safe-uuid.js?v=20260815-admin-inicio-y-refresco"></script>
+-    <script src="js/presentation-labels.js?v=20260815-admin-inicio-y-refresco"></script>
+-    <script src="js/user-display.js?v=20260815-admin-inicio-y-refresco"></script>
+-    <script src="js/sale-client-selection.js?v=20260815-admin-inicio-y-refresco"></script>
+-    <script src="js/app.js?v=20260815-admin-inicio-y-refresco"></script>
+-    <script type="module" src="js/v3/bootstrap.js?v=20260815-admin-inicio-y-refresco"></script>
++    <script src="js/central-auth-ui.js?v=20260815-llenos-solo-sin-ronda"></script>
++    <script src="js/safe-uuid.js?v=20260815-llenos-solo-sin-ronda"></script>
++    <script src="js/presentation-labels.js?v=20260815-llenos-solo-sin-ronda"></script>
++    <script src="js/user-display.js?v=20260815-llenos-solo-sin-ronda"></script>
++    <script src="js/sale-client-selection.js?v=20260815-llenos-solo-sin-ronda"></script>
++    <script src="js/app.js?v=20260815-llenos-solo-sin-ronda"></script>
++    <script type="module" src="js/v3/bootstrap.js?v=20260815-llenos-solo-sin-ronda"></script>
+   </body>
+ </html>
+diff --git a/js/app.js b/js/app.js
+index f74d7db..e642e03 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1,7 +1,7 @@
+ (() => {
+   "use strict";
+ 
+-  const APP_SCRIPT_BUILD = "20260815-admin-inicio-y-refresco";
++  const APP_SCRIPT_BUILD = "20260815-llenos-solo-sin-ronda";
+   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
+ 
+   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
+@@ -4146,7 +4146,7 @@
+         const trackerLineHtml = (index) =>
+           `<div class="route-progress-line${trackerStep >= index ? " is-done" : ""}"></div>`;
+         const routeTrackerHtml = `<div class="route-progress-track">${trackerStepHtml(0, "Preparando")}${trackerLineHtml(1)}${trackerStepHtml(1, "En ruta")}${trackerLineHtml(2)}${trackerStepHtml(2, "Regreso")}</div>`;
+-        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}${can("adjust_inventory") ? " route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong class="${can("adjust_inventory") ? "route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="empty_${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}<button class="text-btn" data-inventory-quick="adjust" data-location="${route}">Corregir existencias</button></div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
++        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}${!round && can("adjust_inventory") ? " route-stock-inline-edit" : ""}" ${!round && can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong class="${can("adjust_inventory") ? "route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="empty_${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}${can("adjust_inventory") ? `<button class="text-btn" data-inventory-quick="adjust" data-location="empty_${route}">Corregir vacíos</button>` : ""}</div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
+       })
+       .join("");
+ 
+diff --git a/js/central-auth-ui.js b/js/central-auth-ui.js
+index 77bcec3..c9696a4 100644
+--- a/js/central-auth-ui.js
++++ b/js/central-auth-ui.js
+@@ -1,7 +1,7 @@
+ (function exposeCentralAuthUi(globalScope) {
+   "use strict";
+ 
+-  const BUILD = "20260815-admin-inicio-y-refresco";
++  const BUILD = "20260815-llenos-solo-sin-ronda";
+   const TRIGGER_SELECTOR =
+     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
+   const bindings = new WeakMap();
+diff --git a/js/data/cash-repository.js b/js/data/cash-repository.js
+index e9b6bd5..08c0e38 100644
+--- a/js/data/cash-repository.js
++++ b/js/data/cash-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ const expensePaymentMethod = (value) => {
+   const normalized = String(value || "otro").trim().toLowerCase();
+diff --git a/js/data/clients-repository.js b/js/data/clients-repository.js
+index ad0fcae..a760b08 100644
+--- a/js/data/clients-repository.js
++++ b/js/data/clients-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ function payload(client) {
+   return {
+diff --git a/js/data/corrections-repository.js b/js/data/corrections-repository.js
+index f4c6d7e..bba86db 100644
+--- a/js/data/corrections-repository.js
++++ b/js/data/corrections-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
+ 
+diff --git a/js/data/inventory-repository.js b/js/data/inventory-repository.js
+index 62406af..bb5a55e 100644
+--- a/js/data/inventory-repository.js
++++ b/js/data/inventory-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const inventoryRepository = {
+   listLocations: () => selectAll("inventory_locations"),
+diff --git a/js/data/ledger-repository.js b/js/data/ledger-repository.js
+index c0b6cb0..50c8a3b 100644
+--- a/js/data/ledger-repository.js
++++ b/js/data/ledger-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const ledgerRepository = {
+   listPayments: () =>
+diff --git a/js/data/maintenance-repository.js b/js/data/maintenance-repository.js
+index 42bb301..c459a2c 100644
+--- a/js/data/maintenance-repository.js
++++ b/js/data/maintenance-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const maintenanceRepository = {
+   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),
+diff --git a/js/data/operational-store.js b/js/data/operational-store.js
+index a08e80f..d61fd73 100644
+--- a/js/data/operational-store.js
++++ b/js/data/operational-store.js
+@@ -1,16 +1,16 @@
+-import { profilesRepository } from "./profiles-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { clientsRepository } from "./clients-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { salesRepository } from "./sales-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { ledgerRepository } from "./ledger-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { cashRepository } from "./cash-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { inventoryRepository } from "./inventory-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { roundsRepository } from "./rounds-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { suppliesRepository } from "./supplies-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { settingsRepository } from "./settings-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { reportsRepository } from "./reports-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { returnsRepository } from "./returns-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { correctionsRepository } from "./corrections-repository.js?v=20260815-admin-inicio-y-refresco";
++import { profilesRepository } from "./profiles-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { clientsRepository } from "./clients-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { salesRepository } from "./sales-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { ledgerRepository } from "./ledger-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { cashRepository } from "./cash-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { inventoryRepository } from "./inventory-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { roundsRepository } from "./rounds-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { suppliesRepository } from "./supplies-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { settingsRepository } from "./settings-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { reportsRepository } from "./reports-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { returnsRepository } from "./returns-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { correctionsRepository } from "./corrections-repository.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ const fromCents = (value) => Number(value || 0) / 100;
+ const locationKey = (row) =>
+diff --git a/js/data/profiles-repository.js b/js/data/profiles-repository.js
+index a722496..39b20fc 100644
+--- a/js/data/profiles-repository.js
++++ b/js/data/profiles-repository.js
+@@ -2,8 +2,8 @@ import {
+   supabase,
+   getDeviceId,
+   getDeviceName,
+-} from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
+-import { selectAll, rpc } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++} from "./supabase-client.js?v=20260815-llenos-solo-sin-ronda";
++import { selectAll, rpc } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ const PUBLIC_PROFILE_FIELDS =
+   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
+diff --git a/js/data/reports-repository.js b/js/data/reports-repository.js
+index 2a5502c..2b4f03e 100644
+--- a/js/data/reports-repository.js
++++ b/js/data/reports-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const reportsRepository = {
+   listAudit: () =>
+diff --git a/js/data/repository-utils.js b/js/data/repository-utils.js
+index 452c855..84a6bb6 100644
+--- a/js/data/repository-utils.js
++++ b/js/data/repository-utils.js
+@@ -1,7 +1,7 @@
+ import {
+   supabase,
+   getDeviceId,
+-} from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
++} from "./supabase-client.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
+ const CENTRAL_SESSION_ERROR = "central_session_expired";
+diff --git a/js/data/returns-repository.js b/js/data/returns-repository.js
+index 93a845c..b462e3f 100644
+--- a/js/data/returns-repository.js
++++ b/js/data/returns-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const returnsRepository = {
+   list: async () => {
+diff --git a/js/data/rounds-repository.js b/js/data/rounds-repository.js
+index 2ed49d0..aae221e 100644
+--- a/js/data/rounds-repository.js
++++ b/js/data/rounds-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const roundsRepository = {
+   list: () =>
+diff --git a/js/data/sales-repository.js b/js/data/sales-repository.js
+index 62e8cb3..3e80704 100644
+--- a/js/data/sales-repository.js
++++ b/js/data/sales-repository.js
+@@ -1,5 +1,5 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+-import { supabase } from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
++import { supabase } from "./supabase-client.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const salesRepository = {
+   list: () =>
+diff --git a/js/data/settings-repository.js b/js/data/settings-repository.js
+index 84dd000..6f4f373 100644
+--- a/js/data/settings-repository.js
++++ b/js/data/settings-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const settingsRepository = {
+   list: () => selectAll("settings"),
+diff --git a/js/data/supabase-client.js b/js/data/supabase-client.js
+index 74c3148..f6ee1be 100644
+--- a/js/data/supabase-client.js
++++ b/js/data/supabase-client.js
+@@ -1,7 +1,7 @@
+ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
+-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-admin-inicio-y-refresco";
++import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-llenos-solo-sin-ronda";
+ 
+-export const SUPABASE_CLIENT_BUILD = "20260815-admin-inicio-y-refresco";
++export const SUPABASE_CLIENT_BUILD = "20260815-llenos-solo-sin-ronda";
+ export const DEVICE_KEY = "purificadora_v3_device_id";
+ export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
+ export const AUTH_STORAGE_KEY = "purificadora_v3_auth";
+diff --git a/js/data/supplies-repository.js b/js/data/supplies-repository.js
+index b89cf2f..9bd942d 100644
+--- a/js/data/supplies-repository.js
++++ b/js/data/supplies-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-llenos-solo-sin-ronda";
+ 
+ export const suppliesRepository = {
+   list: () => selectAll("supplies", "*", (query) => query.order("name")),
+diff --git a/js/v3/bootstrap.js b/js/v3/bootstrap.js
+index 0cdeaed..fa7bf6e 100644
+--- a/js/v3/bootstrap.js
++++ b/js/v3/bootstrap.js
+@@ -6,13 +6,13 @@ import {
+   getDeviceName,
+   setRememberDevicePreference,
+   REMEMBERED_EMAIL_KEY,
+-} from "../data/supabase-client.js?v=20260815-admin-inicio-y-refresco";
+-import { OperationalStore } from "../data/operational-store.js?v=20260815-admin-inicio-y-refresco";
+-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { clientsRepository } from "../data/clients-repository.js?v=20260815-admin-inicio-y-refresco";
+-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-admin-inicio-y-refresco";
++} from "../data/supabase-client.js?v=20260815-llenos-solo-sin-ronda";
++import { OperationalStore } from "../data/operational-store.js?v=20260815-llenos-solo-sin-ronda";
++import { profilesRepository } from "../data/profiles-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { clientsRepository } from "../data/clients-repository.js?v=20260815-llenos-solo-sin-ronda";
++import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-llenos-solo-sin-ronda";
+ 
+-const BOOTSTRAP_BUILD = "20260815-admin-inicio-y-refresco";
++const BOOTSTRAP_BUILD = "20260815-llenos-solo-sin-ronda";
+ const APP_BUILD =
+   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
+ const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
+diff --git a/sw.js b/sw.js
+index 552f24c..f307f4c 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,4 +1,4 @@
+-const BUILD = "20260815-admin-inicio-y-refresco";
++const BUILD = "20260815-llenos-solo-sin-ronda";
+ const CACHE = `purificadora-trujillo-${BUILD}`;
+ const ASSETS = [
+   "./",
+diff --git a/tests/central-auth-mobile.test.cjs b/tests/central-auth-mobile.test.cjs
+index 0f588a8..608f909 100644
+--- a/tests/central-auth-mobile.test.cjs
++++ b/tests/central-auth-mobile.test.cjs
+@@ -17,7 +17,7 @@ const dataModules = fs
+ const moduleGraph = `${bootstrap}\n${dataModules}`;
+ 
+ assert.match(html, /id="v3OpenAuthBtn"[\s\S]*?type="button"[\s\S]*?aria-controls="v3AuthDialog"/);
+-assert.match(html, /meta name="app-build" content="20260815-admin-inicio-y-refresco"/);
++assert.match(html, /meta name="app-build" content="20260815-llenos-solo-sin-ronda"/);
+ assert.match(html, /id="v3AuthTrace"/);
+ assert.match(html, /central-auth-ui\.js no cargado/);
+ assert.match(authUi, /bindStableAuthDelegation\(document\)/);
+@@ -41,7 +41,7 @@ assert.match(bootstrap, /Bootstrap build:/);
+ assert.match(bootstrap, /Central auth UI build:/);
+ assert.match(bootstrap, /Service-worker\/cache version:/);
+ assert.match(css, /#v3OpenAuthBtn[\s\S]*?touch-action: manipulation/);
+-assert.match(sw, /20260815-admin-inicio-y-refresco/);
++assert.match(sw, /20260815-llenos-solo-sin-ronda/);
+ assert.match(app, /PurificadoraAppScriptBuild = APP_SCRIPT_BUILD/);
+ assert.match(bootstrap, /APP_SCRIPT_BUILD = window\.PurificadoraAppScriptBuild/);
+ assert.match(sw, /GET_PURIFICADORA_BUILD/);
+@@ -54,7 +54,7 @@ assert.doesNotMatch(
+ );
+ assert.match(
+   bootstrap,
+-  /operational-store\.js\?v=20260815-admin-inicio-y-refresco/,
++  /operational-store\.js\?v=20260815-llenos-solo-sin-ronda/,
+ );
+ 
+ const submitStart = bootstrap.indexOf('form.addEventListener("submit"');
+diff --git a/tests/mobile-auth-qa.cjs b/tests/mobile-auth-qa.cjs
+index f764ff1..07c3784 100644
+--- a/tests/mobile-auth-qa.cjs
++++ b/tests/mobile-auth-qa.cjs
+@@ -30,7 +30,7 @@ async function openPage(browser, viewport, withoutNativeUuid = false) {
+     const mobile = await openPage(browser, { width: 390, height: 844 }, true);
+     assert.equal(
+       await mobile.page.locator('meta[name="app-build"]').getAttribute("content"),
+-      "20260815-admin-inicio-y-refresco",
++      "20260815-llenos-solo-sin-ronda",
+     );
+     assert.match(
+       await mobile.page.evaluate(() => window.PurificadoraCrypto.safeRandomUUID()),
+diff --git a/tests/mobile-ux-v35.test.cjs b/tests/mobile-ux-v35.test.cjs
+index 9d65f86..3a94461 100644
+--- a/tests/mobile-ux-v35.test.cjs
++++ b/tests/mobile-ux-v35.test.cjs
+@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
+ assert.match(bootstrap, /host\.appendChild\(panel\)/);
+ assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
+ assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
+-assert.match(sw, /20260815-admin-inicio-y-refresco/);
++assert.match(sw, /20260815-llenos-solo-sin-ronda/);
+ assert.match(html, /class="panel sales-list-panel"/);
+ assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
+ assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);
+@@ -36,7 +36,7 @@ assert.match(css, /@media \(max-width: 850px\)[\s\S]*?\.route-header-secondary\s
+ assert.match(css, /\.route-header-secondary\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+ assert.match(css, /\.route-header-secondary button\s*\{[\s\S]*?min-width: 0[\s\S]*?white-space: normal/);
+ assert.match(css, /\.route-header-secondary \.text-btn\s*\{\s*color: #fff/);
+-assert.match(app, /route-header-secondary[\s\S]*Recargar[\s\S]*Regreso[\s\S]*Cobrar[\s\S]*Registrar gasto[\s\S]*Corregir existencias/);
++assert.match(app, /route-header-secondary[\s\S]*Recargar[\s\S]*Regreso[\s\S]*Cobrar[\s\S]*Registrar gasto[\s\S]*Corregir vacíos/);
+ assert.match(app, /window\.scrollTo\(\{ top: 0, left: 0, behavior: "auto" \}\)/);
+ assert.doesNotMatch(app, /behavior: "smooth"/);
+ assert.match(
+diff --git a/tests/presentation-labels.test.cjs b/tests/presentation-labels.test.cjs
+index 2c4e98c..a50de25 100644
+--- a/tests/presentation-labels.test.cjs
++++ b/tests/presentation-labels.test.cjs
+@@ -33,6 +33,6 @@ assert.match(
+ assert.match(app, /register\(`\.\/sw\.js\?v=\$\{encodeURIComponent\(appBuild\)\}`\)/);
+ assert.match(bootstrap, /badge\.hidden = centralConnected \|\| noConnection/);
+ assert.match(bootstrap, /\? "Conectar"/);
+-assert.match(html, /presentation-labels\.js\?v=20260815-admin-inicio-y-refresco/);
++assert.match(html, /presentation-labels\.js\?v=20260815-llenos-solo-sin-ronda/);
+ 
+ console.log("presentation-labels: 17/17 PASS");
+diff --git a/tests/route-inline-stock-edit-v2.test.cjs b/tests/route-inline-stock-edit-v2.test.cjs
+index a0d2e51..e5bf637 100644
+--- a/tests/route-inline-stock-edit-v2.test.cjs
++++ b/tests/route-inline-stock-edit-v2.test.cjs
+@@ -4,25 +4,31 @@ const assert = require("assert");
+ const app = fs.readFileSync("js/app.js", "utf8");
+ const css = fs.readFileSync("css/styles.css", "utf8");
+ 
+-// La cifra de Llenos debe apuntar a la ubicación de la ruta, y la de Vacíos
+-// a "empty_<ruta>", reutilizando el mismo mecanismo data-inventory-quick que
+-// ya usan el resto de las tarjetas (Local, Inventario), no un observer aparte.
++// Bug real detectado al probar en dispositivo: mientras hay ronda activa, la
++// cifra de "Llenos" mostrada es metrics.availableFull (carga + recargas -
++// vendidos de ESA ronda), no state.inventory[route]. "Corregir existencias"
++// ajusta state.inventory[route], así que durante una ronda activa NO debe
++// ofrecerse como si fuera a corregir lo que se ve en pantalla.
+ assert.match(
+   app,
+-  /route-stock-inline-edit[\s\S]*?data-inventory-quick="adjust" data-location="\$\{route\}"/,
+-  "la cifra de Llenos abre Corregir existencias de la ruta",
++  /!round && can\("adjust_inventory"\) \? ` ?data-inventory-quick="adjust" data-location="\$\{route\}"/,
++  "la cifra de Llenos solo es tocable cuando NO hay ronda activa",
+ );
++
++// Vacíos SIEMPRE lee state.inventory[`empty_${route}`] sin importar si hay
++// ronda activa o no, así que debe seguir siendo tocable en ambos casos.
+ assert.match(
+   app,
+-  /route-stock-inline-edit[\s\S]*?data-location="empty_\$\{route\}"/,
+-  "la cifra de Vacíos abre Corregir existencias del vacío de la ruta",
++  /route-stock-inline-edit[\s\S]*?can\("adjust_inventory"\) \? `data-inventory-quick="adjust" data-location="empty_\$\{route\}"/,
++  "la cifra de Vacíos siempre es tocable si el usuario tiene el permiso",
+ );
+ 
+-// Debe estar condicionado al permiso, no visible/interactivo para cualquiera.
++// El botón de texto que queda visible durante una ronda activa corrige
++// vacíos (que sí es correcto en ese contexto), no llenos.
+ assert.match(
+   app,
+-  /can\("adjust_inventory"\) \? ` ?data-inventory-quick="adjust"/,
+-  "solo aparece tocable si el usuario tiene adjust_inventory",
++  /can\("adjust_inventory"\) \? `<button class="text-btn" data-inventory-quick="adjust" data-location="empty_\$\{route\}">Corregir vacíos<\/button>/,
++  "durante una ronda activa, el botón secundario corrige vacíos, no llenos",
+ );
+ 
+ // Accesible por teclado (Enter/Espacio), ya que no es un <button> nativo.
+diff --git a/tests/safe-uuid.test.cjs b/tests/safe-uuid.test.cjs
+index 490e0d2..e234a2d 100644
+--- a/tests/safe-uuid.test.cjs
++++ b/tests/safe-uuid.test.cjs
+@@ -25,7 +25,7 @@ assert.match(
+ );
+ assert.throws(() => safeRandomUUID({}), /generador criptogr/);
+ 
+-assert.match(html, /safe-uuid\.js\?v=20260815-admin-inicio-y-refresco/);
++assert.match(html, /safe-uuid\.js\?v=20260815-llenos-solo-sin-ronda/);
+ assert.match(sw, /js\/safe-uuid\.js/);
+ assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
+ assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);
+diff --git a/tests/simplified-container-flow.test.cjs b/tests/simplified-container-flow.test.cjs
+index 584629e..04afeb5 100644
+--- a/tests/simplified-container-flow.test.cjs
++++ b/tests/simplified-container-flow.test.cjs
+@@ -49,6 +49,6 @@ ok(/finalize_round_close/.test(read("supabase/migrations/20260814153453_round_re
+ ok(/audit_log/.test(migration), "preparar llenos registra auditoría");
+ ok(/can_operate\('rounds'\)/.test(migration), "los permisos se validan en backend");
+ ok(!/drop\s+table|truncate\s+table|delete\s+from\s+public\.(sales|rounds)/i.test(migration), "la migración no es destructiva");
+-ok(/20260815-admin-inicio-y-refresco/.test(sw), "service worker usa el build nuevo");
++ok(/20260815-llenos-solo-sin-ronda/.test(sw), "service worker usa el build nuevo");
+ 
+ console.log(`simplified-container-flow: ${checks}/${checks} PASS`);
+diff --git a/tests/supabase-client-uuid-load.test.cjs b/tests/supabase-client-uuid-load.test.cjs
+index 71c824e..f2f4083 100644
+--- a/tests/supabase-client-uuid-load.test.cjs
++++ b/tests/supabase-client-uuid-load.test.cjs
+@@ -6,7 +6,7 @@ const { safeRandomUUID } = require("../js/safe-uuid.js");
+ const root = path.resolve(__dirname, "..");
+ const clientPath = path.join(root, "js/data/supabase-client.js");
+ const source = fs.readFileSync(clientPath, "utf8");
+-const build = "20260815-admin-inicio-y-refresco";
++const build = "20260815-llenos-solo-sin-ronda";
+ 
+ assert.doesNotMatch(source, /crypto\.randomUUID\s*\(/);
+ assert.doesNotMatch(source, /\.randomUUID\s*\(/);
+-- 
+2.43.0
+

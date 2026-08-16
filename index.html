@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20260815-envases-pendientes" />
+    <meta name="app-build" content="20260815-cierre-jornada-repartidor-cash" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0d6efd" />
     <title>Purificadora Trujillo · ERP V3.5</title>
@@ -1892,6 +1892,44 @@
       </form>
     </dialog>
 
+    <dialog id="closeWorkDayDialog">
+      <form
+        method="dialog"
+        id="closeWorkDayForm"
+        class="dialog-form"
+      >
+        <div class="dialog-head">
+          <h3>Cerrar jornada</h3>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="closeWorkDayDialog"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div id="closeWorkDayAlert" class="info-box hidden"></div>
+        <p>Se cerrarán automáticamente:</p>
+        <ul style="margin-bottom: 1rem;">
+          <li id="closeWorkDayOpenCashes"></li>
+          <li id="closeWorkDayActiveRounds"></li>
+        </ul>
+        <div class="dialog-buttons">
+          <button type="button" class="secondary-btn" data-close="closeWorkDayDialog">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            id="closeWorkDayConfirmBtn"
+            class="primary-btn"
+          >
+            Cerrar jornada
+          </button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="resetDataDialog">
       <form
         method="dialog"
@@ -2672,5 +2710,6 @@
     <script src="js/sale-client-selection.js?v=20260815-envases-pendientes"></script>
     <script src="js/app.js?v=20260815-envases-pendientes"></script>
     <script type="module" src="js/v3/bootstrap.js?v=20260815-envases-pendientes"></script>
+    <div id="closeWorkDaySummaryContent" class="hidden" style="display: none;"></div>
   </body>
 </html>

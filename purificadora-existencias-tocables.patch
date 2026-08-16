@@ -1,0 +1,678 @@
+From 00a2cb882f2ddf6c5fd539ee097a67501f93e109 Mon Sep 17 00:00:00 2001
+From: "Mayorga (via Claude)" <mayorga@purificadoratrujillo.local>
+Date: Sat, 15 Aug 2026 21:52:48 +0000
+Subject: [PATCH] =?UTF-8?q?Fix:=20permisos=20de=20inventario=20en=20Rutas?=
+ =?UTF-8?q?=20+=20cifras=20Llenos/Vac=C3=ADos=20tocables?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Reimplementación limpia de lo que traía 'parche v4' (aplicado en la
+PC pero nunca llegó a GitHub, y con corrupción de codificación en el
+código nuevo que agregaba — no se usó tal cual, se reescribió).
+
+1) permissionsFor() ya no deja que un permissions:[] vacío anule los
+   permisos base del rol (bug real: perfiles centrales con arreglo
+   vacío se quedaban sin ningún permiso en vez de heredar los de su
+   rol).
+
+2) adjust_inventory / transfer_inventory se agregan SOLO al rol
+   administrador (el parche original también se los daba a
+   repartidor y ventanilla; se acotó a propósito, mismo criterio que
+   ya se usó con Gastos: son acciones correctivas, no de operación
+   diaria).
+
+3) Las cifras de Llenos/Vacíos en el encabezado de cada Ruta ahora
+   son tocables y abren 'Corregir existencias' directo — reutilizan
+   el mecanismo data-inventory-quick + openInventoryAdjustQuick que
+   YA existía (mismo permiso, mismo modal, mismo RPC de ajuste), sin
+   agregar un MutationObserver ni detectar texto por contenido como
+   hacía el parche original (esa fue la causa más probable de que
+   los primeros intentos fallaran). Accesible por teclado
+   (Enter/Espacio) ya que no es un <button> nativo.
+
+Se agregan/reescriben 2 tests (round-stock-adjustment,
+route-inline-stock-edit-v2) con texto correcto en español —
+el parche original traía 'vacíos', 'botón', 'ubicación', 'táctil'
+corrompidos (mojibake por doble codificación, típico de PowerShell
+escribiendo archivos sin UTF-8).
+
+Bump de build a 20260815-existencias-tocables-v2.
+
+No se tocó RLS, esquema Supabase ni datos históricos.
+
+26/26 tests (tests/*.test.cjs) PASS.
+---
+ README.md                                 |  2 +-
+ css/styles.css                            | 20 +++++++++
+ index.html                                | 18 ++++-----
+ js/app.js                                 | 17 ++++++--
+ js/central-auth-ui.js                     |  2 +-
+ js/data/cash-repository.js                |  2 +-
+ js/data/clients-repository.js             |  2 +-
+ js/data/corrections-repository.js         |  2 +-
+ js/data/inventory-repository.js           |  2 +-
+ js/data/ledger-repository.js              |  2 +-
+ js/data/maintenance-repository.js         |  2 +-
+ js/data/operational-store.js              | 26 ++++++------
+ js/data/profiles-repository.js            |  4 +-
+ js/data/reports-repository.js             |  2 +-
+ js/data/repository-utils.js               |  2 +-
+ js/data/returns-repository.js             |  2 +-
+ js/data/rounds-repository.js              |  2 +-
+ js/data/sales-repository.js               |  4 +-
+ js/data/settings-repository.js            |  2 +-
+ js/data/supabase-client.js                |  4 +-
+ js/data/supplies-repository.js            |  2 +-
+ js/v3/bootstrap.js                        | 12 +++---
+ sw.js                                     |  2 +-
+ tests/central-auth-mobile.test.cjs        |  6 +--
+ tests/mobile-auth-qa.cjs                  |  2 +-
+ tests/mobile-ux-v35.test.cjs              |  2 +-
+ tests/presentation-labels.test.cjs        |  2 +-
+ tests/round-stock-adjustment.test.cjs     | 45 +++++++++++++++++++++
+ tests/route-inline-stock-edit-v2.test.cjs | 49 +++++++++++++++++++++++
+ tests/safe-uuid.test.cjs                  |  2 +-
+ tests/simplified-container-flow.test.cjs  |  2 +-
+ tests/supabase-client-uuid-load.test.cjs  |  2 +-
+ 32 files changed, 186 insertions(+), 61 deletions(-)
+ create mode 100644 tests/round-stock-adjustment.test.cjs
+ create mode 100644 tests/route-inline-stock-edit-v2.test.cjs
+
+diff --git a/README.md b/README.md
+index 970de6d..b86a9d6 100644
+--- a/README.md
++++ b/README.md
+@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si
+ Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
+ ```
+ 
+-Build actual: `20260815-icono-ruta-pickup`.
++Build actual: `20260815-existencias-tocables-v2`.
+diff --git a/css/styles.css b/css/styles.css
+index e45c180..5a35eb1 100644
+--- a/css/styles.css
++++ b/css/styles.css
+@@ -2614,3 +2614,23 @@ details.full summary {
+   border-radius: 8px;
+ }
+ .sale-date-divider:first-child { margin-top: 0; }
++
++/* ---- Cifras de Llenos/Vacíos tocables en Rutas (abre Corregir existencias) ---- */
++.route-stock-inline-edit {
++  cursor: pointer;
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  min-height: 44px;
++  min-width: 44px;
++  padding: 2px 8px;
++  border-radius: 10px;
++  border-bottom: 2px dashed rgba(255, 255, 255, 0.55);
++  transition: background 0.12s ease;
++}
++.route-stock-inline-edit:hover,
++.route-stock-inline-edit:focus-visible {
++  background: rgba(255, 255, 255, 0.14);
++  outline: none;
++}
++.route-stock-inline-edit:active { transform: scale(0.96); }
+diff --git a/index.html b/index.html
+index 9c88a9b..86190ee 100644
+--- a/index.html
++++ b/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+-    <meta name="app-build" content="20260815-icono-ruta-pickup" />
++    <meta name="app-build" content="20260815-existencias-tocables-v2" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta name="theme-color" content="#0d6efd" />
+     <title>Purificadora Trujillo · ERP V3.5</title>
+@@ -12,7 +12,7 @@
+       href="assets/logo/logo-trujillo.svg"
+       type="image/svg+xml"
+     />
+-    <link rel="stylesheet" href="css/styles.css?v=20260815-icono-ruta-pickup" />
++    <link rel="stylesheet" href="css/styles.css?v=20260815-existencias-tocables-v2" />
+   </head>
+   <body>
+     <div class="app-shell">
+@@ -2556,12 +2556,12 @@
+         }, 1200);
+       })();
+     </script>
+-    <script src="js/central-auth-ui.js?v=20260815-icono-ruta-pickup"></script>
+-    <script src="js/safe-uuid.js?v=20260815-icono-ruta-pickup"></script>
+-    <script src="js/presentation-labels.js?v=20260815-icono-ruta-pickup"></script>
+-    <script src="js/user-display.js?v=20260815-icono-ruta-pickup"></script>
+-    <script src="js/sale-client-selection.js?v=20260815-icono-ruta-pickup"></script>
+-    <script src="js/app.js?v=20260815-icono-ruta-pickup"></script>
+-    <script type="module" src="js/v3/bootstrap.js?v=20260815-icono-ruta-pickup"></script>
++    <script src="js/central-auth-ui.js?v=20260815-existencias-tocables-v2"></script>
++    <script src="js/safe-uuid.js?v=20260815-existencias-tocables-v2"></script>
++    <script src="js/presentation-labels.js?v=20260815-existencias-tocables-v2"></script>
++    <script src="js/user-display.js?v=20260815-existencias-tocables-v2"></script>
++    <script src="js/sale-client-selection.js?v=20260815-existencias-tocables-v2"></script>
++    <script src="js/app.js?v=20260815-existencias-tocables-v2"></script>
++    <script type="module" src="js/v3/bootstrap.js?v=20260815-existencias-tocables-v2"></script>
+   </body>
+ </html>
+diff --git a/js/app.js b/js/app.js
+index 6ee302f..563d10d 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1,7 +1,7 @@
+ (() => {
+   "use strict";
+ 
+-  const APP_SCRIPT_BUILD = "20260815-icono-ruta-pickup";
++  const APP_SCRIPT_BUILD = "20260815-existencias-tocables-v2";
+   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
+ 
+   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
+@@ -97,6 +97,8 @@
+         "create_expense",
+         "view_expenses",
+         "view_inventory",
++        "adjust_inventory",
++        "transfer_inventory",
+         "rounds",
+         "supplies",
+         ...ESSENTIAL_ADMIN_PERMISSIONS,
+@@ -992,7 +994,9 @@
+     return ageMinutes <= 30 || Boolean(session && !session.closedAt);
+   }
+   function permissionsFor(user = activeUser()) {
+-    return user?.permissions || ROLE_PERMISSIONS[user?.role] || [];
++    return user?.permissions?.length
++      ? user.permissions
++      : ROLE_PERMISSIONS[user?.role] || [];
+   }
+   function can(permission) {
+     const user = activeUser();
+@@ -1873,6 +1877,13 @@
+       if (inventoryAction?.dataset.inventoryQuick === "fill")
+         openFillContainersDialog();
+     });
++    document.body.addEventListener("keydown", (e) => {
++      if (e.key !== "Enter" && e.key !== " ") return;
++      const stockFigure = e.target.closest(".route-stock-inline-edit");
++      if (!stockFigure) return;
++      e.preventDefault();
++      stockFigure.click();
++    });
+     $("menuBtn").addEventListener("click", () =>
+       $("sidebar").classList.toggle("open"),
+     );
+@@ -4135,7 +4146,7 @@
+         const trackerLineHtml = (index) =>
+           `<div class="route-progress-line${trackerStep >= index ? " is-done" : ""}"></div>`;
+         const routeTrackerHtml = `<div class="route-progress-track">${trackerStepHtml(0, "Preparando")}${trackerLineHtml(1)}${trackerStepHtml(1, "En ruta")}${trackerLineHtml(2)}${trackerStepHtml(2, "Regreso")}</div>`;
+-        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}">${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}<button class="text-btn" data-inventory-quick="adjust" data-location="${route}">Corregir existencias</button></div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
++        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}${can("adjust_inventory") ? " route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong class="${can("adjust_inventory") ? "route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="empty_${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}<button class="text-btn" data-inventory-quick="adjust" data-location="${route}">Corregir existencias</button></div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
+       })
+       .join("");
+ 
+diff --git a/js/central-auth-ui.js b/js/central-auth-ui.js
+index 62ef2a5..a57afc7 100644
+--- a/js/central-auth-ui.js
++++ b/js/central-auth-ui.js
+@@ -1,7 +1,7 @@
+ (function exposeCentralAuthUi(globalScope) {
+   "use strict";
+ 
+-  const BUILD = "20260815-icono-ruta-pickup";
++  const BUILD = "20260815-existencias-tocables-v2";
+   const TRIGGER_SELECTOR =
+     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
+   const bindings = new WeakMap();
+diff --git a/js/data/cash-repository.js b/js/data/cash-repository.js
+index fee900f..a98e77b 100644
+--- a/js/data/cash-repository.js
++++ b/js/data/cash-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ const expensePaymentMethod = (value) => {
+   const normalized = String(value || "otro").trim().toLowerCase();
+diff --git a/js/data/clients-repository.js b/js/data/clients-repository.js
+index b7c0267..0e11c09 100644
+--- a/js/data/clients-repository.js
++++ b/js/data/clients-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ function payload(client) {
+   return {
+diff --git a/js/data/corrections-repository.js b/js/data/corrections-repository.js
+index b0a727b..7401575 100644
+--- a/js/data/corrections-repository.js
++++ b/js/data/corrections-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
+ 
+diff --git a/js/data/inventory-repository.js b/js/data/inventory-repository.js
+index 8650908..ca3e184 100644
+--- a/js/data/inventory-repository.js
++++ b/js/data/inventory-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const inventoryRepository = {
+   listLocations: () => selectAll("inventory_locations"),
+diff --git a/js/data/ledger-repository.js b/js/data/ledger-repository.js
+index a97b436..8b76cd9 100644
+--- a/js/data/ledger-repository.js
++++ b/js/data/ledger-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const ledgerRepository = {
+   listPayments: () =>
+diff --git a/js/data/maintenance-repository.js b/js/data/maintenance-repository.js
+index a75b600..9170e9d 100644
+--- a/js/data/maintenance-repository.js
++++ b/js/data/maintenance-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const maintenanceRepository = {
+   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),
+diff --git a/js/data/operational-store.js b/js/data/operational-store.js
+index ff47195..8563873 100644
+--- a/js/data/operational-store.js
++++ b/js/data/operational-store.js
+@@ -1,16 +1,16 @@
+-import { profilesRepository } from "./profiles-repository.js?v=20260815-icono-ruta-pickup";
+-import { clientsRepository } from "./clients-repository.js?v=20260815-icono-ruta-pickup";
+-import { salesRepository } from "./sales-repository.js?v=20260815-icono-ruta-pickup";
+-import { ledgerRepository } from "./ledger-repository.js?v=20260815-icono-ruta-pickup";
+-import { cashRepository } from "./cash-repository.js?v=20260815-icono-ruta-pickup";
+-import { inventoryRepository } from "./inventory-repository.js?v=20260815-icono-ruta-pickup";
+-import { roundsRepository } from "./rounds-repository.js?v=20260815-icono-ruta-pickup";
+-import { suppliesRepository } from "./supplies-repository.js?v=20260815-icono-ruta-pickup";
+-import { settingsRepository } from "./settings-repository.js?v=20260815-icono-ruta-pickup";
+-import { reportsRepository } from "./reports-repository.js?v=20260815-icono-ruta-pickup";
+-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-icono-ruta-pickup";
+-import { returnsRepository } from "./returns-repository.js?v=20260815-icono-ruta-pickup";
+-import { correctionsRepository } from "./corrections-repository.js?v=20260815-icono-ruta-pickup";
++import { profilesRepository } from "./profiles-repository.js?v=20260815-existencias-tocables-v2";
++import { clientsRepository } from "./clients-repository.js?v=20260815-existencias-tocables-v2";
++import { salesRepository } from "./sales-repository.js?v=20260815-existencias-tocables-v2";
++import { ledgerRepository } from "./ledger-repository.js?v=20260815-existencias-tocables-v2";
++import { cashRepository } from "./cash-repository.js?v=20260815-existencias-tocables-v2";
++import { inventoryRepository } from "./inventory-repository.js?v=20260815-existencias-tocables-v2";
++import { roundsRepository } from "./rounds-repository.js?v=20260815-existencias-tocables-v2";
++import { suppliesRepository } from "./supplies-repository.js?v=20260815-existencias-tocables-v2";
++import { settingsRepository } from "./settings-repository.js?v=20260815-existencias-tocables-v2";
++import { reportsRepository } from "./reports-repository.js?v=20260815-existencias-tocables-v2";
++import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-existencias-tocables-v2";
++import { returnsRepository } from "./returns-repository.js?v=20260815-existencias-tocables-v2";
++import { correctionsRepository } from "./corrections-repository.js?v=20260815-existencias-tocables-v2";
+ 
+ const fromCents = (value) => Number(value || 0) / 100;
+ const locationKey = (row) =>
+diff --git a/js/data/profiles-repository.js b/js/data/profiles-repository.js
+index 29a1518..cb5bdd9 100644
+--- a/js/data/profiles-repository.js
++++ b/js/data/profiles-repository.js
+@@ -2,8 +2,8 @@ import {
+   supabase,
+   getDeviceId,
+   getDeviceName,
+-} from "./supabase-client.js?v=20260815-icono-ruta-pickup";
+-import { selectAll, rpc } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++} from "./supabase-client.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ const PUBLIC_PROFILE_FIELDS =
+   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
+diff --git a/js/data/reports-repository.js b/js/data/reports-repository.js
+index acdd5b9..c64d0f0 100644
+--- a/js/data/reports-repository.js
++++ b/js/data/reports-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const reportsRepository = {
+   listAudit: () =>
+diff --git a/js/data/repository-utils.js b/js/data/repository-utils.js
+index bc34088..1aa2fcd 100644
+--- a/js/data/repository-utils.js
++++ b/js/data/repository-utils.js
+@@ -1,7 +1,7 @@
+ import {
+   supabase,
+   getDeviceId,
+-} from "./supabase-client.js?v=20260815-icono-ruta-pickup";
++} from "./supabase-client.js?v=20260815-existencias-tocables-v2";
+ 
+ const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
+ const CENTRAL_SESSION_ERROR = "central_session_expired";
+diff --git a/js/data/returns-repository.js b/js/data/returns-repository.js
+index e83ae9a..19a5c37 100644
+--- a/js/data/returns-repository.js
++++ b/js/data/returns-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const returnsRepository = {
+   list: async () => {
+diff --git a/js/data/rounds-repository.js b/js/data/rounds-repository.js
+index 3e82d78..784f392 100644
+--- a/js/data/rounds-repository.js
++++ b/js/data/rounds-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const roundsRepository = {
+   list: () =>
+diff --git a/js/data/sales-repository.js b/js/data/sales-repository.js
+index bb7aeca..63e8afe 100644
+--- a/js/data/sales-repository.js
++++ b/js/data/sales-repository.js
+@@ -1,5 +1,5 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
+-import { supabase } from "./supabase-client.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { supabase } from "./supabase-client.js?v=20260815-existencias-tocables-v2";
+ 
+ export const salesRepository = {
+   list: () =>
+diff --git a/js/data/settings-repository.js b/js/data/settings-repository.js
+index 872a201..8ab9bec 100644
+--- a/js/data/settings-repository.js
++++ b/js/data/settings-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const settingsRepository = {
+   list: () => selectAll("settings"),
+diff --git a/js/data/supabase-client.js b/js/data/supabase-client.js
+index dcd5d60..74b5cf3 100644
+--- a/js/data/supabase-client.js
++++ b/js/data/supabase-client.js
+@@ -1,7 +1,7 @@
+ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
+-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-icono-ruta-pickup";
++import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-existencias-tocables-v2";
+ 
+-export const SUPABASE_CLIENT_BUILD = "20260815-icono-ruta-pickup";
++export const SUPABASE_CLIENT_BUILD = "20260815-existencias-tocables-v2";
+ export const DEVICE_KEY = "purificadora_v3_device_id";
+ export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
+ export const AUTH_STORAGE_KEY = "purificadora_v3_auth";
+diff --git a/js/data/supplies-repository.js b/js/data/supplies-repository.js
+index 740ecc1..5fafdd6 100644
+--- a/js/data/supplies-repository.js
++++ b/js/data/supplies-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-icono-ruta-pickup";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+ 
+ export const suppliesRepository = {
+   list: () => selectAll("supplies", "*", (query) => query.order("name")),
+diff --git a/js/v3/bootstrap.js b/js/v3/bootstrap.js
+index db6e7cf..b5d6812 100644
+--- a/js/v3/bootstrap.js
++++ b/js/v3/bootstrap.js
+@@ -6,13 +6,13 @@ import {
+   getDeviceName,
+   setRememberDevicePreference,
+   REMEMBERED_EMAIL_KEY,
+-} from "../data/supabase-client.js?v=20260815-icono-ruta-pickup";
+-import { OperationalStore } from "../data/operational-store.js?v=20260815-icono-ruta-pickup";
+-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-icono-ruta-pickup";
+-import { clientsRepository } from "../data/clients-repository.js?v=20260815-icono-ruta-pickup";
+-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-icono-ruta-pickup";
++} from "../data/supabase-client.js?v=20260815-existencias-tocables-v2";
++import { OperationalStore } from "../data/operational-store.js?v=20260815-existencias-tocables-v2";
++import { profilesRepository } from "../data/profiles-repository.js?v=20260815-existencias-tocables-v2";
++import { clientsRepository } from "../data/clients-repository.js?v=20260815-existencias-tocables-v2";
++import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-existencias-tocables-v2";
+ 
+-const BOOTSTRAP_BUILD = "20260815-icono-ruta-pickup";
++const BOOTSTRAP_BUILD = "20260815-existencias-tocables-v2";
+ const APP_BUILD =
+   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
+ const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
+diff --git a/sw.js b/sw.js
+index 84cd0f2..bf12bab 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,4 +1,4 @@
+-const BUILD = "20260815-icono-ruta-pickup";
++const BUILD = "20260815-existencias-tocables-v2";
+ const CACHE = `purificadora-trujillo-${BUILD}`;
+ const ASSETS = [
+   "./",
+diff --git a/tests/central-auth-mobile.test.cjs b/tests/central-auth-mobile.test.cjs
+index 35f2966..d785b6e 100644
+--- a/tests/central-auth-mobile.test.cjs
++++ b/tests/central-auth-mobile.test.cjs
+@@ -17,7 +17,7 @@ const dataModules = fs
+ const moduleGraph = `${bootstrap}\n${dataModules}`;
+ 
+ assert.match(html, /id="v3OpenAuthBtn"[\s\S]*?type="button"[\s\S]*?aria-controls="v3AuthDialog"/);
+-assert.match(html, /meta name="app-build" content="20260815-icono-ruta-pickup"/);
++assert.match(html, /meta name="app-build" content="20260815-existencias-tocables-v2"/);
+ assert.match(html, /id="v3AuthTrace"/);
+ assert.match(html, /central-auth-ui\.js no cargado/);
+ assert.match(authUi, /bindStableAuthDelegation\(document\)/);
+@@ -41,7 +41,7 @@ assert.match(bootstrap, /Bootstrap build:/);
+ assert.match(bootstrap, /Central auth UI build:/);
+ assert.match(bootstrap, /Service-worker\/cache version:/);
+ assert.match(css, /#v3OpenAuthBtn[\s\S]*?touch-action: manipulation/);
+-assert.match(sw, /20260815-icono-ruta-pickup/);
++assert.match(sw, /20260815-existencias-tocables-v2/);
+ assert.match(app, /PurificadoraAppScriptBuild = APP_SCRIPT_BUILD/);
+ assert.match(bootstrap, /APP_SCRIPT_BUILD = window\.PurificadoraAppScriptBuild/);
+ assert.match(sw, /GET_PURIFICADORA_BUILD/);
+@@ -54,7 +54,7 @@ assert.doesNotMatch(
+ );
+ assert.match(
+   bootstrap,
+-  /operational-store\.js\?v=20260815-icono-ruta-pickup/,
++  /operational-store\.js\?v=20260815-existencias-tocables-v2/,
+ );
+ 
+ const submitStart = bootstrap.indexOf('form.addEventListener("submit"');
+diff --git a/tests/mobile-auth-qa.cjs b/tests/mobile-auth-qa.cjs
+index df8b7b3..a4e07f7 100644
+--- a/tests/mobile-auth-qa.cjs
++++ b/tests/mobile-auth-qa.cjs
+@@ -30,7 +30,7 @@ async function openPage(browser, viewport, withoutNativeUuid = false) {
+     const mobile = await openPage(browser, { width: 390, height: 844 }, true);
+     assert.equal(
+       await mobile.page.locator('meta[name="app-build"]').getAttribute("content"),
+-      "20260815-icono-ruta-pickup",
++      "20260815-existencias-tocables-v2",
+     );
+     assert.match(
+       await mobile.page.evaluate(() => window.PurificadoraCrypto.safeRandomUUID()),
+diff --git a/tests/mobile-ux-v35.test.cjs b/tests/mobile-ux-v35.test.cjs
+index ea9c84a..55cbf96 100644
+--- a/tests/mobile-ux-v35.test.cjs
++++ b/tests/mobile-ux-v35.test.cjs
+@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
+ assert.match(bootstrap, /host\.appendChild\(panel\)/);
+ assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
+ assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
+-assert.match(sw, /20260815-icono-ruta-pickup/);
++assert.match(sw, /20260815-existencias-tocables-v2/);
+ assert.match(html, /class="panel sales-list-panel"/);
+ assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
+ assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);
+diff --git a/tests/presentation-labels.test.cjs b/tests/presentation-labels.test.cjs
+index e59bf13..0a1f301 100644
+--- a/tests/presentation-labels.test.cjs
++++ b/tests/presentation-labels.test.cjs
+@@ -33,6 +33,6 @@ assert.match(
+ assert.match(app, /register\(`\.\/sw\.js\?v=\$\{encodeURIComponent\(appBuild\)\}`\)/);
+ assert.match(bootstrap, /badge\.hidden = centralConnected \|\| noConnection/);
+ assert.match(bootstrap, /\? "Conectar"/);
+-assert.match(html, /presentation-labels\.js\?v=20260815-icono-ruta-pickup/);
++assert.match(html, /presentation-labels\.js\?v=20260815-existencias-tocables-v2/);
+ 
+ console.log("presentation-labels: 17/17 PASS");
+diff --git a/tests/round-stock-adjustment.test.cjs b/tests/round-stock-adjustment.test.cjs
+new file mode 100644
+index 0000000..9ac37a9
+--- /dev/null
++++ b/tests/round-stock-adjustment.test.cjs
+@@ -0,0 +1,45 @@
++const fs = require("fs");
++const assert = require("assert");
++
++const app = fs.readFileSync("js/app.js", "utf8");
++
++function policyBlock(role, nextRole) {
++  const start = app.indexOf(`${role}: {`);
++  const end = app.indexOf(`${nextRole}:`, start);
++  assert.ok(start >= 0 && end > start, `se localiza ACCESS_POLICY de ${role}`);
++  return app.slice(start, end);
++}
++
++const admin = policyBlock("administrador", "repartidor");
++assert.match(admin, /"adjust_inventory"/, "administrador puede corregir existencias");
++assert.match(admin, /"transfer_inventory"/, "administrador puede transferir");
++
++const repartidor = policyBlock("repartidor", "ventanilla");
++assert.doesNotMatch(
++  repartidor,
++  /"adjust_inventory"|"transfer_inventory"/,
++  "repartidor NO debe poder ajustar/transferir inventario",
++);
++
++const ventanilla = policyBlock("ventanilla", "inventario");
++assert.doesNotMatch(
++  ventanilla,
++  /"adjust_inventory"|"transfer_inventory"/,
++  "ventanilla NO debe poder ajustar/transferir inventario",
++);
++
++assert.match(
++  app,
++  /function openInventoryAdjustQuick\(location\)[\s\S]*?requirePermission\("adjust_inventory"\)/,
++  "Corregir existencias reutiliza el permiso y flujo seguro existente",
++);
++
++// Bug real reportado: permissionsFor() tomaba un arreglo vacío como definitivo
++// en vez de caer al permiso base del rol (perfiles centrales con permissions: []).
++assert.match(
++  app,
++  /function permissionsFor\(user = activeUser\(\)\) \{\s*return user\?\.permissions\?\.length/,
++  "un permissions:[] vacío no debe anular los permisos base del rol",
++);
++
++console.log("round-stock-adjustment: 5/5 PASS");
+diff --git a/tests/route-inline-stock-edit-v2.test.cjs b/tests/route-inline-stock-edit-v2.test.cjs
+new file mode 100644
+index 0000000..a0d2e51
+--- /dev/null
++++ b/tests/route-inline-stock-edit-v2.test.cjs
+@@ -0,0 +1,49 @@
++const fs = require("fs");
++const assert = require("assert");
++
++const app = fs.readFileSync("js/app.js", "utf8");
++const css = fs.readFileSync("css/styles.css", "utf8");
++
++// La cifra de Llenos debe apuntar a la ubicación de la ruta, y la de Vacíos
++// a "empty_<ruta>", reutilizando el mismo mecanismo data-inventory-quick que
++// ya usan el resto de las tarjetas (Local, Inventario), no un observer aparte.
++assert.match(
++  app,
++  /route-stock-inline-edit[\s\S]*?data-inventory-quick="adjust" data-location="\$\{route\}"/,
++  "la cifra de Llenos abre Corregir existencias de la ruta",
++);
++assert.match(
++  app,
++  /route-stock-inline-edit[\s\S]*?data-location="empty_\$\{route\}"/,
++  "la cifra de Vacíos abre Corregir existencias del vacío de la ruta",
++);
++
++// Debe estar condicionado al permiso, no visible/interactivo para cualquiera.
++assert.match(
++  app,
++  /can\("adjust_inventory"\) \? ` ?data-inventory-quick="adjust"/,
++  "solo aparece tocable si el usuario tiene adjust_inventory",
++);
++
++// Accesible por teclado (Enter/Espacio), ya que no es un <button> nativo.
++assert.match(
++  app,
++  /e\.key !== "Enter" && e\.key !== " "[\s\S]*?route-stock-inline-edit/,
++  "responde a Enter/Espacio para accesibilidad de teclado",
++);
++
++// No debe depender de un MutationObserver ni de detectar texto por contenido:
++// eso fue lo que hizo frágiles los intentos anteriores.
++assert.doesNotMatch(
++  app,
++  /MutationObserver/,
++  "no debe usarse un MutationObserver para esta función",
++);
++
++assert.match(
++  css,
++  /\.route-stock-inline-edit[\s\S]*?min-height:\s*44px/,
++  "objetivo táctil >=44px",
++);
++
++console.log("route-inline-stock-edit-v2: 6/6 PASS");
+diff --git a/tests/safe-uuid.test.cjs b/tests/safe-uuid.test.cjs
+index 61f1f39..e836026 100644
+--- a/tests/safe-uuid.test.cjs
++++ b/tests/safe-uuid.test.cjs
+@@ -25,7 +25,7 @@ assert.match(
+ );
+ assert.throws(() => safeRandomUUID({}), /generador criptogr/);
+ 
+-assert.match(html, /safe-uuid\.js\?v=20260815-icono-ruta-pickup/);
++assert.match(html, /safe-uuid\.js\?v=20260815-existencias-tocables-v2/);
+ assert.match(sw, /js\/safe-uuid\.js/);
+ assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
+ assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);
+diff --git a/tests/simplified-container-flow.test.cjs b/tests/simplified-container-flow.test.cjs
+index cf1cbb9..623b31b 100644
+--- a/tests/simplified-container-flow.test.cjs
++++ b/tests/simplified-container-flow.test.cjs
+@@ -49,6 +49,6 @@ ok(/finalize_round_close/.test(read("supabase/migrations/20260814153453_round_re
+ ok(/audit_log/.test(migration), "preparar llenos registra auditoría");
+ ok(/can_operate\('rounds'\)/.test(migration), "los permisos se validan en backend");
+ ok(!/drop\s+table|truncate\s+table|delete\s+from\s+public\.(sales|rounds)/i.test(migration), "la migración no es destructiva");
+-ok(/20260815-icono-ruta-pickup/.test(sw), "service worker usa el build nuevo");
++ok(/20260815-existencias-tocables-v2/.test(sw), "service worker usa el build nuevo");
+ 
+ console.log(`simplified-container-flow: ${checks}/${checks} PASS`);
+diff --git a/tests/supabase-client-uuid-load.test.cjs b/tests/supabase-client-uuid-load.test.cjs
+index 2974d3b..4f744e5 100644
+--- a/tests/supabase-client-uuid-load.test.cjs
++++ b/tests/supabase-client-uuid-load.test.cjs
+@@ -6,7 +6,7 @@ const { safeRandomUUID } = require("../js/safe-uuid.js");
+ const root = path.resolve(__dirname, "..");
+ const clientPath = path.join(root, "js/data/supabase-client.js");
+ const source = fs.readFileSync(clientPath, "utf8");
+-const build = "20260815-icono-ruta-pickup";
++const build = "20260815-existencias-tocables-v2";
+ 
+ assert.doesNotMatch(source, /crypto\.randomUUID\s*\(/);
+ assert.doesNotMatch(source, /\.randomUUID\s*\(/);
+-- 
+2.43.0
+

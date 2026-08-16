@@ -1,0 +1,512 @@
+From 20edcd19bafbad16139b6f7ea9d0aee5e75992e1 Mon Sep 17 00:00:00 2001
+From: "Mayorga (via Claude)" <mayorga@purificadoratrujillo.local>
+Date: Sat, 15 Aug 2026 23:00:41 +0000
+Subject: [PATCH] Fix: sesion fantasma -- employeeSession guardado que ya no
+ resuelve a nadie real
+
+Causa exacta confirmada por Mayorga: al cerrar con la X la ventana
+de cuenta central sin llenarla, la app quedaba con el menu vacio
+pero SIN mostrar ningun dialogo de login -- el sidebar se veia
+abierto y vacio, con el dashboard de fondo.
+
+El fix anterior (commit 9adf3cd) revisaba unicamente si
+employeeSession existia, pero ese objeto puede seguir guardado en
+sessionStorage de un login anterior en ese mismo navegador, AUNQUE
+state.users todavia no haya sincronizado con la cuenta central esta
+vez. Eso deja activeUser() en null (no encuentra el id guardado
+dentro de state.users) mientras employeeSession sigue siendo
+verdadero -- una sesion fantasma que no bloquea el acceso (no
+fuerza la pantalla de login) pero tampoco resuelve a ningun usuario
+real, asi que canAccess() oculta todo el menu sin explicacion.
+
+Se cambia la condicion de !employeeSession a !activeUser(), que
+si detecta este caso, y se limpia explicitamente employeeSession +
+sessionStorage antes de reabrir la pantalla de acceso.
+
+No se agrego una limpieza mas agresiva/automatica en otros puntos
+de la app (ej. cada vez que se sincroniza con central) para evitar
+el riesgo de cerrar sesion a alguien valido mientras los datos
+todavia estan cargando -- se deja acotado a este punto de entrada
+confirmado. Si el mismo sintoma aparece por otra via, se revisa con
+ese caso concreto en mano.
+
+Bump de build a 20260815-sesion-fantasma-fix.
+
+28/28 tests (tests/*.test.cjs) PASS.
+---
+ README.md                                |  2 +-
+ index.html                               | 18 ++++++++--------
+ js/app.js                                | 19 ++++++++++-------
+ js/central-auth-ui.js                    |  2 +-
+ js/data/cash-repository.js               |  2 +-
+ js/data/clients-repository.js            |  2 +-
+ js/data/corrections-repository.js        |  2 +-
+ js/data/inventory-repository.js          |  2 +-
+ js/data/ledger-repository.js             |  2 +-
+ js/data/maintenance-repository.js        |  2 +-
+ js/data/operational-store.js             | 26 ++++++++++++------------
+ js/data/profiles-repository.js           |  4 ++--
+ js/data/reports-repository.js            |  2 +-
+ js/data/repository-utils.js              |  2 +-
+ js/data/returns-repository.js            |  2 +-
+ js/data/rounds-repository.js             |  2 +-
+ js/data/sales-repository.js              |  4 ++--
+ js/data/settings-repository.js           |  2 +-
+ js/data/supabase-client.js               |  4 ++--
+ js/data/supplies-repository.js           |  2 +-
+ js/v3/bootstrap.js                       | 12 +++++------
+ sw.js                                    |  2 +-
+ tests/central-auth-mobile.test.cjs       |  6 +++---
+ tests/mobile-auth-qa.cjs                 |  2 +-
+ tests/mobile-ux-v35.test.cjs             |  2 +-
+ tests/presentation-labels.test.cjs       |  2 +-
+ tests/safe-uuid.test.cjs                 |  2 +-
+ tests/simplified-container-flow.test.cjs |  2 +-
+ tests/supabase-client-uuid-load.test.cjs |  2 +-
+ 29 files changed, 70 insertions(+), 65 deletions(-)
+
+diff --git a/README.md b/README.md
+index 47c0e9b..ce4ab1f 100644
+--- a/README.md
++++ b/README.md
+@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si
+ Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
+ ```
+ 
+-Build actual: `20260815-cierre-modal-seguro`.
++Build actual: `20260815-sesion-fantasma-fix`.
+diff --git a/index.html b/index.html
+index b7e87e8..c517d45 100644
+--- a/index.html
++++ b/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+-    <meta name="app-build" content="20260815-cierre-modal-seguro" />
++    <meta name="app-build" content="20260815-sesion-fantasma-fix" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta name="theme-color" content="#0d6efd" />
+     <title>Purificadora Trujillo · ERP V3.5</title>
+@@ -12,7 +12,7 @@
+       href="assets/logo/logo-trujillo.svg"
+       type="image/svg+xml"
+     />
+-    <link rel="stylesheet" href="css/styles.css?v=20260815-cierre-modal-seguro" />
++    <link rel="stylesheet" href="css/styles.css?v=20260815-sesion-fantasma-fix" />
+   </head>
+   <body>
+     <div class="app-shell">
+@@ -2599,12 +2599,12 @@
+         }, 1200);
+       })();
+     </script>
+-    <script src="js/central-auth-ui.js?v=20260815-cierre-modal-seguro"></script>
+-    <script src="js/safe-uuid.js?v=20260815-cierre-modal-seguro"></script>
+-    <script src="js/presentation-labels.js?v=20260815-cierre-modal-seguro"></script>
+-    <script src="js/user-display.js?v=20260815-cierre-modal-seguro"></script>
+-    <script src="js/sale-client-selection.js?v=20260815-cierre-modal-seguro"></script>
+-    <script src="js/app.js?v=20260815-cierre-modal-seguro"></script>
+-    <script type="module" src="js/v3/bootstrap.js?v=20260815-cierre-modal-seguro"></script>
++    <script src="js/central-auth-ui.js?v=20260815-sesion-fantasma-fix"></script>
++    <script src="js/safe-uuid.js?v=20260815-sesion-fantasma-fix"></script>
++    <script src="js/presentation-labels.js?v=20260815-sesion-fantasma-fix"></script>
++    <script src="js/user-display.js?v=20260815-sesion-fantasma-fix"></script>
++    <script src="js/sale-client-selection.js?v=20260815-sesion-fantasma-fix"></script>
++    <script src="js/app.js?v=20260815-sesion-fantasma-fix"></script>
++    <script type="module" src="js/v3/bootstrap.js?v=20260815-sesion-fantasma-fix"></script>
+   </body>
+ </html>
+diff --git a/js/app.js b/js/app.js
+index 8feb874..8ecb42d 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1,7 +1,7 @@
+ (() => {
+   "use strict";
+ 
+-  const APP_SCRIPT_BUILD = "20260815-cierre-modal-seguro";
++  const APP_SCRIPT_BUILD = "20260815-sesion-fantasma-fix";
+   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
+ 
+   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
+@@ -2126,13 +2126,18 @@
+   function bindGeneral() {
+     $("v3AuthDialog").addEventListener("close", () => {
+       // Si se cierra esta ventana sin completar el login (botón × , ESC,
+-      // clic fuera) y no quedó una sesión de empleado válida, siempre se
+-      // regresa a la pantalla de acceso limpia. No depende de coordinar
+-      // el orden exacto con el listener de central-auth-ui.js: sin
+-      // importar la causa, nunca debe quedar la app a medias con el
+-      // menú vacío.
++      // clic fuera) y no quedó una sesión de empleado REAL Y VÁLIDA,
++      // siempre se regresa a la pantalla de acceso limpia. Ojo: no basta
++      // con revisar `employeeSession` -- ese objeto puede seguir en
++      // sessionStorage de un login anterior aunque state.users todavía
++      // no haya sincronizado con la cuenta central, dejando `activeUser()`
++      // en null (sesión "fantasma": no bloquea el acceso, pero tampoco
++      // resuelve a nadie real, y el menú queda vacío). Por eso se revisa
++      // activeUser(), no solo la existencia de employeeSession.
+       setPendingAccessFlow(null);
+-      if (!employeeSession) {
++      if (!activeUser()) {
++        employeeSession = null;
++        sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+         window.setTimeout(() => openAccessChoice({ clearPending: true }), 0);
+       }
+     });
+diff --git a/js/central-auth-ui.js b/js/central-auth-ui.js
+index 8feac6a..a08c790 100644
+--- a/js/central-auth-ui.js
++++ b/js/central-auth-ui.js
+@@ -1,7 +1,7 @@
+ (function exposeCentralAuthUi(globalScope) {
+   "use strict";
+ 
+-  const BUILD = "20260815-cierre-modal-seguro";
++  const BUILD = "20260815-sesion-fantasma-fix";
+   const TRIGGER_SELECTOR =
+     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
+   const bindings = new WeakMap();
+diff --git a/js/data/cash-repository.js b/js/data/cash-repository.js
+index 5eebcc3..f2c4b15 100644
+--- a/js/data/cash-repository.js
++++ b/js/data/cash-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ const expensePaymentMethod = (value) => {
+   const normalized = String(value || "otro").trim().toLowerCase();
+diff --git a/js/data/clients-repository.js b/js/data/clients-repository.js
+index a0db095..edcf4be 100644
+--- a/js/data/clients-repository.js
++++ b/js/data/clients-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ function payload(client) {
+   return {
+diff --git a/js/data/corrections-repository.js b/js/data/corrections-repository.js
+index a0e933b..0a494db 100644
+--- a/js/data/corrections-repository.js
++++ b/js/data/corrections-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
+ 
+diff --git a/js/data/inventory-repository.js b/js/data/inventory-repository.js
+index 622c10f..95dd942 100644
+--- a/js/data/inventory-repository.js
++++ b/js/data/inventory-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const inventoryRepository = {
+   listLocations: () => selectAll("inventory_locations"),
+diff --git a/js/data/ledger-repository.js b/js/data/ledger-repository.js
+index 87d57c5..8e27b98 100644
+--- a/js/data/ledger-repository.js
++++ b/js/data/ledger-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const ledgerRepository = {
+   listPayments: () =>
+diff --git a/js/data/maintenance-repository.js b/js/data/maintenance-repository.js
+index 2567191..230db06 100644
+--- a/js/data/maintenance-repository.js
++++ b/js/data/maintenance-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const maintenanceRepository = {
+   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),
+diff --git a/js/data/operational-store.js b/js/data/operational-store.js
+index 40f1786..b20f83d 100644
+--- a/js/data/operational-store.js
++++ b/js/data/operational-store.js
+@@ -1,16 +1,16 @@
+-import { profilesRepository } from "./profiles-repository.js?v=20260815-cierre-modal-seguro";
+-import { clientsRepository } from "./clients-repository.js?v=20260815-cierre-modal-seguro";
+-import { salesRepository } from "./sales-repository.js?v=20260815-cierre-modal-seguro";
+-import { ledgerRepository } from "./ledger-repository.js?v=20260815-cierre-modal-seguro";
+-import { cashRepository } from "./cash-repository.js?v=20260815-cierre-modal-seguro";
+-import { inventoryRepository } from "./inventory-repository.js?v=20260815-cierre-modal-seguro";
+-import { roundsRepository } from "./rounds-repository.js?v=20260815-cierre-modal-seguro";
+-import { suppliesRepository } from "./supplies-repository.js?v=20260815-cierre-modal-seguro";
+-import { settingsRepository } from "./settings-repository.js?v=20260815-cierre-modal-seguro";
+-import { reportsRepository } from "./reports-repository.js?v=20260815-cierre-modal-seguro";
+-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-cierre-modal-seguro";
+-import { returnsRepository } from "./returns-repository.js?v=20260815-cierre-modal-seguro";
+-import { correctionsRepository } from "./corrections-repository.js?v=20260815-cierre-modal-seguro";
++import { profilesRepository } from "./profiles-repository.js?v=20260815-sesion-fantasma-fix";
++import { clientsRepository } from "./clients-repository.js?v=20260815-sesion-fantasma-fix";
++import { salesRepository } from "./sales-repository.js?v=20260815-sesion-fantasma-fix";
++import { ledgerRepository } from "./ledger-repository.js?v=20260815-sesion-fantasma-fix";
++import { cashRepository } from "./cash-repository.js?v=20260815-sesion-fantasma-fix";
++import { inventoryRepository } from "./inventory-repository.js?v=20260815-sesion-fantasma-fix";
++import { roundsRepository } from "./rounds-repository.js?v=20260815-sesion-fantasma-fix";
++import { suppliesRepository } from "./supplies-repository.js?v=20260815-sesion-fantasma-fix";
++import { settingsRepository } from "./settings-repository.js?v=20260815-sesion-fantasma-fix";
++import { reportsRepository } from "./reports-repository.js?v=20260815-sesion-fantasma-fix";
++import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-sesion-fantasma-fix";
++import { returnsRepository } from "./returns-repository.js?v=20260815-sesion-fantasma-fix";
++import { correctionsRepository } from "./corrections-repository.js?v=20260815-sesion-fantasma-fix";
+ 
+ const fromCents = (value) => Number(value || 0) / 100;
+ const locationKey = (row) =>
+diff --git a/js/data/profiles-repository.js b/js/data/profiles-repository.js
+index a285922..cabc1cf 100644
+--- a/js/data/profiles-repository.js
++++ b/js/data/profiles-repository.js
+@@ -2,8 +2,8 @@ import {
+   supabase,
+   getDeviceId,
+   getDeviceName,
+-} from "./supabase-client.js?v=20260815-cierre-modal-seguro";
+-import { selectAll, rpc } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++} from "./supabase-client.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ const PUBLIC_PROFILE_FIELDS =
+   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
+diff --git a/js/data/reports-repository.js b/js/data/reports-repository.js
+index 033a4d7..d9d95be 100644
+--- a/js/data/reports-repository.js
++++ b/js/data/reports-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const reportsRepository = {
+   listAudit: () =>
+diff --git a/js/data/repository-utils.js b/js/data/repository-utils.js
+index 12a716c..f4460b3 100644
+--- a/js/data/repository-utils.js
++++ b/js/data/repository-utils.js
+@@ -1,7 +1,7 @@
+ import {
+   supabase,
+   getDeviceId,
+-} from "./supabase-client.js?v=20260815-cierre-modal-seguro";
++} from "./supabase-client.js?v=20260815-sesion-fantasma-fix";
+ 
+ const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
+ const CENTRAL_SESSION_ERROR = "central_session_expired";
+diff --git a/js/data/returns-repository.js b/js/data/returns-repository.js
+index 405fb97..43d7a22 100644
+--- a/js/data/returns-repository.js
++++ b/js/data/returns-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const returnsRepository = {
+   list: async () => {
+diff --git a/js/data/rounds-repository.js b/js/data/rounds-repository.js
+index f971707..5a1f1f6 100644
+--- a/js/data/rounds-repository.js
++++ b/js/data/rounds-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const roundsRepository = {
+   list: () =>
+diff --git a/js/data/sales-repository.js b/js/data/sales-repository.js
+index d0146fc..fe092d9 100644
+--- a/js/data/sales-repository.js
++++ b/js/data/sales-repository.js
+@@ -1,5 +1,5 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
+-import { supabase } from "./supabase-client.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { supabase } from "./supabase-client.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const salesRepository = {
+   list: () =>
+diff --git a/js/data/settings-repository.js b/js/data/settings-repository.js
+index 91c53d6..bc9f818 100644
+--- a/js/data/settings-repository.js
++++ b/js/data/settings-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const settingsRepository = {
+   list: () => selectAll("settings"),
+diff --git a/js/data/supabase-client.js b/js/data/supabase-client.js
+index 67bbbad..e486acb 100644
+--- a/js/data/supabase-client.js
++++ b/js/data/supabase-client.js
+@@ -1,7 +1,7 @@
+ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
+-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-cierre-modal-seguro";
++import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-sesion-fantasma-fix";
+ 
+-export const SUPABASE_CLIENT_BUILD = "20260815-cierre-modal-seguro";
++export const SUPABASE_CLIENT_BUILD = "20260815-sesion-fantasma-fix";
+ export const DEVICE_KEY = "purificadora_v3_device_id";
+ export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
+ export const AUTH_STORAGE_KEY = "purificadora_v3_auth";
+diff --git a/js/data/supplies-repository.js b/js/data/supplies-repository.js
+index 2493806..66c9dba 100644
+--- a/js/data/supplies-repository.js
++++ b/js/data/supplies-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-cierre-modal-seguro";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+ 
+ export const suppliesRepository = {
+   list: () => selectAll("supplies", "*", (query) => query.order("name")),
+diff --git a/js/v3/bootstrap.js b/js/v3/bootstrap.js
+index f56472e..6ff1b0c 100644
+--- a/js/v3/bootstrap.js
++++ b/js/v3/bootstrap.js
+@@ -6,13 +6,13 @@ import {
+   getDeviceName,
+   setRememberDevicePreference,
+   REMEMBERED_EMAIL_KEY,
+-} from "../data/supabase-client.js?v=20260815-cierre-modal-seguro";
+-import { OperationalStore } from "../data/operational-store.js?v=20260815-cierre-modal-seguro";
+-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-cierre-modal-seguro";
+-import { clientsRepository } from "../data/clients-repository.js?v=20260815-cierre-modal-seguro";
+-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-cierre-modal-seguro";
++} from "../data/supabase-client.js?v=20260815-sesion-fantasma-fix";
++import { OperationalStore } from "../data/operational-store.js?v=20260815-sesion-fantasma-fix";
++import { profilesRepository } from "../data/profiles-repository.js?v=20260815-sesion-fantasma-fix";
++import { clientsRepository } from "../data/clients-repository.js?v=20260815-sesion-fantasma-fix";
++import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-sesion-fantasma-fix";
+ 
+-const BOOTSTRAP_BUILD = "20260815-cierre-modal-seguro";
++const BOOTSTRAP_BUILD = "20260815-sesion-fantasma-fix";
+ const APP_BUILD =
+   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
+ const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
+diff --git a/sw.js b/sw.js
+index cba7e9f..efb6b60 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,4 +1,4 @@
+-const BUILD = "20260815-cierre-modal-seguro";
++const BUILD = "20260815-sesion-fantasma-fix";
+ const CACHE = `purificadora-trujillo-${BUILD}`;
+ const ASSETS = [
+   "./",
+diff --git a/tests/central-auth-mobile.test.cjs b/tests/central-auth-mobile.test.cjs
+index 093bb55..b8afa93 100644
+--- a/tests/central-auth-mobile.test.cjs
++++ b/tests/central-auth-mobile.test.cjs
+@@ -17,7 +17,7 @@ const dataModules = fs
+ const moduleGraph = `${bootstrap}\n${dataModules}`;
+ 
+ assert.match(html, /id="v3OpenAuthBtn"[\s\S]*?type="button"[\s\S]*?aria-controls="v3AuthDialog"/);
+-assert.match(html, /meta name="app-build" content="20260815-cierre-modal-seguro"/);
++assert.match(html, /meta name="app-build" content="20260815-sesion-fantasma-fix"/);
+ assert.match(html, /id="v3AuthTrace"/);
+ assert.match(html, /central-auth-ui\.js no cargado/);
+ assert.match(authUi, /bindStableAuthDelegation\(document\)/);
+@@ -41,7 +41,7 @@ assert.match(bootstrap, /Bootstrap build:/);
+ assert.match(bootstrap, /Central auth UI build:/);
+ assert.match(bootstrap, /Service-worker\/cache version:/);
+ assert.match(css, /#v3OpenAuthBtn[\s\S]*?touch-action: manipulation/);
+-assert.match(sw, /20260815-cierre-modal-seguro/);
++assert.match(sw, /20260815-sesion-fantasma-fix/);
+ assert.match(app, /PurificadoraAppScriptBuild = APP_SCRIPT_BUILD/);
+ assert.match(bootstrap, /APP_SCRIPT_BUILD = window\.PurificadoraAppScriptBuild/);
+ assert.match(sw, /GET_PURIFICADORA_BUILD/);
+@@ -54,7 +54,7 @@ assert.doesNotMatch(
+ );
+ assert.match(
+   bootstrap,
+-  /operational-store\.js\?v=20260815-cierre-modal-seguro/,
++  /operational-store\.js\?v=20260815-sesion-fantasma-fix/,
+ );
+ 
+ const submitStart = bootstrap.indexOf('form.addEventListener("submit"');
+diff --git a/tests/mobile-auth-qa.cjs b/tests/mobile-auth-qa.cjs
+index f7ba2c7..83d7c6d 100644
+--- a/tests/mobile-auth-qa.cjs
++++ b/tests/mobile-auth-qa.cjs
+@@ -30,7 +30,7 @@ async function openPage(browser, viewport, withoutNativeUuid = false) {
+     const mobile = await openPage(browser, { width: 390, height: 844 }, true);
+     assert.equal(
+       await mobile.page.locator('meta[name="app-build"]').getAttribute("content"),
+-      "20260815-cierre-modal-seguro",
++      "20260815-sesion-fantasma-fix",
+     );
+     assert.match(
+       await mobile.page.evaluate(() => window.PurificadoraCrypto.safeRandomUUID()),
+diff --git a/tests/mobile-ux-v35.test.cjs b/tests/mobile-ux-v35.test.cjs
+index 4f2f3d0..8025649 100644
+--- a/tests/mobile-ux-v35.test.cjs
++++ b/tests/mobile-ux-v35.test.cjs
+@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
+ assert.match(bootstrap, /host\.appendChild\(panel\)/);
+ assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
+ assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
+-assert.match(sw, /20260815-cierre-modal-seguro/);
++assert.match(sw, /20260815-sesion-fantasma-fix/);
+ assert.match(html, /class="panel sales-list-panel"/);
+ assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
+ assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);
+diff --git a/tests/presentation-labels.test.cjs b/tests/presentation-labels.test.cjs
+index f6e2488..bc3c9a5 100644
+--- a/tests/presentation-labels.test.cjs
++++ b/tests/presentation-labels.test.cjs
+@@ -33,6 +33,6 @@ assert.match(
+ assert.match(app, /register\(`\.\/sw\.js\?v=\$\{encodeURIComponent\(appBuild\)\}`\)/);
+ assert.match(bootstrap, /badge\.hidden = centralConnected \|\| noConnection/);
+ assert.match(bootstrap, /\? "Conectar"/);
+-assert.match(html, /presentation-labels\.js\?v=20260815-cierre-modal-seguro/);
++assert.match(html, /presentation-labels\.js\?v=20260815-sesion-fantasma-fix/);
+ 
+ console.log("presentation-labels: 17/17 PASS");
+diff --git a/tests/safe-uuid.test.cjs b/tests/safe-uuid.test.cjs
+index a2c0fd9..89037c4 100644
+--- a/tests/safe-uuid.test.cjs
++++ b/tests/safe-uuid.test.cjs
+@@ -25,7 +25,7 @@ assert.match(
+ );
+ assert.throws(() => safeRandomUUID({}), /generador criptogr/);
+ 
+-assert.match(html, /safe-uuid\.js\?v=20260815-cierre-modal-seguro/);
++assert.match(html, /safe-uuid\.js\?v=20260815-sesion-fantasma-fix/);
+ assert.match(sw, /js\/safe-uuid\.js/);
+ assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
+ assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);
+diff --git a/tests/simplified-container-flow.test.cjs b/tests/simplified-container-flow.test.cjs
+index c3717b0..ea85d54 100644
+--- a/tests/simplified-container-flow.test.cjs
++++ b/tests/simplified-container-flow.test.cjs
+@@ -49,6 +49,6 @@ ok(/finalize_round_close/.test(read("supabase/migrations/20260814153453_round_re
+ ok(/audit_log/.test(migration), "preparar llenos registra auditoría");
+ ok(/can_operate\('rounds'\)/.test(migration), "los permisos se validan en backend");
+ ok(!/drop\s+table|truncate\s+table|delete\s+from\s+public\.(sales|rounds)/i.test(migration), "la migración no es destructiva");
+-ok(/20260815-cierre-modal-seguro/.test(sw), "service worker usa el build nuevo");
++ok(/20260815-sesion-fantasma-fix/.test(sw), "service worker usa el build nuevo");
+ 
+ console.log(`simplified-container-flow: ${checks}/${checks} PASS`);
+diff --git a/tests/supabase-client-uuid-load.test.cjs b/tests/supabase-client-uuid-load.test.cjs
+index 8451fde..afa8fb3 100644
+--- a/tests/supabase-client-uuid-load.test.cjs
++++ b/tests/supabase-client-uuid-load.test.cjs
+@@ -6,7 +6,7 @@ const { safeRandomUUID } = require("../js/safe-uuid.js");
+ const root = path.resolve(__dirname, "..");
+ const clientPath = path.join(root, "js/data/supabase-client.js");
+ const source = fs.readFileSync(clientPath, "utf8");
+-const build = "20260815-cierre-modal-seguro";
++const build = "20260815-sesion-fantasma-fix";
+ 
+ assert.doesNotMatch(source, /crypto\.randomUUID\s*\(/);
+ assert.doesNotMatch(source, /\.randomUUID\s*\(/);
+-- 
+2.43.0
+

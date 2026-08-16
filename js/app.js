@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260815-envases-pendientes";
+  const APP_SCRIPT_BUILD = "20260815-cierre-jornada-repartidor-cash";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -43,6 +43,7 @@
     "view_all_cash",
     "open_cash",
     "close_cash",
+    "close_work_day",
     "cash_adjustments",
     "cash_delivery",
     "create_expense",
@@ -94,6 +95,7 @@
         "view_all_cash",
         "open_cash",
         "close_cash",
+        "close_work_day",
         "cash_delivery",
         "create_expense",
         "view_expenses",
@@ -174,6 +176,7 @@
         "view_all_cash",
         "open_cash",
         "close_cash",
+        "close_work_day",
         "cash_delivery",
         "create_expense",
         "view_expenses",
@@ -1006,6 +1009,8 @@
     const user = activeUser();
     if (recoveryRequired || stateConflict || !employeeSession || !user)
       return false;
+    if (permission === "open_cash" && user.role === "repartidor")
+      return true;
     if (adminMode && user.role === "administrador")
       return ADMIN_PERMISSIONS.includes(permission);
     return permissionsFor(user).includes(permission);
@@ -2479,6 +2484,11 @@
       dashboardCards.push(`<article class="operational-card operational-card--fiado${pending > 0.009 ? " is-live" : ""}"><div class="operational-card-head"><div class="operational-card-title"><span class="card-icon" aria-hidden="true">🧾</span><div><span class="eyebrow">FIADO</span><h3>${money(pending)} pendiente</h3></div></div></div><div class="quick-actions"><button class="primary-btn" data-go="fiado">Cobrar</button><button class="text-btn" data-go="clientes">Ver clientes</button></div></article>`);
     if (can("create_expense"))
       dashboardCards.push(`<article class="operational-card operational-card--gastos"><div class="operational-card-head"><div class="operational-card-title"><span class="card-icon" aria-hidden="true">🧮</span><div><span class="eyebrow">GASTOS</span><h3>Registro rápido</h3></div></div></div><div class="quick-actions"><button class="primary-btn" data-go="gastos" data-expense-center="${esc(u?.center || "local")}">Registrar gasto</button></div></article>`);
+    if (isAdmin && can("close_work_day")) {
+      const openCashCount = state.cashSessions.filter((s) => !s.closedAt).length;
+      const activeRoundCount = state.rounds.filter((r) => r.status !== "cerrada").length;
+      dashboardCards.push(`<article class="operational-card operational-card--workday"><div class="operational-card-head"><div class="operational-card-title"><span class="card-icon" aria-hidden="true">🔒</span><div><span class="eyebrow">CIERRE</span><h3>Cerrar jornada</h3></div></div></div><div class="operational-card-stats"><span>${int(openCashCount)} caja(s)</span><span>${int(activeRoundCount)} ronda(s)</span></div><div class="quick-actions"><button class="primary-btn" id="closeWorkDayBtn">Cerrar jornada</button></div></article>`);
+    }
     $("dashboardPrimaryActions").innerHTML = dashboardCards.join("");
     const cashAction = $("dashboardCashAction");
     if (cashAction)
@@ -2499,6 +2509,15 @@
     $$("#dashboardPrimaryActions .recover-round").forEach(
       (button) => (button.onclick = () => openReturnRound(button.dataset.id, true)),
     );
+    const closeWorkDayBtn = $("closeWorkDayBtn");
+    if (closeWorkDayBtn) {
+      const openCashCount = state.cashSessions.filter((s) => !s.closedAt).length;
+      const activeRoundCount = state.rounds.filter((r) => r.status !== "cerrada").length;
+      $("closeWorkDayOpenCashes").textContent = `Cerrar ${int(openCashCount)} caja(s) abierta(s)`;
+      $("closeWorkDayActiveRounds").textContent = `Cerrar ${int(activeRoundCount)} ronda(s) activa(s)`;
+      closeWorkDayBtn.onclick = openCloseWorkDayDialog;
+    }
+    $("closeWorkDayForm").addEventListener("submit", closeWorkDay);
     if (isAdmin) {
       $("dashboardEyebrow").textContent = "ADMINISTRACIÓN · HOY";
       $("dashboardHeading").textContent = "Resumen de hoy";
@@ -5182,6 +5201,157 @@
     $("cashCloseDialog").close();
     renderCash();
     toast("Caja cerrada");
+  }
+  function openCloseWorkDayDialog() {
+    if (!requirePermission("close_work_day")) return;
+    const activeRoundsWithIssues = state.rounds.filter(
+      (r) => r.status !== "cerrada" && roundMetrics(r)?.inconsistencyQty > 0,
+    );
+    const button = $("closeWorkDayConfirmBtn");
+    button.disabled = activeRoundsWithIssues.length > 0;
+    if (activeRoundsWithIssues.length > 0) {
+      $("closeWorkDayAlert").innerHTML = `⚠️ No se puede cerrar jornada: hay ${activeRoundsWithIssues.length} ronda(s) con inconsistencias sin resolver.`;
+    } else {
+      $("closeWorkDayAlert").innerHTML = "";
+    }
+    showManagedDialog($("closeWorkDayDialog"));
+  }
+  function openWorkDaySummary() {
+    const u = activeUser();
+    const allSales = todaySales();
+    const allExpenses = todayExpenses();
+    const allPayments = state.ledger.filter(
+      (x) => sameDay(x.date) && x.type === "payment",
+    );
+    const openCashes = state.cashSessions.filter((s) => !s.closedAt);
+    const activeRounds = state.rounds.filter((r) => r.status !== "cerrada");
+    const units = allSales.reduce((a, s) => a + s.qty, 0);
+    const revenue = allSales.reduce((a, s) => a + s.total, 0);
+    const collected =
+      allSales.reduce((a, s) => a + s.paid, 0) +
+      allPayments.reduce((a, x) => a + x.payment, 0);
+    const credit = allSales.reduce((a, s) => a + s.credit, 0);
+    const expenses = allExpenses.reduce((a, e) => a + e.amount, 0);
+    const byChannel = Object.keys(CHANNELS).map((k) => ({
+      channel: CHANNELS[k],
+      sales: allSales
+        .filter((s) => s.channel === k)
+        .reduce((a, s) => a + s.total, 0),
+      units: allSales.filter((s) => s.channel === k).reduce((a, s) => a + s.qty, 0),
+    }));
+    const html = `
+      <div class="close-work-day-summary">
+        <div class="summary-header">
+          <h1>Resumen de jornada</h1>
+          <p>${new Date().toLocaleDateString("es-MX", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-metric">
+            <span class="label">Garrafones</span>
+            <strong>${int(units)}</strong>
+            <small>vendidos</small>
+          </div>
+          <div class="summary-metric">
+            <span class="label">Ventas</span>
+            <strong>${money(revenue)}</strong>
+            <small>total</small>
+          </div>
+          <div class="summary-metric">
+            <span class="label">Cobrado</span>
+            <strong>${money(collected)}</strong>
+            <small>ventas + pagos</small>
+          </div>
+          <div class="summary-metric">
+            <span class="label">Fiado</span>
+            <strong>${money(credit)}</strong>
+            <small>generado</small>
+          </div>
+          <div class="summary-metric">
+            <span class="label">Gastos</span>
+            <strong>${money(expenses)}</strong>
+            <small>registrados</small>
+          </div>
+          <div class="summary-metric">
+            <span class="label">Neto</span>
+            <strong>${money(revenue - expenses)}</strong>
+            <small>operativo</small>
+          </div>
+        </div>
+        <div class="summary-section">
+          <h2>Por canal</h2>
+          <table class="summary-table">
+            <tbody>
+              ${byChannel
+                .map(
+                  (c) =>
+                    `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td>${money(c.sales)}</td></tr>`,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+        <div class="summary-section">
+          <h2>Estado operativo</h2>
+          <ul class="summary-list">
+            <li>Cajas abiertas: <strong>${int(openCashes.length)}</strong></li>
+            <li>Rondas activas: <strong>${int(activeRounds.length)}</strong></li>
+            <li>Clientes con deuda: <strong>${int(state.clients.filter((c) => clientBalance(c.id) > 0.009).length)}</strong></li>
+          </ul>
+        </div>
+      </div>
+    `;
+    $("closeWorkDaySummaryContent").innerHTML = html;
+    window.print();
+  }
+  async function closeWorkDay(e) {
+    if (e) e.preventDefault();
+    if (!requirePermission("close_work_day")) return;
+    const button = $("closeWorkDayConfirmBtn");
+    if (button) button.disabled = true;
+    const previousState = structuredClone(state);
+    const timestamp = nowISO();
+    let closedCount = 0;
+    state.cashSessions.forEach((session) => {
+      if (!session.closedAt) {
+        session.closedAt = timestamp;
+        session.status = "cerrada";
+        session.autoClosedWorkDay = true;
+        const m = cashMovementsForSession(session);
+        session.countedAmount = m.expected;
+        session.expectedAmount = m.expected;
+        session.difference = 0;
+        session.differenceReason = "Cierre automático de jornada";
+        closedCount++;
+      }
+    });
+    state.rounds.forEach((round) => {
+      if (round.status !== "cerrada") {
+        round.status = "cerrada";
+        round.endedAt = timestamp;
+        round.closedBy = activeUser()?.id || null;
+        round.autoClosedWorkDay = true;
+        closedCount++;
+      }
+    });
+    addActivity(
+      `Jornada cerrada automáticamente · ${closedCount} elemento(s) cerrado(s)`,
+    );
+    audit(
+      "close_work_day",
+      "workday",
+      "daily",
+      `Jornada cerrada · ${closedCount} elemento(s)`,
+      previousState,
+      state,
+    );
+    if (!(await commitState(previousState))) {
+      if (button) button.disabled = false;
+      return;
+    }
+    $("closeWorkDayDialog").close();
+    renderAll();
+    openWorkDaySummary();
+    toast(`Jornada cerrada · ${closedCount} elemento(s)`);
   }
   async function saveCashMovement(e) {
     e.preventDefault();

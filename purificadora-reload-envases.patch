@@ -1,0 +1,1306 @@
+From 33b1204c97606609de5ce8bd179a9ec5acdd87f3 Mon Sep 17 00:00:00 2001
+From: "Mayorga (via Claude)" <mayorga@purificadoratrujillo.local>
+Date: Sat, 15 Aug 2026 23:06:01 +0000
+Subject: [PATCH 1/2] Fix: Recargar ruta fallaba con "null value in column
+ reason" si Notas quedaba vacio
+
+Reportado con captura real del error de Supabase:
+  null value in column "reason" of relation "audit_log"
+  violates not-null constraint
+
+Causa exacta: la funcion reload_round() en Postgres usaba
+  nullif(trim(coalesce(p_notes, '')), '')
+para el reason del audit_log. nullif(x, '') convierte texto vacio en
+NULL, y audit_log.reason es NOT NULL. El resto de las funciones del
+sistema (close_cash_session, register_round_return,
+finalize_round_close) ya insertan trim(coalesce(p_notes, '')) SIN
+nullif para ese mismo proposito -- solo reload_round tenia esta
+inconsistencia.
+
+No es un bug del cliente: el JS ya mandaba "" (texto vacio) cuando
+Notas queda en blanco, nunca null -- el problema estaba adentro de
+la funcion de base de datos.
+
+Nueva migracion (create or replace function, mismo cuerpo, mismos
+permisos, misma validacion de capacidad e inventario -- solo se
+quita el nullif del reason).
+
+IMPORTANTE: esto es un cambio de base de datos (Supabase), NO un
+archivo estatico del sitio. No se aplica con git am + servidor local
+como el resto de los parches -- hay que correrlo directo en Supabase
+(SQL Editor del dashboard, o supabase db push si la CLI ya esta
+enlazada al proyecto correcto).
+
+28/28 tests (tests/*.test.cjs) PASS -- ningun test escanea
+migraciones SQL automaticamente, este archivo no las afecta.
+---
+ ...815230500_fix_reload_round_null_reason.sql | 137 ++++++++++++++++++
+ 1 file changed, 137 insertions(+)
+ create mode 100644 supabase/migrations/20260815230500_fix_reload_round_null_reason.sql
+
+diff --git a/supabase/migrations/20260815230500_fix_reload_round_null_reason.sql b/supabase/migrations/20260815230500_fix_reload_round_null_reason.sql
+new file mode 100644
+index 0000000..0980583
+--- /dev/null
++++ b/supabase/migrations/20260815230500_fix_reload_round_null_reason.sql
+@@ -0,0 +1,137 @@
++-- Bug reportado en producción: "Recargar ruta" fallaba con
++--   null value in column "reason" of relation "audit_log"
++--   violates not-null constraint
++-- cuando el campo "Notas" se dejaba vacío.
++--
++-- Causa: reload_round() usaba
++--   nullif(trim(coalesce(p_notes, '')), '')
++-- para el reason del audit_log. nullif(x, '') convierte un texto
++-- vacío en NULL -- y audit_log.reason es NOT NULL. El resto de las
++-- funciones del sistema (close_cash_session, register_round_return,
++-- finalize_round_close) ya insertan trim(coalesce(p_notes, '')) SIN
++-- nullif para audit_log.reason, dejando '' cuando no hay notas; solo
++-- reload_round tenía esta inconsistencia.
++--
++-- Fix: se quita el nullif() para el reason del audit_log. El resto
++-- de la función queda idéntico (mismos permisos, misma validación
++-- de capacidad, mismos movimientos de inventario).
++
++create or replace function public.reload_round(
++  p_operation_id uuid,
++  p_device_id uuid,
++  p_round_id uuid,
++  p_quantity integer,
++  p_notes text default ''
++) returns jsonb
++language plpgsql
++security definer
++set search_path = pg_catalog, public
++as $$
++declare
++  v_actor public.profiles;
++  v_round public.rounds;
++  v_local public.inventory_locations;
++  v_route public.inventory_locations;
++  v_cached jsonb;
++  v_payload jsonb;
++  v_capacity record;
++begin
++  select * into v_actor
++  from public.profiles
++  where id = app_private.current_profile_id();
++
++  if v_actor.id is null or not app_private.can_operate('rounds') then
++    raise exception 'operation_not_authorized' using errcode = '42501';
++  end if;
++  if p_quantity is null or p_quantity <= 0 then
++    raise exception 'invalid_round_reload' using errcode = '22023';
++  end if;
++
++  v_payload := jsonb_build_object(
++    'round_id', p_round_id,
++    'quantity', p_quantity,
++    'notes', coalesce(p_notes, '')
++  );
++  v_cached := app_private.claim_operation(
++    p_operation_id,
++    p_device_id,
++    'reload_round',
++    v_payload
++  );
++  if v_cached is not null then return v_cached; end if;
++
++  select * into v_round
++  from public.rounds
++  where id = p_round_id
++  for update;
++
++  if v_round.id is null or v_round.status not in ('preparing', 'active') then
++    raise exception 'round_not_open' using errcode = '55000';
++  end if;
++  if v_actor.role = 'repartidor'
++     and (v_round.user_id <> v_actor.id or v_round.route <> v_actor.route) then
++    raise exception 'route_scope_violation' using errcode = '42501';
++  end if;
++
++  select * into v_local
++  from public.inventory_locations
++  where id = app_private.inventory_location_id('local')
++  for update;
++  select * into v_route
++  from public.inventory_locations
++  where id = app_private.inventory_location_id(v_round.route)
++  for update;
++
++  if v_local.quantity < p_quantity then
++    raise exception 'insufficient_inventory' using errcode = '23514';
++  end if;
++
++  update public.inventory_locations
++  set quantity = quantity - p_quantity, updated_at = now()
++  where id = v_local.id;
++  update public.inventory_locations
++  set quantity = quantity + p_quantity, updated_at = now()
++  where id = v_route.id;
++
++  insert into public.inventory_movements(
++    container_type, from_location_id, to_location_id, quantity,
++    movement_type, reference_type, reference_id, round_id,
++    user_id, operation_id
++  ) values (
++    'full', v_local.id, v_route.id, p_quantity,
++    'round_reload', 'round', v_round.id, v_round.id,
++    v_actor.id, p_operation_id
++  );
++
++  select * into v_capacity
++  from app_private.round_capacity(v_round.id);
++
++  insert into public.audit_log(
++    user_id, device_id, action, entity, entity_id, after_data, reason
++  ) values (
++    v_actor.id, p_device_id, 'round_reloaded', 'round', v_round.id,
++    jsonb_build_object(
++      'quantity', p_quantity,
++      'reloads', v_capacity.reloads,
++      'available_full', v_capacity.available_full
++    ),
++    trim(coalesce(p_notes, ''))
++  );
++
++  return app_private.complete_operation(
++    p_operation_id,
++    jsonb_build_object(
++      'round', to_jsonb(v_round),
++      'quantity', p_quantity,
++      'capacity', to_jsonb(v_capacity)
++    )
++  );
++end;
++$$;
++
++revoke all on function public.reload_round(uuid,uuid,uuid,integer,text)
++from public, anon, authenticated;
++grant execute on function public.reload_round(uuid,uuid,uuid,integer,text)
++to authenticated;
++
++notify pgrst, 'reload schema';
+-- 
+2.43.0
+
+
+From 343fa151edfd007580e4d25f5a51e56d6e781806 Mon Sep 17 00:00:00 2001
+From: "Mayorga (via Claude)" <mayorga@purificadoratrujillo.local>
+Date: Sun, 16 Aug 2026 03:09:06 +0000
+Subject: [PATCH 2/2] Feature: Envases pendientes -- quien debe garrafones (no
+ retroactivo)
+
+Nueva pantalla "Envases pendientes" (menu lateral, junto a Fiado y
+pagos, mismo permiso view_client_debt) que muestra que clientes
+tienen garrafones vacios pendientes de devolver.
+
+No es retroactivo: container_debt nace en 0 para todos los clientes
+existentes, solo las ventas registradas DESDE esta migracion afectan
+el saldo.
+
+Diseno (base de datos):
+- Nueva columna clients.container_debt.
+- Se extienden los triggers que YA existian para el efecto de
+  envases de cada venta (apply_sale_container_effect /
+  reverse_sale_container_effect, de la migracion
+  20260815010351_simplified_container_flow.sql) en vez de crear una
+  ruta paralela -- asi una venta, su devolucion o su correccion
+  ajustan el inventario Y la deuda de envases en la MISMA
+  transaccion, sin poder desincronizarse entre si.
+- Nuevo RPC return_client_containers para cuando el cliente viene
+  SOLO a entregar envases, sin comprar: reduce container_debt (nunca
+  bajo cero, aunque traiga de mas) y abona al inventario de vacios
+  del lugar indicado (Local/Ruta 1/Ruta 2).
+
+Diseno (app):
+- renderContainerDebt(): tabla de clientes con deuda > 0, mismo
+  patron visual que renderDebt() (Fiado).
+- Dialogo "Registrar entrega de envases", mismo patron que
+  "Registrar pago".
+- clientsRepository.returnContainers() llama al RPC real. En
+  operational-store.js se agrega deteccion de
+  "containerDebt disminuyo" CON PRIORIDAD ANTES del guardado
+  generico de cliente (updatedClient) en la cadena de diffs, para
+  que no se intente sincronizar como una edicion de ficha normal.
+
+IMPORTANTE: esto incluye una migracion SQL nueva
+(20260815233000_client_container_debt.sql). No se aplica con el
+servidor local como el resto -- hay que correrla en Supabase (SQL
+Editor del dashboard o supabase db push), igual que el fix de
+Recargar ruta.
+
+Nuevo test tests/client-container-debt.test.cjs (12 verificaciones).
+
+29/29 tests (tests/*.test.cjs) PASS.
+---
+ README.md                                     |   2 +-
+ index.html                                    |  84 ++++++-
+ js/app.js                                     | 100 +++++++-
+ js/central-auth-ui.js                         |   2 +-
+ js/data/cash-repository.js                    |   2 +-
+ js/data/clients-repository.js                 |  12 +-
+ js/data/corrections-repository.js             |   2 +-
+ js/data/inventory-repository.js               |   2 +-
+ js/data/ledger-repository.js                  |   2 +-
+ js/data/maintenance-repository.js             |   2 +-
+ js/data/operational-store.js                  |  41 +++-
+ js/data/profiles-repository.js                |   4 +-
+ js/data/reports-repository.js                 |   2 +-
+ js/data/repository-utils.js                   |   2 +-
+ js/data/returns-repository.js                 |   2 +-
+ js/data/rounds-repository.js                  |   2 +-
+ js/data/sales-repository.js                   |   4 +-
+ js/data/settings-repository.js                |   2 +-
+ js/data/supabase-client.js                    |   4 +-
+ js/data/supplies-repository.js                |   2 +-
+ js/v3/bootstrap.js                            |  12 +-
+ .../20260815233000_client_container_debt.sql  | 222 ++++++++++++++++++
+ sw.js                                         |   2 +-
+ tests/central-auth-mobile.test.cjs            |   6 +-
+ tests/client-container-debt.test.cjs          |  82 +++++++
+ tests/mobile-auth-qa.cjs                      |   2 +-
+ tests/mobile-ux-v35.test.cjs                  |   2 +-
+ tests/presentation-labels.test.cjs            |   2 +-
+ tests/safe-uuid.test.cjs                      |   2 +-
+ tests/simplified-container-flow.test.cjs      |   2 +-
+ tests/supabase-client-uuid-load.test.cjs      |   2 +-
+ 31 files changed, 552 insertions(+), 59 deletions(-)
+ create mode 100644 supabase/migrations/20260815233000_client_container_debt.sql
+ create mode 100644 tests/client-container-debt.test.cjs
+
+diff --git a/README.md b/README.md
+index ce4ab1f..af13bf3 100644
+--- a/README.md
++++ b/README.md
+@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si
+ Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
+ ```
+ 
+-Build actual: `20260815-sesion-fantasma-fix`.
++Build actual: `20260815-envases-pendientes`.
+diff --git a/index.html b/index.html
+index c517d45..438bc4f 100644
+--- a/index.html
++++ b/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+-    <meta name="app-build" content="20260815-sesion-fantasma-fix" />
++    <meta name="app-build" content="20260815-envases-pendientes" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta name="theme-color" content="#0d6efd" />
+     <title>Purificadora Trujillo · ERP V3.5</title>
+@@ -12,7 +12,7 @@
+       href="assets/logo/logo-trujillo.svg"
+       type="image/svg+xml"
+     />
+-    <link rel="stylesheet" href="css/styles.css?v=20260815-sesion-fantasma-fix" />
++    <link rel="stylesheet" href="css/styles.css?v=20260815-envases-pendientes" />
+   </head>
+   <body>
+     <div class="app-shell">
+@@ -32,6 +32,7 @@
+           <button class="nav-item" data-view="ventas">Nueva venta</button>
+           <button class="nav-item" data-view="ultimas">Últimas ventas</button>
+           <button class="nav-item" data-view="fiado">Fiado y pagos</button>
++          <button class="nav-item" data-view="envases">Envases pendientes</button>
+           <button class="nav-item" data-view="rutas">Rutas</button>
+           <button class="nav-item" data-view="ventanilla">Ventanilla</button>
+           <button class="nav-item" data-view="caja">Caja</button>
+@@ -523,6 +524,29 @@
+           </div>
+         </section>
+ 
++        <section class="view" id="view-envases">
++          <div class="metric-grid" id="containerDebtMetrics"></div>
++          <div class="panel">
++            <div class="panel-head">
++              <h3>Clientes con envases pendientes</h3>
++              <span class="pill">Cuenta desde el 15/08/2026</span>
++            </div>
++            <div class="table-responsive">
++              <table>
++                <thead>
++                  <tr>
++                    <th>Cliente</th>
++                    <th>Envases pendientes</th>
++                    <th>Ruta</th>
++                    <th></th>
++                  </tr>
++                </thead>
++                <tbody id="containerDebtTableBody"></tbody>
++              </table>
++            </div>
++          </div>
++        </section>
++
+         <section class="view" id="view-rutas">
+           <div id="routeStatusHeader" class="route-status-stack"></div>
+           <div class="toolbar route-toolbar">
+@@ -1398,6 +1422,48 @@
+       </form>
+     </dialog>
+ 
++    <dialog id="containerReturnDialog">
++      <form
++        method="dialog"
++        id="containerReturnForm"
++        class="dialog-form"
++        data-dirty-guard
++      >
++        <div class="dialog-head">
++          <h3>Registrar entrega de envases</h3>
++          <button
++            type="button"
++            class="icon-btn"
++            data-close="containerReturnDialog"
++            aria-label="Cerrar"
++          >
++            ×
++          </button>
++        </div>
++        <input id="containerReturnClientId" type="hidden" />
++        <div id="containerReturnClientSummary" class="info-box"></div>
++        <label
++          >Garrafones vacíos que trae<input
++            id="containerReturnQty"
++            type="number"
++            min="1"
++            step="1"
++            required
++        /></label>
++        <label
++          >Dónde los entrega<select id="containerReturnLocation">
++            <option value="local">Local</option>
++            <option value="ruta1">Ruta 1</option>
++            <option value="ruta2">Ruta 2</option>
++          </select></label
++        >
++        <label>Notas<textarea id="containerReturnNotes" rows="2"></textarea></label>
++        <button class="primary-btn wide" value="default">
++          Registrar entrega
++        </button>
++      </form>
++    </dialog>
++
+     <dialog id="inventoryAdjustQuickDialog">
+       <form id="inventoryAdjustQuickForm" class="dialog-form" data-dirty-guard>
+         <div class="dialog-head">
+@@ -2599,12 +2665,12 @@
+         }, 1200);
+       })();
+     </script>
+-    <script src="js/central-auth-ui.js?v=20260815-sesion-fantasma-fix"></script>
+-    <script src="js/safe-uuid.js?v=20260815-sesion-fantasma-fix"></script>
+-    <script src="js/presentation-labels.js?v=20260815-sesion-fantasma-fix"></script>
+-    <script src="js/user-display.js?v=20260815-sesion-fantasma-fix"></script>
+-    <script src="js/sale-client-selection.js?v=20260815-sesion-fantasma-fix"></script>
+-    <script src="js/app.js?v=20260815-sesion-fantasma-fix"></script>
+-    <script type="module" src="js/v3/bootstrap.js?v=20260815-sesion-fantasma-fix"></script>
++    <script src="js/central-auth-ui.js?v=20260815-envases-pendientes"></script>
++    <script src="js/safe-uuid.js?v=20260815-envases-pendientes"></script>
++    <script src="js/presentation-labels.js?v=20260815-envases-pendientes"></script>
++    <script src="js/user-display.js?v=20260815-envases-pendientes"></script>
++    <script src="js/sale-client-selection.js?v=20260815-envases-pendientes"></script>
++    <script src="js/app.js?v=20260815-envases-pendientes"></script>
++    <script type="module" src="js/v3/bootstrap.js?v=20260815-envases-pendientes"></script>
+   </body>
+ </html>
+diff --git a/js/app.js b/js/app.js
+index 8ecb42d..1350243 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1,7 +1,7 @@
+ (() => {
+   "use strict";
+ 
+-  const APP_SCRIPT_BUILD = "20260815-sesion-fantasma-fix";
++  const APP_SCRIPT_BUILD = "20260815-envases-pendientes";
+   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
+ 
+   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
+@@ -73,6 +73,7 @@
+         "ventas",
+         "ultimas",
+         "fiado",
++        "envases",
+         "rutas",
+         "ventanilla",
+         "caja",
+@@ -111,6 +112,7 @@
+         "ventas",
+         "ultimas",
+         "fiado",
++        "envases",
+         "rutas",
+         "caja",
+         "inventario",
+@@ -138,6 +140,7 @@
+         "ventas",
+         "ultimas",
+         "fiado",
++        "envases",
+         "ventanilla",
+         "caja",
+       ],
+@@ -212,6 +215,7 @@
+     ventanilla: "create_sale",
+     clientes: "view_client_debt",
+     fiado: "view_client_debt",
++    envases: "view_client_debt",
+     rutas: "rounds",
+     caja: "view_own_cash",
+     gastos: "view_expenses",
+@@ -1954,6 +1958,7 @@
+       ventas: "Nueva venta",
+       ultimas: "Últimas ventas",
+       fiado: "Fiado y pagos",
++      envases: "Envases pendientes",
+       rutas: "Rutas",
+       ventanilla: "Ventanilla",
+       caja: "Caja",
+@@ -2081,6 +2086,10 @@
+     $("mergeClientsForm").addEventListener("submit", mergeDuplicateClients);
+     $("saleForm").addEventListener("submit", saveSale);
+     $("paymentForm").addEventListener("submit", savePayment);
++    $("containerReturnForm").addEventListener(
++      "submit",
++      saveContainerReturn,
++    );
+     $("userForm").addEventListener("submit", saveUser);
+     $("transferForm").addEventListener("submit", saveTransfer);
+     $("inventoryAdjustForm").addEventListener(
+@@ -2286,6 +2295,7 @@
+     renderLatestSales();
+     renderAllLatestSales();
+     renderDebt();
++    renderContainerDebt();
+     renderRoutes();
+     renderWindow();
+     renderCash();
+@@ -2307,6 +2317,7 @@
+         ventas: renderLatestSales,
+         ultimas: renderAllLatestSales,
+         fiado: renderDebt,
++        envases: renderContainerDebt,
+         rutas: renderRoutes,
+         ventanilla: renderWindow,
+         caja: renderCash,
+@@ -4150,6 +4161,93 @@
+       (b) => (b.onclick = () => openClientDetail(b.dataset.id)),
+     );
+   }
++  function renderContainerDebt() {
++    const u = activeUser(),
++      arr = state.clients
++        .filter(
++          (c) => Number(c.containerDebt || 0) > 0 && clientInDebtScope(c, u),
++        )
++        .sort((a, b) => Number(b.containerDebt) - Number(a.containerDebt)),
++      total = arr.reduce((a, c) => a + Number(c.containerDebt || 0), 0);
++    $("containerDebtMetrics").innerHTML = [
++      metric(
++        "Envases pendientes",
++        int(total),
++        `${arr.length} cliente(s)`,
++      ),
++    ].join("");
++    $("containerDebtTableBody").innerHTML = arr.length
++      ? arr
++          .map(
++            (c) =>
++              `<tr><td><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><br><small class="muted">${esc(c.phone || "")}</small></td><td class="amount-danger">${int(c.containerDebt)}</td><td>${esc(CHANNELS[c.route] || c.route || "-")}</td><td><button class="primary-btn return-containers" data-id="${c.id}">Registrar entrega</button></td></tr>`,
++          )
++          .join("")
++      : '<tr><td colspan="4"><div class="empty">Nadie debe envases por ahora.</div></td></tr>';
++    $$(".return-containers").forEach((b) => {
++      b.hidden = !can("view_client_debt");
++      b.onclick = () => openContainerReturnDialog(b.dataset.id);
++    });
++  }
++  function openContainerReturnDialog(id) {
++    if (!requirePermission("view_client_debt")) return;
++    const c = clientById(id);
++    if (!c) return;
++    const debt = Number(c.containerDebt || 0);
++    if (debt <= 0)
++      return toast("Este cliente no tiene envases pendientes.", "error");
++    $("containerReturnForm").reset();
++    $("containerReturnClientId").value = id;
++    $("containerReturnQty").value = debt;
++    $("containerReturnQty").max = String(debt);
++    $("containerReturnLocation").value =
++      c.route === "ruta1" || c.route === "ruta2" ? c.route : "local";
++    $("containerReturnClientSummary").innerHTML =
++      `<strong>${esc(c.name)}</strong><br>Debe: <span class="amount-danger">${int(debt)} garrafón(es)</span>`;
++    showManagedDialog($("containerReturnDialog"));
++  }
++  async function saveContainerReturn(e) {
++    e.preventDefault();
++    if (!requirePermission("view_client_debt")) return;
++    const id = $("containerReturnClientId").value,
++      c = clientById(id),
++      qty = Number($("containerReturnQty").value),
++      location = $("containerReturnLocation").value,
++      notes = $("containerReturnNotes").value.trim();
++    if (!c) return;
++    if (!Number.isInteger(qty) || qty <= 0)
++      return toast("Captura una cantidad válida.", "error");
++    const previousState = structuredClone(state),
++      before = Number(c.containerDebt || 0),
++      applied = Math.min(qty, Math.max(before, 0));
++    recordInventoryMovement(
++      `empty_${location}`,
++      qty,
++      "client_container_return",
++      notes || "Entrega de envases",
++      "client",
++      { clientId: id },
++    );
++    c.containerDebt = Math.max(before - applied, 0);
++    c.lastContainerReturnQty = qty;
++    c.lastContainerReturnLocation = location;
++    c.lastContainerReturnNotes = notes;
++    audit(
++      "client_containers_returned",
++      "client",
++      id,
++      notes || "Entrega de envases",
++      { containerDebt: before },
++      { containerDebt: c.containerDebt, received: qty },
++    );
++    addActivity(
++      `${c.name}: entregó ${qty} garrafón(es) vacío(s) · ${CHANNELS[location] || "Local"}`,
++    );
++    if (!(await commitState(previousState))) return;
++    $("containerReturnDialog").close();
++    renderAll();
++    toast("Entrega de envases registrada");
++  }
+ 
+   function renderRoutes() {
+     const u = activeUser(),
+diff --git a/js/central-auth-ui.js b/js/central-auth-ui.js
+index a08c790..2047479 100644
+--- a/js/central-auth-ui.js
++++ b/js/central-auth-ui.js
+@@ -1,7 +1,7 @@
+ (function exposeCentralAuthUi(globalScope) {
+   "use strict";
+ 
+-  const BUILD = "20260815-sesion-fantasma-fix";
++  const BUILD = "20260815-envases-pendientes";
+   const TRIGGER_SELECTOR =
+     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
+   const bindings = new WeakMap();
+diff --git a/js/data/cash-repository.js b/js/data/cash-repository.js
+index f2c4b15..383beff 100644
+--- a/js/data/cash-repository.js
++++ b/js/data/cash-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ const expensePaymentMethod = (value) => {
+   const normalized = String(value || "otro").trim().toLowerCase();
+diff --git a/js/data/clients-repository.js b/js/data/clients-repository.js
+index edcf4be..fe7c6fa 100644
+--- a/js/data/clients-repository.js
++++ b/js/data/clients-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ function payload(client) {
+   return {
+@@ -45,4 +45,14 @@ export const clientsRepository = {
+         p_duplicate_client_ids: duplicateClientIds,
+       }),
+     ),
++  returnContainers: ({ clientId, quantity, location, notes }) =>
++    rpc(
++      "return_client_containers",
++      commandArgs({
++        p_client_id: clientId,
++        p_quantity: Number(quantity),
++        p_location: location || "local",
++        p_notes: notes || "",
++      }),
++    ),
+ };
+diff --git a/js/data/corrections-repository.js b/js/data/corrections-repository.js
+index 0a494db..b566825 100644
+--- a/js/data/corrections-repository.js
++++ b/js/data/corrections-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
+ 
+diff --git a/js/data/inventory-repository.js b/js/data/inventory-repository.js
+index 95dd942..2bb6c1b 100644
+--- a/js/data/inventory-repository.js
++++ b/js/data/inventory-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const inventoryRepository = {
+   listLocations: () => selectAll("inventory_locations"),
+diff --git a/js/data/ledger-repository.js b/js/data/ledger-repository.js
+index 8e27b98..5399d5f 100644
+--- a/js/data/ledger-repository.js
++++ b/js/data/ledger-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const ledgerRepository = {
+   listPayments: () =>
+diff --git a/js/data/maintenance-repository.js b/js/data/maintenance-repository.js
+index 230db06..8717b59 100644
+--- a/js/data/maintenance-repository.js
++++ b/js/data/maintenance-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const maintenanceRepository = {
+   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),
+diff --git a/js/data/operational-store.js b/js/data/operational-store.js
+index b20f83d..a2b5bfb 100644
+--- a/js/data/operational-store.js
++++ b/js/data/operational-store.js
+@@ -1,16 +1,16 @@
+-import { profilesRepository } from "./profiles-repository.js?v=20260815-sesion-fantasma-fix";
+-import { clientsRepository } from "./clients-repository.js?v=20260815-sesion-fantasma-fix";
+-import { salesRepository } from "./sales-repository.js?v=20260815-sesion-fantasma-fix";
+-import { ledgerRepository } from "./ledger-repository.js?v=20260815-sesion-fantasma-fix";
+-import { cashRepository } from "./cash-repository.js?v=20260815-sesion-fantasma-fix";
+-import { inventoryRepository } from "./inventory-repository.js?v=20260815-sesion-fantasma-fix";
+-import { roundsRepository } from "./rounds-repository.js?v=20260815-sesion-fantasma-fix";
+-import { suppliesRepository } from "./supplies-repository.js?v=20260815-sesion-fantasma-fix";
+-import { settingsRepository } from "./settings-repository.js?v=20260815-sesion-fantasma-fix";
+-import { reportsRepository } from "./reports-repository.js?v=20260815-sesion-fantasma-fix";
+-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-sesion-fantasma-fix";
+-import { returnsRepository } from "./returns-repository.js?v=20260815-sesion-fantasma-fix";
+-import { correctionsRepository } from "./corrections-repository.js?v=20260815-sesion-fantasma-fix";
++import { profilesRepository } from "./profiles-repository.js?v=20260815-envases-pendientes";
++import { clientsRepository } from "./clients-repository.js?v=20260815-envases-pendientes";
++import { salesRepository } from "./sales-repository.js?v=20260815-envases-pendientes";
++import { ledgerRepository } from "./ledger-repository.js?v=20260815-envases-pendientes";
++import { cashRepository } from "./cash-repository.js?v=20260815-envases-pendientes";
++import { inventoryRepository } from "./inventory-repository.js?v=20260815-envases-pendientes";
++import { roundsRepository } from "./rounds-repository.js?v=20260815-envases-pendientes";
++import { suppliesRepository } from "./supplies-repository.js?v=20260815-envases-pendientes";
++import { settingsRepository } from "./settings-repository.js?v=20260815-envases-pendientes";
++import { reportsRepository } from "./reports-repository.js?v=20260815-envases-pendientes";
++import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-envases-pendientes";
++import { returnsRepository } from "./returns-repository.js?v=20260815-envases-pendientes";
++import { correctionsRepository } from "./corrections-repository.js?v=20260815-envases-pendientes";
+ 
+ const fromCents = (value) => Number(value || 0) / 100;
+ const locationKey = (row) =>
+@@ -288,6 +288,7 @@ export class OperationalStore {
+         frequent: true,
+         active: item.active,
+         notes: item.notes,
++        containerDebt: Number(item.container_debt || 0),
+         version: item.version,
+         createdAt: item.created_at,
+         updatedAt: item.updated_at,
+@@ -551,6 +552,13 @@ export class OperationalStore {
+       : null;
+     const newClients = added(before.clients, draft.clients);
+     const updatedClient = changedItem(before.clients, draft.clients);
++    const containerReturnClient = draft.clients.find((item) => {
++      const old = before.clients.find((candidate) => candidate.id === item.id);
++      return (
++        old &&
++        Number(item.containerDebt || 0) < Number(old.containerDebt || 0)
++      );
++    });
+     const newSales = added(before.sales, draft.sales);
+     const newReturn = added(before.returns || [], draft.returns || [])[0];
+     const newCorrection = added(before.saleCorrections || [], draft.saleCorrections || [])[0];
+@@ -620,6 +628,13 @@ export class OperationalStore {
+     else if (newSales[0]) await salesRepository.create(newSales[0]);
+     else if (newLedger) await ledgerRepository.registerPayment(newLedger);
+     else if (newClients[0]) await clientsRepository.create(newClients[0]);
++    else if (containerReturnClient)
++      await clientsRepository.returnContainers({
++        clientId: containerReturnClient.id,
++        quantity: containerReturnClient.lastContainerReturnQty,
++        location: containerReturnClient.lastContainerReturnLocation,
++        notes: containerReturnClient.lastContainerReturnNotes,
++      });
+     else if (updatedClient) await clientsRepository.update(updatedClient);
+     else if (newSessions[0]) await cashRepository.open(newSessions[0]);
+     else if (closedSession) await cashRepository.close(closedSession);
+diff --git a/js/data/profiles-repository.js b/js/data/profiles-repository.js
+index cabc1cf..637b48c 100644
+--- a/js/data/profiles-repository.js
++++ b/js/data/profiles-repository.js
+@@ -2,8 +2,8 @@ import {
+   supabase,
+   getDeviceId,
+   getDeviceName,
+-} from "./supabase-client.js?v=20260815-sesion-fantasma-fix";
+-import { selectAll, rpc } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++} from "./supabase-client.js?v=20260815-envases-pendientes";
++import { selectAll, rpc } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ const PUBLIC_PROFILE_FIELDS =
+   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
+diff --git a/js/data/reports-repository.js b/js/data/reports-repository.js
+index d9d95be..14e5729 100644
+--- a/js/data/reports-repository.js
++++ b/js/data/reports-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const reportsRepository = {
+   listAudit: () =>
+diff --git a/js/data/repository-utils.js b/js/data/repository-utils.js
+index f4460b3..3578878 100644
+--- a/js/data/repository-utils.js
++++ b/js/data/repository-utils.js
+@@ -1,7 +1,7 @@
+ import {
+   supabase,
+   getDeviceId,
+-} from "./supabase-client.js?v=20260815-sesion-fantasma-fix";
++} from "./supabase-client.js?v=20260815-envases-pendientes";
+ 
+ const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
+ const CENTRAL_SESSION_ERROR = "central_session_expired";
+diff --git a/js/data/returns-repository.js b/js/data/returns-repository.js
+index 43d7a22..267e604 100644
+--- a/js/data/returns-repository.js
++++ b/js/data/returns-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const returnsRepository = {
+   list: async () => {
+diff --git a/js/data/rounds-repository.js b/js/data/rounds-repository.js
+index 5a1f1f6..02bf5d1 100644
+--- a/js/data/rounds-repository.js
++++ b/js/data/rounds-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const roundsRepository = {
+   list: () =>
+diff --git a/js/data/sales-repository.js b/js/data/sales-repository.js
+index fe092d9..6da3b5b 100644
+--- a/js/data/sales-repository.js
++++ b/js/data/sales-repository.js
+@@ -1,5 +1,5 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
+-import { supabase } from "./supabase-client.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
++import { supabase } from "./supabase-client.js?v=20260815-envases-pendientes";
+ 
+ export const salesRepository = {
+   list: () =>
+diff --git a/js/data/settings-repository.js b/js/data/settings-repository.js
+index bc9f818..a7c4898 100644
+--- a/js/data/settings-repository.js
++++ b/js/data/settings-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const settingsRepository = {
+   list: () => selectAll("settings"),
+diff --git a/js/data/supabase-client.js b/js/data/supabase-client.js
+index e486acb..81bacf7 100644
+--- a/js/data/supabase-client.js
++++ b/js/data/supabase-client.js
+@@ -1,7 +1,7 @@
+ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
+-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-sesion-fantasma-fix";
++import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-envases-pendientes";
+ 
+-export const SUPABASE_CLIENT_BUILD = "20260815-sesion-fantasma-fix";
++export const SUPABASE_CLIENT_BUILD = "20260815-envases-pendientes";
+ export const DEVICE_KEY = "purificadora_v3_device_id";
+ export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
+ export const AUTH_STORAGE_KEY = "purificadora_v3_auth";
+diff --git a/js/data/supplies-repository.js b/js/data/supplies-repository.js
+index 66c9dba..c170b18 100644
+--- a/js/data/supplies-repository.js
++++ b/js/data/supplies-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-sesion-fantasma-fix";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+ 
+ export const suppliesRepository = {
+   list: () => selectAll("supplies", "*", (query) => query.order("name")),
+diff --git a/js/v3/bootstrap.js b/js/v3/bootstrap.js
+index 6ff1b0c..6eca548 100644
+--- a/js/v3/bootstrap.js
++++ b/js/v3/bootstrap.js
+@@ -6,13 +6,13 @@ import {
+   getDeviceName,
+   setRememberDevicePreference,
+   REMEMBERED_EMAIL_KEY,
+-} from "../data/supabase-client.js?v=20260815-sesion-fantasma-fix";
+-import { OperationalStore } from "../data/operational-store.js?v=20260815-sesion-fantasma-fix";
+-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-sesion-fantasma-fix";
+-import { clientsRepository } from "../data/clients-repository.js?v=20260815-sesion-fantasma-fix";
+-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-sesion-fantasma-fix";
++} from "../data/supabase-client.js?v=20260815-envases-pendientes";
++import { OperationalStore } from "../data/operational-store.js?v=20260815-envases-pendientes";
++import { profilesRepository } from "../data/profiles-repository.js?v=20260815-envases-pendientes";
++import { clientsRepository } from "../data/clients-repository.js?v=20260815-envases-pendientes";
++import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-envases-pendientes";
+ 
+-const BOOTSTRAP_BUILD = "20260815-sesion-fantasma-fix";
++const BOOTSTRAP_BUILD = "20260815-envases-pendientes";
+ const APP_BUILD =
+   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
+ const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
+diff --git a/supabase/migrations/20260815233000_client_container_debt.sql b/supabase/migrations/20260815233000_client_container_debt.sql
+new file mode 100644
+index 0000000..8679f48
+--- /dev/null
++++ b/supabase/migrations/20260815233000_client_container_debt.sql
+@@ -0,0 +1,222 @@
++-- Deuda de envases por cliente ("¿quién me debe garrafones?").
++-- Empieza a contar desde hoy (no retroactivo): la columna nace en 0 para
++-- todos los clientes existentes, y solo las ventas registradas DESPUÉS de
++-- aplicar esta migración afectan el saldo.
++--
++-- Reutiliza el mismo mecanismo que ya calcula el efecto de envases de cada
++-- venta (app_private.apply_sale_container_effect / reverse_sale_container_effect,
++-- de la migración 20260815010351_simplified_container_flow.sql) en vez de
++-- crear una ruta paralela: así una venta, su devolución o su corrección
++-- ajustan el inventario Y la deuda de envases en la misma transacción,
++-- sin poder desincronizarse entre sí.
++
++alter table public.clients
++  add column if not exists container_debt integer not null default 0;
++
++-- ---------------------------------------------------------------------
++-- 1) Alta de deuda: al registrarse una venta con cliente, si no regresó
++--    todos los vacíos correspondientes (ni se dañaron), la diferencia se
++--    suma a container_debt.
++-- ---------------------------------------------------------------------
++create or replace function app_private.apply_sale_container_effect()
++returns trigger
++language plpgsql
++security definer
++set search_path = pg_catalog, public
++as $$
++declare
++  v_empty public.inventory_locations;
++  v_damaged public.inventory_locations;
++  v_debt integer;
++begin
++  if new.empty_return_quantity > 0 then
++    select * into v_empty from public.inventory_locations
++    where id=app_private.sale_empty_location_id(new.channel) for update;
++    if v_empty.id is null then raise exception 'empty_inventory_location_missing' using errcode='P0002'; end if;
++    update public.inventory_locations set quantity=quantity+new.empty_return_quantity,updated_at=now() where id=v_empty.id;
++    insert into public.inventory_movements(container_type,to_location_id,quantity,movement_type,reference_type,reference_id,round_id,user_id,operation_id)
++    values('empty',v_empty.id,new.empty_return_quantity,'sale_empty_received','sale',new.id,new.round_id,new.user_id,new.operation_id);
++  end if;
++  if new.damaged_return_quantity > 0 then
++    select * into v_damaged from public.inventory_locations
++    where id=app_private.inventory_location_id('danados') for update;
++    update public.inventory_locations set quantity=quantity+new.damaged_return_quantity,updated_at=now() where id=v_damaged.id;
++    insert into public.inventory_movements(container_type,to_location_id,quantity,movement_type,reference_type,reference_id,round_id,user_id,operation_id)
++    values('damaged',v_damaged.id,new.damaged_return_quantity,'sale_damaged_received','sale',new.id,new.round_id,new.user_id,new.operation_id);
++  end if;
++
++  if new.client_id is not null then
++    v_debt := new.quantity - new.empty_return_quantity - new.damaged_return_quantity;
++    if v_debt <> 0 then
++      update public.clients set container_debt = container_debt + v_debt where id = new.client_id;
++    end if;
++  end if;
++
++  return new;
++end;
++$$;
++
++-- ---------------------------------------------------------------------
++-- 2) Reversa de deuda: al devolver o corregir (parcial o total) una
++--    venta, se le resta proporcionalmente al cliente lo que ya se le
++--    había cargado -- mismo patrón matemático que ya usa la función para
++--    revertir envases vacíos/dañados (acumulado nuevo menos acumulado
++--    previo, para que devoluciones parciales sucesivas de la misma venta
++--    no se descuadren).
++-- ---------------------------------------------------------------------
++create or replace function app_private.reverse_sale_container_effect(
++  p_sale public.sales,
++  p_quantity integer,
++  p_operation_id uuid,
++  p_reference_type text,
++  p_reference_id uuid,
++  p_actor_id uuid
++) returns void
++language plpgsql
++security definer
++set search_path = pg_catalog, public
++as $$
++declare
++  v_prior integer;
++  v_empty_qty integer;
++  v_damaged_qty integer;
++  v_debt_total integer;
++  v_debt_qty integer;
++  v_empty public.inventory_locations;
++  v_damaged public.inventory_locations;
++begin
++  select coalesce(sum(quantity),0)::integer into v_prior from public.sale_returns where sale_id=p_sale.id and id<>p_reference_id;
++  v_empty_qty := round(coalesce(p_sale.empty_return_quantity,p_sale.quantity)::numeric*(v_prior+p_quantity)::numeric/p_sale.quantity::numeric)::integer
++    - round(coalesce(p_sale.empty_return_quantity,p_sale.quantity)::numeric*v_prior::numeric/p_sale.quantity::numeric)::integer;
++  v_damaged_qty := round(coalesce(p_sale.damaged_return_quantity,0)::numeric*(v_prior+p_quantity)::numeric/p_sale.quantity::numeric)::integer
++    - round(coalesce(p_sale.damaged_return_quantity,0)::numeric*v_prior::numeric/p_sale.quantity::numeric)::integer;
++  if v_empty_qty > 0 then
++    select * into v_empty from public.inventory_locations where id=app_private.sale_empty_location_id(p_sale.channel) for update;
++    if v_empty.quantity < v_empty_qty then raise exception 'insufficient_empty_inventory_for_reversal' using errcode='23514'; end if;
++    update public.inventory_locations set quantity=quantity-v_empty_qty,updated_at=now() where id=v_empty.id;
++    insert into public.inventory_movements(container_type,from_location_id,quantity,movement_type,reference_type,reference_id,round_id,user_id,operation_id)
++    values('empty',v_empty.id,v_empty_qty,'sale_empty_reversal',p_reference_type,p_reference_id,p_sale.round_id,p_actor_id,p_operation_id);
++  end if;
++  if v_damaged_qty > 0 then
++    select * into v_damaged from public.inventory_locations where id=app_private.inventory_location_id('danados') for update;
++    if v_damaged.quantity < v_damaged_qty then raise exception 'insufficient_damaged_inventory_for_reversal' using errcode='23514'; end if;
++    update public.inventory_locations set quantity=quantity-v_damaged_qty,updated_at=now() where id=v_damaged.id;
++    insert into public.inventory_movements(container_type,from_location_id,quantity,movement_type,reference_type,reference_id,round_id,user_id,operation_id)
++    values('damaged',v_damaged.id,v_damaged_qty,'sale_damaged_reversal',p_reference_type,p_reference_id,p_sale.round_id,p_actor_id,p_operation_id);
++  end if;
++
++  if p_sale.client_id is not null then
++    v_debt_total := p_sale.quantity - coalesce(p_sale.empty_return_quantity,p_sale.quantity) - coalesce(p_sale.damaged_return_quantity,0);
++    if v_debt_total <> 0 then
++      v_debt_qty := round(v_debt_total::numeric*(v_prior+p_quantity)::numeric/p_sale.quantity::numeric)::integer
++        - round(v_debt_total::numeric*v_prior::numeric/p_sale.quantity::numeric)::integer;
++      if v_debt_qty <> 0 then
++        update public.clients set container_debt = container_debt - v_debt_qty where id = p_sale.client_id;
++      end if;
++    end if;
++  end if;
++end;
++$$;
++
++-- ---------------------------------------------------------------------
++-- 3) Entrega de envases sueltos: el cliente viene solo a dejar vacíos,
++--    sin comprar. Reduce container_debt y suma al inventario de vacíos
++--    del lugar indicado (Local por defecto). Nunca deja container_debt
++--    negativo -- si trae más de lo que debe, el excedente no resta.
++-- ---------------------------------------------------------------------
++create or replace function public.return_client_containers(
++  p_operation_id uuid,
++  p_device_id uuid,
++  p_client_id uuid,
++  p_quantity integer,
++  p_location text default 'local',
++  p_notes text default ''
++) returns jsonb
++language plpgsql
++security definer
++set search_path = pg_catalog, public
++as $$
++declare
++  v_actor public.profiles;
++  v_client public.clients;
++  v_empty public.inventory_locations;
++  v_cached jsonb;
++  v_applied integer;
++  v_location_key text;
++begin
++  select * into v_actor
++  from public.profiles
++  where id = app_private.current_profile_id();
++
++  if v_actor.id is null or not app_private.can_operate('view_client_debt') then
++    raise exception 'operation_not_authorized' using errcode = '42501';
++  end if;
++  if p_quantity is null or p_quantity <= 0 then
++    raise exception 'invalid_container_return_quantity' using errcode = '22023';
++  end if;
++
++  v_cached := app_private.claim_operation(
++    p_operation_id, p_device_id, 'return_client_containers',
++    jsonb_build_object('client_id', p_client_id, 'quantity', p_quantity, 'location', p_location)
++  );
++  if v_cached is not null then return v_cached; end if;
++
++  select * into v_client from public.clients where id = p_client_id for update;
++  if v_client.id is null then
++    raise exception 'client_not_found' using errcode = '22023';
++  end if;
++
++  v_location_key := case
++    when p_location in ('ruta1','ruta2') then 'empty_'||p_location
++    else 'empty_local'
++  end;
++  select * into v_empty from public.inventory_locations
++  where id = app_private.inventory_location_id(v_location_key) for update;
++  if v_empty.id is null then
++    raise exception 'empty_inventory_location_missing' using errcode = 'P0002';
++  end if;
++
++  v_applied := least(p_quantity, greatest(v_client.container_debt, 0));
++
++  update public.clients
++  set container_debt = container_debt - v_applied
++  where id = v_client.id;
++
++  update public.inventory_locations
++  set quantity = quantity + p_quantity, updated_at = now()
++  where id = v_empty.id;
++
++  insert into public.inventory_movements(
++    container_type, to_location_id, quantity, movement_type,
++    reference_type, reference_id, user_id, operation_id
++  ) values (
++    'empty', v_empty.id, p_quantity, 'client_container_return',
++    'client', p_client_id, v_actor.id, p_operation_id
++  );
++
++  insert into public.audit_log(
++    user_id, device_id, action, entity, entity_id, before_data, after_data, reason
++  ) values (
++    v_actor.id, p_device_id, 'client_containers_returned', 'client', p_client_id,
++    jsonb_build_object('container_debt', v_client.container_debt),
++    jsonb_build_object('container_debt', v_client.container_debt - v_applied, 'received', p_quantity),
++    coalesce(nullif(trim(p_notes), ''), 'Entrega de envases')
++  );
++
++  return app_private.complete_operation(
++    p_operation_id,
++    jsonb_build_object(
++      'client_id', v_client.id,
++      'container_debt', v_client.container_debt - v_applied,
++      'received', p_quantity
++    )
++  );
++end;
++$$;
++
++revoke all on function public.return_client_containers(uuid,uuid,uuid,integer,text,text)
++from public, anon, authenticated;
++grant execute on function public.return_client_containers(uuid,uuid,uuid,integer,text,text)
++to authenticated;
++
++notify pgrst, 'reload schema';
+diff --git a/sw.js b/sw.js
+index efb6b60..98b92f5 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,4 +1,4 @@
+-const BUILD = "20260815-sesion-fantasma-fix";
++const BUILD = "20260815-envases-pendientes";
+ const CACHE = `purificadora-trujillo-${BUILD}`;
+ const ASSETS = [
+   "./",
+diff --git a/tests/central-auth-mobile.test.cjs b/tests/central-auth-mobile.test.cjs
+index b8afa93..76298de 100644
+--- a/tests/central-auth-mobile.test.cjs
++++ b/tests/central-auth-mobile.test.cjs
+@@ -17,7 +17,7 @@ const dataModules = fs
+ const moduleGraph = `${bootstrap}\n${dataModules}`;
+ 
+ assert.match(html, /id="v3OpenAuthBtn"[\s\S]*?type="button"[\s\S]*?aria-controls="v3AuthDialog"/);
+-assert.match(html, /meta name="app-build" content="20260815-sesion-fantasma-fix"/);
++assert.match(html, /meta name="app-build" content="20260815-envases-pendientes"/);
+ assert.match(html, /id="v3AuthTrace"/);
+ assert.match(html, /central-auth-ui\.js no cargado/);
+ assert.match(authUi, /bindStableAuthDelegation\(document\)/);
+@@ -41,7 +41,7 @@ assert.match(bootstrap, /Bootstrap build:/);
+ assert.match(bootstrap, /Central auth UI build:/);
+ assert.match(bootstrap, /Service-worker\/cache version:/);
+ assert.match(css, /#v3OpenAuthBtn[\s\S]*?touch-action: manipulation/);
+-assert.match(sw, /20260815-sesion-fantasma-fix/);
++assert.match(sw, /20260815-envases-pendientes/);
+ assert.match(app, /PurificadoraAppScriptBuild = APP_SCRIPT_BUILD/);
+ assert.match(bootstrap, /APP_SCRIPT_BUILD = window\.PurificadoraAppScriptBuild/);
+ assert.match(sw, /GET_PURIFICADORA_BUILD/);
+@@ -54,7 +54,7 @@ assert.doesNotMatch(
+ );
+ assert.match(
+   bootstrap,
+-  /operational-store\.js\?v=20260815-sesion-fantasma-fix/,
++  /operational-store\.js\?v=20260815-envases-pendientes/,
+ );
+ 
+ const submitStart = bootstrap.indexOf('form.addEventListener("submit"');
+diff --git a/tests/client-container-debt.test.cjs b/tests/client-container-debt.test.cjs
+new file mode 100644
+index 0000000..8f0f7ab
+--- /dev/null
++++ b/tests/client-container-debt.test.cjs
+@@ -0,0 +1,82 @@
++const fs = require("fs");
++const assert = require("assert");
++
++const app = fs.readFileSync("js/app.js", "utf8");
++const html = fs.readFileSync("index.html", "utf8");
++const store = fs.readFileSync("js/data/operational-store.js", "utf8");
++const clientsRepo = fs.readFileSync("js/data/clients-repository.js", "utf8");
++const migration = fs.readFileSync(
++  "supabase/migrations/20260815233000_client_container_debt.sql",
++  "utf8",
++);
++
++// Pantalla y navegación
++assert.match(html, /id="view-envases"/, "existe la vista Envases pendientes");
++assert.match(
++  html,
++  /data-view="envases">Env[aá]ses pendientes/,
++  "aparece en el menú lateral",
++);
++assert.match(app, /envases: renderContainerDebt/, "está en el despachador de vistas");
++assert.match(app, /renderContainerDebt\(\);/, "se refresca en renderAll()");
++
++// Visibilidad por rol: mismo permiso que Fiado (view_client_debt), no uno nuevo.
++assert.match(
++  app,
++  /envases: "view_client_debt"/,
++  "usa el mismo permiso que Fiado y pagos",
++);
++["administrador", "repartidor", "ventanilla"].forEach((role) => {
++  const start = app.indexOf(`${role}: {`);
++  const block = app.slice(start, start + 400);
++  assert.match(block, /"fiado",\s*\n\s*"envases"/, `${role} tiene envases junto a fiado`);
++});
++
++// No es retroactivo: la columna nace en 0 para todos.
++assert.match(
++  migration,
++  /add column if not exists container_debt integer not null default 0/,
++  "container_debt arranca en 0 (no retroactivo)",
++);
++
++// La deuda se calcula y revierte en la MISMA transacción que ya mueve el
++// inventario de envases (no una ruta paralela que se pueda desincronizar).
++assert.match(
++  migration,
++  /apply_sale_container_effect[\s\S]*?container_debt = container_debt \+ v_debt/,
++  "la venta suma deuda dentro del mismo trigger que ya existía",
++);
++assert.match(
++  migration,
++  /reverse_sale_container_effect[\s\S]*?container_debt = container_debt - v_debt_qty/,
++  "la devolución/corrección resta deuda proporcionalmente",
++);
++
++// Entrega de envases sueltos (sin venta): RPC dedicado, nunca dejar
++// container_debt negativo.
++assert.match(
++  migration,
++  /function public\.return_client_containers/,
++  "existe el RPC de entrega de envases",
++);
++assert.match(
++  migration,
++  /v_applied := least\(p_quantity, greatest\(v_client\.container_debt, 0\)\)/,
++  "nunca resta más deuda de la que el cliente realmente debe",
++);
++
++// El cliente (JS) llama al RPC real, no a update_client genérico -- y con
++// prioridad ANTES del guardado genérico de cliente en el diff.
++assert.match(
++  clientsRepo,
++  /returnContainers: \(\{ clientId, quantity, location, notes \}\)/,
++  "existe returnContainers en el repositorio",
++);
++const containerBranch = store.indexOf("containerReturnClient)");
++const updatedClientBranch = store.indexOf("else if (updatedClient)");
++assert.ok(
++  containerBranch > 0 && containerBranch < updatedClientBranch,
++  "la entrega de envases se detecta ANTES que la edición genérica de cliente",
++);
++
++console.log("client-container-debt: 12/12 PASS");
+diff --git a/tests/mobile-auth-qa.cjs b/tests/mobile-auth-qa.cjs
+index 83d7c6d..ee6b141 100644
+--- a/tests/mobile-auth-qa.cjs
++++ b/tests/mobile-auth-qa.cjs
+@@ -30,7 +30,7 @@ async function openPage(browser, viewport, withoutNativeUuid = false) {
+     const mobile = await openPage(browser, { width: 390, height: 844 }, true);
+     assert.equal(
+       await mobile.page.locator('meta[name="app-build"]').getAttribute("content"),
+-      "20260815-sesion-fantasma-fix",
++      "20260815-envases-pendientes",
+     );
+     assert.match(
+       await mobile.page.evaluate(() => window.PurificadoraCrypto.safeRandomUUID()),
+diff --git a/tests/mobile-ux-v35.test.cjs b/tests/mobile-ux-v35.test.cjs
+index 8025649..f3344ea 100644
+--- a/tests/mobile-ux-v35.test.cjs
++++ b/tests/mobile-ux-v35.test.cjs
+@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
+ assert.match(bootstrap, /host\.appendChild\(panel\)/);
+ assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
+ assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
+-assert.match(sw, /20260815-sesion-fantasma-fix/);
++assert.match(sw, /20260815-envases-pendientes/);
+ assert.match(html, /class="panel sales-list-panel"/);
+ assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
+ assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);
+diff --git a/tests/presentation-labels.test.cjs b/tests/presentation-labels.test.cjs
+index bc3c9a5..a430fc2 100644
+--- a/tests/presentation-labels.test.cjs
++++ b/tests/presentation-labels.test.cjs
+@@ -33,6 +33,6 @@ assert.match(
+ assert.match(app, /register\(`\.\/sw\.js\?v=\$\{encodeURIComponent\(appBuild\)\}`\)/);
+ assert.match(bootstrap, /badge\.hidden = centralConnected \|\| noConnection/);
+ assert.match(bootstrap, /\? "Conectar"/);
+-assert.match(html, /presentation-labels\.js\?v=20260815-sesion-fantasma-fix/);
++assert.match(html, /presentation-labels\.js\?v=20260815-envases-pendientes/);
+ 
+ console.log("presentation-labels: 17/17 PASS");
+diff --git a/tests/safe-uuid.test.cjs b/tests/safe-uuid.test.cjs
+index 89037c4..78b18d6 100644
+--- a/tests/safe-uuid.test.cjs
++++ b/tests/safe-uuid.test.cjs
+@@ -25,7 +25,7 @@ assert.match(
+ );
+ assert.throws(() => safeRandomUUID({}), /generador criptogr/);
+ 
+-assert.match(html, /safe-uuid\.js\?v=20260815-sesion-fantasma-fix/);
++assert.match(html, /safe-uuid\.js\?v=20260815-envases-pendientes/);
+ assert.match(sw, /js\/safe-uuid\.js/);
+ assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
+ assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);
+diff --git a/tests/simplified-container-flow.test.cjs b/tests/simplified-container-flow.test.cjs
+index ea85d54..10194a8 100644
+--- a/tests/simplified-container-flow.test.cjs
++++ b/tests/simplified-container-flow.test.cjs
+@@ -49,6 +49,6 @@ ok(/finalize_round_close/.test(read("supabase/migrations/20260814153453_round_re
+ ok(/audit_log/.test(migration), "preparar llenos registra auditoría");
+ ok(/can_operate\('rounds'\)/.test(migration), "los permisos se validan en backend");
+ ok(!/drop\s+table|truncate\s+table|delete\s+from\s+public\.(sales|rounds)/i.test(migration), "la migración no es destructiva");
+-ok(/20260815-sesion-fantasma-fix/.test(sw), "service worker usa el build nuevo");
++ok(/20260815-envases-pendientes/.test(sw), "service worker usa el build nuevo");
+ 
+ console.log(`simplified-container-flow: ${checks}/${checks} PASS`);
+diff --git a/tests/supabase-client-uuid-load.test.cjs b/tests/supabase-client-uuid-load.test.cjs
+index afa8fb3..90744b3 100644
+--- a/tests/supabase-client-uuid-load.test.cjs
++++ b/tests/supabase-client-uuid-load.test.cjs
+@@ -6,7 +6,7 @@ const { safeRandomUUID } = require("../js/safe-uuid.js");
+ const root = path.resolve(__dirname, "..");
+ const clientPath = path.join(root, "js/data/supabase-client.js");
+ const source = fs.readFileSync(clientPath, "utf8");
+-const build = "20260815-sesion-fantasma-fix";
++const build = "20260815-envases-pendientes";
+ 
+ assert.doesNotMatch(source, /crypto\.randomUUID\s*\(/);
+ assert.doesNotMatch(source, /\.randomUUID\s*\(/);
+-- 
+2.43.0
+

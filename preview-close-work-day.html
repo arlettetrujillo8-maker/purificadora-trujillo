@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview - Cerrar Jornada</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f7fb;
+      padding: 2rem;
+      color: #172033;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 2rem;
+    }
+
+    .preview-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .preview-section h2 {
+      font-size: 18px;
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid #dfe5ef;
+      padding-bottom: 0.5rem;
+    }
+
+    /* Dialog Styles */
+    .dialog-preview {
+      border: 1px solid #dfe5ef;
+      border-radius: 8px;
+      background: #fff;
+      max-width: 400px;
+      overflow: hidden;
+    }
+
+    .dialog-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid #dfe5ef;
+      background: #f8f9fa;
+    }
+
+    .dialog-head h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #687386;
+    }
+
+    .dialog-body {
+      padding: 1.5rem;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      font-size: 14px;
+      color: #856404;
+    }
+
+    .info-box.hidden {
+      display: none;
+    }
+
+    .dialog-body p {
+      font-size: 14px;
+      margin-bottom: 1rem;
+    }
+
+    .dialog-body ul {
+      list-style: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .dialog-body li {
+      padding: 0.5rem 0;
+      font-size: 14px;
+      color: #172033;
+    }
+
+    .dialog-body li strong {
+      font-weight: 600;
+      color: #1463ff;
+    }
+
+    .dialog-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .secondary-btn {
+      background: #eef4ff;
+      color: #1463ff;
+      border: 1px solid #dfe5ef;
+    }
+
+    .secondary-btn:hover {
+      background: #e0e7ff;
+    }
+
+    .primary-btn {
+      background: #1463ff;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #0b46c8;
+    }
+
+    .primary-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    /* Summary Styles */
+    .close-work-day-summary {
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #1a1a1a;
+    }
+
+    .summary-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 1rem;
+    }
+
+    .summary-header h1 {
+      margin: 0 0 0.5rem;
+      font-size: 28px;
+    }
+
+    .summary-header p {
+      margin: 0;
+      font-size: 14px;
+      color: #666;
+      text-transform: capitalize;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-metric {
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 3px solid #1463ff;
+    }
+
+    .summary-metric .label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+
+    .summary-metric strong {
+      font-size: 18px;
+      color: #000;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-metric small {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .summary-section {
+      margin-bottom: 2rem;
+    }
+
+    .summary-section h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 0.5rem;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .summary-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .summary-table td:first-child {
+      font-weight: 500;
+    }
+
+    .summary-table td:nth-child(2),
+    .summary-table td:nth-child(3) {
+      text-align: right;
+    }
+
+    .summary-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .summary-list li {
+      padding: 0.5rem 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+
+    .summary-list strong {
+      font-weight: 700;
+      color: #1463ff;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 Preview: Cerrar Jornada</h1>
+
+    <div class="two-col">
+      <!-- Dialog Preview -->
+      <div class="preview-section">
+        <h2>Diálogo de confirmación</h2>
+
+        <div class="dialog-preview">
+          <div class="dialog-head">
+            <h3>Cerrar jornada</h3>
+            <button class="icon-btn" aria-label="Cerrar">×</button>
+          </div>
+
+          <div class="dialog-body">
+            <div id="alert1" class="info-box hidden">
+              ⚠️ No se puede cerrar jornada: hay 1 ronda(s) con inconsistencias sin resolver.
+            </div>
+
+            <p>Se cerrarán automáticamente:</p>
+            <ul>
+              <li><strong>2</strong> cajas abiertas</li>
+              <li><strong>1</strong> ronda activa</li>
+            </ul>
+
+            <div class="dialog-buttons">
+              <button class="btn secondary-btn">Cancelar</button>
+              <button class="btn primary-btn">Cerrar jornada</button>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin-top: 2rem; font-size: 12px; color: #666;">
+          <strong>Nota:</strong> El botón se deshabilita automáticamente si hay rondas con inconsistencias sin resolver.
+        </p>
+      </div>
+
+      <!-- Summary Preview -->
+      <div class="preview-section">
+        <h2>Resumen imprimible</h2>
+
+        <div class="close-work-day-summary" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+          <div class="summary-header">
+            <h1>Resumen de jornada</h1>
+            <p>jueves, 15 de agosto de 2024</p>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-metric">
+              <span class="label">Garrafones</span>
+              <strong>142</strong>
+              <small>vendidos</small>
+            </div>
+            <div class="summary-metric">
+              <span class="label">Ventas</span>
+              <strong>$2,550.00</strong>
+              <small>total</small>
+            </div>
+            <div class="summary-metric">
+              <span class="label">Cobrado</span>
+              <strong>$2,100.00</strong>
+              <small>ventas + pagos</small>
+            </div>
+            <div class="summary-metric">
+              <span class="label">Fiado</span>
+              <strong>$450.00</strong>
+              <small>generado</small>
+            </div>
+            <div class="summary-metric">
+              <span class="label">Gastos</span>
+              <strong>$350.00</strong>
+              <small>registrados</small>
+            </div>
+            <div class="summary-metric">
+              <span class="label">Neto</span>
+              <strong>$2,200.00</strong>
+              <small>operativo</small>
+            </div>
+          </div>
+
+          <div class="summary-section">
+            <h2>Por canal</h2>
+            <table class="summary-table">
+              <tbody>
+                <tr><td>Ventanilla</td><td>45</td><td>$850.00</td></tr>
+                <tr><td>Ruta 1</td><td>55</td><td>$900.00</td></tr>
+                <tr><td>Ruta 2</td><td>42</td><td>$800.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="summary-section">
+            <h2>Estado operativo</h2>
+            <ul class="summary-list">
+              <li>Cajas abiertas: <strong>0</strong></li>
+              <li>Rondas activas: <strong>0</strong></li>
+              <li>Clientes con deuda: <strong>12</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <p style="margin-top: 2rem; font-size: 12px; color: #666;">
+          <strong>Nota:</strong> Se abre automáticamente la vista de impresión al cerrar jornada. Los datos se generan en tiempo real del estado actual.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

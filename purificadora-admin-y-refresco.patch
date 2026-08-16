@@ -1,0 +1,507 @@
+From d1280ea33941f40cfe6e7da6eade43523816b6db Mon Sep 17 00:00:00 2001
+From: "Mayorga (via Claude)" <mayorga@purificadoratrujillo.local>
+Date: Sat, 15 Aug 2026 22:11:37 +0000
+Subject: [PATCH] =?UTF-8?q?Fix:=20admin=20entra=20a=20Inicio=20(se=20hab?=
+ =?UTF-8?q?=C3=ADa=20perdido)=20+=20pantalla=20no=20se=20actualizaba=20tra?=
+ =?UTF-8?q?s=20ajustar/transferir=20inventario?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+1) El fix de 'Administrador entra a Inicio' (unlockAdmin -> showView
+   dashboard) se había hecho antes pero nunca llegó a aplicarse: al
+   reconstruir todo limpio para evitar la corrupción del parche v4,
+   se reseteó el sandbox a un punto anterior y se perdió. Reaplicado.
+
+2) Bug real reportado al probar 'tocar Llenos/Vacíos': el ajuste SÍ
+   se guardaba (RPC, auditoría, todo correcto), pero
+   saveInventoryAdjustment() y saveInventoryTransfer() solo llamaban
+   renderInventory() después de guardar, nunca renderRoutes() ni
+   renderDashboard() — así que si el usuario ajustaba desde Rutas,
+   la pantalla se quedaba mostrando el número viejo hasta navegar a
+   otra vista y volver. Se cambia a renderAll(), que es el patrón
+   que ya usa el resto de los guardados de la app (saveSale,
+   startRound, saleReturn, etc.).
+
+Bump de build a 20260815-admin-inicio-y-refresco.
+
+26/26 tests (tests/*.test.cjs) PASS.
+---
+ README.md                                |  2 +-
+ index.html                               | 18 ++++++++--------
+ js/app.js                                |  8 ++++----
+ js/central-auth-ui.js                    |  2 +-
+ js/data/cash-repository.js               |  2 +-
+ js/data/clients-repository.js            |  2 +-
+ js/data/corrections-repository.js        |  2 +-
+ js/data/inventory-repository.js          |  2 +-
+ js/data/ledger-repository.js             |  2 +-
+ js/data/maintenance-repository.js        |  2 +-
+ js/data/operational-store.js             | 26 ++++++++++++------------
+ js/data/profiles-repository.js           |  4 ++--
+ js/data/reports-repository.js            |  2 +-
+ js/data/repository-utils.js              |  2 +-
+ js/data/returns-repository.js            |  2 +-
+ js/data/rounds-repository.js             |  2 +-
+ js/data/sales-repository.js              |  4 ++--
+ js/data/settings-repository.js           |  2 +-
+ js/data/supabase-client.js               |  4 ++--
+ js/data/supplies-repository.js           |  2 +-
+ js/v3/bootstrap.js                       | 12 +++++------
+ sw.js                                    |  2 +-
+ tests/central-auth-mobile.test.cjs       |  6 +++---
+ tests/mobile-auth-qa.cjs                 |  2 +-
+ tests/mobile-ux-v35.test.cjs             |  2 +-
+ tests/presentation-labels.test.cjs       |  2 +-
+ tests/safe-uuid.test.cjs                 |  2 +-
+ tests/simplified-container-flow.test.cjs |  2 +-
+ tests/supabase-client-uuid-load.test.cjs |  2 +-
+ 29 files changed, 62 insertions(+), 62 deletions(-)
+
+diff --git a/README.md b/README.md
+index b86a9d6..f27b4ec 100644
+--- a/README.md
++++ b/README.md
+@@ -52,4 +52,4 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si
+ Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
+ ```
+ 
+-Build actual: `20260815-existencias-tocables-v2`.
++Build actual: `20260815-admin-inicio-y-refresco`.
+diff --git a/index.html b/index.html
+index 86190ee..dab6e57 100644
+--- a/index.html
++++ b/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+-    <meta name="app-build" content="20260815-existencias-tocables-v2" />
++    <meta name="app-build" content="20260815-admin-inicio-y-refresco" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta name="theme-color" content="#0d6efd" />
+     <title>Purificadora Trujillo · ERP V3.5</title>
+@@ -12,7 +12,7 @@
+       href="assets/logo/logo-trujillo.svg"
+       type="image/svg+xml"
+     />
+-    <link rel="stylesheet" href="css/styles.css?v=20260815-existencias-tocables-v2" />
++    <link rel="stylesheet" href="css/styles.css?v=20260815-admin-inicio-y-refresco" />
+   </head>
+   <body>
+     <div class="app-shell">
+@@ -2556,12 +2556,12 @@
+         }, 1200);
+       })();
+     </script>
+-    <script src="js/central-auth-ui.js?v=20260815-existencias-tocables-v2"></script>
+-    <script src="js/safe-uuid.js?v=20260815-existencias-tocables-v2"></script>
+-    <script src="js/presentation-labels.js?v=20260815-existencias-tocables-v2"></script>
+-    <script src="js/user-display.js?v=20260815-existencias-tocables-v2"></script>
+-    <script src="js/sale-client-selection.js?v=20260815-existencias-tocables-v2"></script>
+-    <script src="js/app.js?v=20260815-existencias-tocables-v2"></script>
+-    <script type="module" src="js/v3/bootstrap.js?v=20260815-existencias-tocables-v2"></script>
++    <script src="js/central-auth-ui.js?v=20260815-admin-inicio-y-refresco"></script>
++    <script src="js/safe-uuid.js?v=20260815-admin-inicio-y-refresco"></script>
++    <script src="js/presentation-labels.js?v=20260815-admin-inicio-y-refresco"></script>
++    <script src="js/user-display.js?v=20260815-admin-inicio-y-refresco"></script>
++    <script src="js/sale-client-selection.js?v=20260815-admin-inicio-y-refresco"></script>
++    <script src="js/app.js?v=20260815-admin-inicio-y-refresco"></script>
++    <script type="module" src="js/v3/bootstrap.js?v=20260815-admin-inicio-y-refresco"></script>
+   </body>
+ </html>
+diff --git a/js/app.js b/js/app.js
+index 563d10d..f74d7db 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1,7 +1,7 @@
+ (() => {
+   "use strict";
+ 
+-  const APP_SCRIPT_BUILD = "20260815-existencias-tocables-v2";
++  const APP_SCRIPT_BUILD = "20260815-admin-inicio-y-refresco";
+   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
+ 
+   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
+@@ -1504,7 +1504,7 @@
+     saveState();
+     resetAdminActivity();
+     renderAll();
+-    showView("usuarios");
++    showView("dashboard");
+     toast("Acceso de administrador autorizado");
+   }
+   function lockAdmin(message = "Modo administrador cerrado.") {
+@@ -5240,7 +5240,7 @@
+       after,
+     );
+     if (!(await commitState(previousState))) return;
+-    renderInventory();
++    renderAll();
+     toast("Transferencia registrada");
+   }
+   async function saveInventoryAdjustment(e) {
+@@ -5286,7 +5286,7 @@
+       { value: newQty, difference: delta, movementId: movement.id },
+     );
+     if (!(await commitState(previousState))) return;
+-    renderInventory();
++    renderAll();
+     form.elements.namedItem("adjustReason").value = "";
+     toast("Inventario ajustado");
+   }
+diff --git a/js/central-auth-ui.js b/js/central-auth-ui.js
+index a57afc7..77bcec3 100644
+--- a/js/central-auth-ui.js
++++ b/js/central-auth-ui.js
+@@ -1,7 +1,7 @@
+ (function exposeCentralAuthUi(globalScope) {
+   "use strict";
+ 
+-  const BUILD = "20260815-existencias-tocables-v2";
++  const BUILD = "20260815-admin-inicio-y-refresco";
+   const TRIGGER_SELECTOR =
+     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
+   const bindings = new WeakMap();
+diff --git a/js/data/cash-repository.js b/js/data/cash-repository.js
+index a98e77b..e9b6bd5 100644
+--- a/js/data/cash-repository.js
++++ b/js/data/cash-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ const expensePaymentMethod = (value) => {
+   const normalized = String(value || "otro").trim().toLowerCase();
+diff --git a/js/data/clients-repository.js b/js/data/clients-repository.js
+index 0e11c09..ad0fcae 100644
+--- a/js/data/clients-repository.js
++++ b/js/data/clients-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ function payload(client) {
+   return {
+diff --git a/js/data/corrections-repository.js b/js/data/corrections-repository.js
+index 7401575..f4c6d7e 100644
+--- a/js/data/corrections-repository.js
++++ b/js/data/corrections-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
+ 
+diff --git a/js/data/inventory-repository.js b/js/data/inventory-repository.js
+index ca3e184..62406af 100644
+--- a/js/data/inventory-repository.js
++++ b/js/data/inventory-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const inventoryRepository = {
+   listLocations: () => selectAll("inventory_locations"),
+diff --git a/js/data/ledger-repository.js b/js/data/ledger-repository.js
+index 8b76cd9..c0b6cb0 100644
+--- a/js/data/ledger-repository.js
++++ b/js/data/ledger-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const ledgerRepository = {
+   listPayments: () =>
+diff --git a/js/data/maintenance-repository.js b/js/data/maintenance-repository.js
+index 9170e9d..42bb301 100644
+--- a/js/data/maintenance-repository.js
++++ b/js/data/maintenance-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const maintenanceRepository = {
+   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),
+diff --git a/js/data/operational-store.js b/js/data/operational-store.js
+index 8563873..a08e80f 100644
+--- a/js/data/operational-store.js
++++ b/js/data/operational-store.js
+@@ -1,16 +1,16 @@
+-import { profilesRepository } from "./profiles-repository.js?v=20260815-existencias-tocables-v2";
+-import { clientsRepository } from "./clients-repository.js?v=20260815-existencias-tocables-v2";
+-import { salesRepository } from "./sales-repository.js?v=20260815-existencias-tocables-v2";
+-import { ledgerRepository } from "./ledger-repository.js?v=20260815-existencias-tocables-v2";
+-import { cashRepository } from "./cash-repository.js?v=20260815-existencias-tocables-v2";
+-import { inventoryRepository } from "./inventory-repository.js?v=20260815-existencias-tocables-v2";
+-import { roundsRepository } from "./rounds-repository.js?v=20260815-existencias-tocables-v2";
+-import { suppliesRepository } from "./supplies-repository.js?v=20260815-existencias-tocables-v2";
+-import { settingsRepository } from "./settings-repository.js?v=20260815-existencias-tocables-v2";
+-import { reportsRepository } from "./reports-repository.js?v=20260815-existencias-tocables-v2";
+-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-existencias-tocables-v2";
+-import { returnsRepository } from "./returns-repository.js?v=20260815-existencias-tocables-v2";
+-import { correctionsRepository } from "./corrections-repository.js?v=20260815-existencias-tocables-v2";
++import { profilesRepository } from "./profiles-repository.js?v=20260815-admin-inicio-y-refresco";
++import { clientsRepository } from "./clients-repository.js?v=20260815-admin-inicio-y-refresco";
++import { salesRepository } from "./sales-repository.js?v=20260815-admin-inicio-y-refresco";
++import { ledgerRepository } from "./ledger-repository.js?v=20260815-admin-inicio-y-refresco";
++import { cashRepository } from "./cash-repository.js?v=20260815-admin-inicio-y-refresco";
++import { inventoryRepository } from "./inventory-repository.js?v=20260815-admin-inicio-y-refresco";
++import { roundsRepository } from "./rounds-repository.js?v=20260815-admin-inicio-y-refresco";
++import { suppliesRepository } from "./supplies-repository.js?v=20260815-admin-inicio-y-refresco";
++import { settingsRepository } from "./settings-repository.js?v=20260815-admin-inicio-y-refresco";
++import { reportsRepository } from "./reports-repository.js?v=20260815-admin-inicio-y-refresco";
++import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-admin-inicio-y-refresco";
++import { returnsRepository } from "./returns-repository.js?v=20260815-admin-inicio-y-refresco";
++import { correctionsRepository } from "./corrections-repository.js?v=20260815-admin-inicio-y-refresco";
+ 
+ const fromCents = (value) => Number(value || 0) / 100;
+ const locationKey = (row) =>
+diff --git a/js/data/profiles-repository.js b/js/data/profiles-repository.js
+index cb5bdd9..a722496 100644
+--- a/js/data/profiles-repository.js
++++ b/js/data/profiles-repository.js
+@@ -2,8 +2,8 @@ import {
+   supabase,
+   getDeviceId,
+   getDeviceName,
+-} from "./supabase-client.js?v=20260815-existencias-tocables-v2";
+-import { selectAll, rpc } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++} from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
++import { selectAll, rpc } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ const PUBLIC_PROFILE_FIELDS =
+   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
+diff --git a/js/data/reports-repository.js b/js/data/reports-repository.js
+index c64d0f0..2a5502c 100644
+--- a/js/data/reports-repository.js
++++ b/js/data/reports-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const reportsRepository = {
+   listAudit: () =>
+diff --git a/js/data/repository-utils.js b/js/data/repository-utils.js
+index 1aa2fcd..452c855 100644
+--- a/js/data/repository-utils.js
++++ b/js/data/repository-utils.js
+@@ -1,7 +1,7 @@
+ import {
+   supabase,
+   getDeviceId,
+-} from "./supabase-client.js?v=20260815-existencias-tocables-v2";
++} from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
+ 
+ const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
+ const CENTRAL_SESSION_ERROR = "central_session_expired";
+diff --git a/js/data/returns-repository.js b/js/data/returns-repository.js
+index 19a5c37..93a845c 100644
+--- a/js/data/returns-repository.js
++++ b/js/data/returns-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const returnsRepository = {
+   list: async () => {
+diff --git a/js/data/rounds-repository.js b/js/data/rounds-repository.js
+index 784f392..2ed49d0 100644
+--- a/js/data/rounds-repository.js
++++ b/js/data/rounds-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const roundsRepository = {
+   list: () =>
+diff --git a/js/data/sales-repository.js b/js/data/sales-repository.js
+index 63e8afe..62e8cb3 100644
+--- a/js/data/sales-repository.js
++++ b/js/data/sales-repository.js
+@@ -1,5 +1,5 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
+-import { supabase } from "./supabase-client.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
++import { supabase } from "./supabase-client.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const salesRepository = {
+   list: () =>
+diff --git a/js/data/settings-repository.js b/js/data/settings-repository.js
+index 8ab9bec..84dd000 100644
+--- a/js/data/settings-repository.js
++++ b/js/data/settings-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const settingsRepository = {
+   list: () => selectAll("settings"),
+diff --git a/js/data/supabase-client.js b/js/data/supabase-client.js
+index 74b5cf3..74c3148 100644
+--- a/js/data/supabase-client.js
++++ b/js/data/supabase-client.js
+@@ -1,7 +1,7 @@
+ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
+-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-existencias-tocables-v2";
++import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260815-admin-inicio-y-refresco";
+ 
+-export const SUPABASE_CLIENT_BUILD = "20260815-existencias-tocables-v2";
++export const SUPABASE_CLIENT_BUILD = "20260815-admin-inicio-y-refresco";
+ export const DEVICE_KEY = "purificadora_v3_device_id";
+ export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
+ export const AUTH_STORAGE_KEY = "purificadora_v3_auth";
+diff --git a/js/data/supplies-repository.js b/js/data/supplies-repository.js
+index 5fafdd6..b89cf2f 100644
+--- a/js/data/supplies-repository.js
++++ b/js/data/supplies-repository.js
+@@ -1,4 +1,4 @@
+-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-existencias-tocables-v2";
++import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-admin-inicio-y-refresco";
+ 
+ export const suppliesRepository = {
+   list: () => selectAll("supplies", "*", (query) => query.order("name")),
+diff --git a/js/v3/bootstrap.js b/js/v3/bootstrap.js
+index b5d6812..0cdeaed 100644
+--- a/js/v3/bootstrap.js
++++ b/js/v3/bootstrap.js
+@@ -6,13 +6,13 @@ import {
+   getDeviceName,
+   setRememberDevicePreference,
+   REMEMBERED_EMAIL_KEY,
+-} from "../data/supabase-client.js?v=20260815-existencias-tocables-v2";
+-import { OperationalStore } from "../data/operational-store.js?v=20260815-existencias-tocables-v2";
+-import { profilesRepository } from "../data/profiles-repository.js?v=20260815-existencias-tocables-v2";
+-import { clientsRepository } from "../data/clients-repository.js?v=20260815-existencias-tocables-v2";
+-import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-existencias-tocables-v2";
++} from "../data/supabase-client.js?v=20260815-admin-inicio-y-refresco";
++import { OperationalStore } from "../data/operational-store.js?v=20260815-admin-inicio-y-refresco";
++import { profilesRepository } from "../data/profiles-repository.js?v=20260815-admin-inicio-y-refresco";
++import { clientsRepository } from "../data/clients-repository.js?v=20260815-admin-inicio-y-refresco";
++import { toCents, fromCents, formatMoney } from "./money.js?v=20260815-admin-inicio-y-refresco";
+ 
+-const BOOTSTRAP_BUILD = "20260815-existencias-tocables-v2";
++const BOOTSTRAP_BUILD = "20260815-admin-inicio-y-refresco";
+ const APP_BUILD =
+   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
+ const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
+diff --git a/sw.js b/sw.js
+index bf12bab..552f24c 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,4 +1,4 @@
+-const BUILD = "20260815-existencias-tocables-v2";
++const BUILD = "20260815-admin-inicio-y-refresco";
+ const CACHE = `purificadora-trujillo-${BUILD}`;
+ const ASSETS = [
+   "./",
+diff --git a/tests/central-auth-mobile.test.cjs b/tests/central-auth-mobile.test.cjs
+index d785b6e..0f588a8 100644
+--- a/tests/central-auth-mobile.test.cjs
++++ b/tests/central-auth-mobile.test.cjs
+@@ -17,7 +17,7 @@ const dataModules = fs
+ const moduleGraph = `${bootstrap}\n${dataModules}`;
+ 
+ assert.match(html, /id="v3OpenAuthBtn"[\s\S]*?type="button"[\s\S]*?aria-controls="v3AuthDialog"/);
+-assert.match(html, /meta name="app-build" content="20260815-existencias-tocables-v2"/);
++assert.match(html, /meta name="app-build" content="20260815-admin-inicio-y-refresco"/);
+ assert.match(html, /id="v3AuthTrace"/);
+ assert.match(html, /central-auth-ui\.js no cargado/);
+ assert.match(authUi, /bindStableAuthDelegation\(document\)/);
+@@ -41,7 +41,7 @@ assert.match(bootstrap, /Bootstrap build:/);
+ assert.match(bootstrap, /Central auth UI build:/);
+ assert.match(bootstrap, /Service-worker\/cache version:/);
+ assert.match(css, /#v3OpenAuthBtn[\s\S]*?touch-action: manipulation/);
+-assert.match(sw, /20260815-existencias-tocables-v2/);
++assert.match(sw, /20260815-admin-inicio-y-refresco/);
+ assert.match(app, /PurificadoraAppScriptBuild = APP_SCRIPT_BUILD/);
+ assert.match(bootstrap, /APP_SCRIPT_BUILD = window\.PurificadoraAppScriptBuild/);
+ assert.match(sw, /GET_PURIFICADORA_BUILD/);
+@@ -54,7 +54,7 @@ assert.doesNotMatch(
+ );
+ assert.match(
+   bootstrap,
+-  /operational-store\.js\?v=20260815-existencias-tocables-v2/,
++  /operational-store\.js\?v=20260815-admin-inicio-y-refresco/,
+ );
+ 
+ const submitStart = bootstrap.indexOf('form.addEventListener("submit"');
+diff --git a/tests/mobile-auth-qa.cjs b/tests/mobile-auth-qa.cjs
+index a4e07f7..f764ff1 100644
+--- a/tests/mobile-auth-qa.cjs
++++ b/tests/mobile-auth-qa.cjs
+@@ -30,7 +30,7 @@ async function openPage(browser, viewport, withoutNativeUuid = false) {
+     const mobile = await openPage(browser, { width: 390, height: 844 }, true);
+     assert.equal(
+       await mobile.page.locator('meta[name="app-build"]').getAttribute("content"),
+-      "20260815-existencias-tocables-v2",
++      "20260815-admin-inicio-y-refresco",
+     );
+     assert.match(
+       await mobile.page.evaluate(() => window.PurificadoraCrypto.safeRandomUUID()),
+diff --git a/tests/mobile-ux-v35.test.cjs b/tests/mobile-ux-v35.test.cjs
+index 55cbf96..9d65f86 100644
+--- a/tests/mobile-ux-v35.test.cjs
++++ b/tests/mobile-ux-v35.test.cjs
+@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
+ assert.match(bootstrap, /host\.appendChild\(panel\)/);
+ assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
+ assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
+-assert.match(sw, /20260815-existencias-tocables-v2/);
++assert.match(sw, /20260815-admin-inicio-y-refresco/);
+ assert.match(html, /class="panel sales-list-panel"/);
+ assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
+ assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);
+diff --git a/tests/presentation-labels.test.cjs b/tests/presentation-labels.test.cjs
+index 0a1f301..2c4e98c 100644
+--- a/tests/presentation-labels.test.cjs
++++ b/tests/presentation-labels.test.cjs
+@@ -33,6 +33,6 @@ assert.match(
+ assert.match(app, /register\(`\.\/sw\.js\?v=\$\{encodeURIComponent\(appBuild\)\}`\)/);
+ assert.match(bootstrap, /badge\.hidden = centralConnected \|\| noConnection/);
+ assert.match(bootstrap, /\? "Conectar"/);
+-assert.match(html, /presentation-labels\.js\?v=20260815-existencias-tocables-v2/);
++assert.match(html, /presentation-labels\.js\?v=20260815-admin-inicio-y-refresco/);
+ 
+ console.log("presentation-labels: 17/17 PASS");
+diff --git a/tests/safe-uuid.test.cjs b/tests/safe-uuid.test.cjs
+index e836026..490e0d2 100644
+--- a/tests/safe-uuid.test.cjs
++++ b/tests/safe-uuid.test.cjs
+@@ -25,7 +25,7 @@ assert.match(
+ );
+ assert.throws(() => safeRandomUUID({}), /generador criptogr/);
+ 
+-assert.match(html, /safe-uuid\.js\?v=20260815-existencias-tocables-v2/);
++assert.match(html, /safe-uuid\.js\?v=20260815-admin-inicio-y-refresco/);
+ assert.match(sw, /js\/safe-uuid\.js/);
+ assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
+ assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);
+diff --git a/tests/simplified-container-flow.test.cjs b/tests/simplified-container-flow.test.cjs
+index 623b31b..584629e 100644
+--- a/tests/simplified-container-flow.test.cjs
++++ b/tests/simplified-container-flow.test.cjs
+@@ -49,6 +49,6 @@ ok(/finalize_round_close/.test(read("supabase/migrations/20260814153453_round_re
+ ok(/audit_log/.test(migration), "preparar llenos registra auditoría");
+ ok(/can_operate\('rounds'\)/.test(migration), "los permisos se validan en backend");
+ ok(!/drop\s+table|truncate\s+table|delete\s+from\s+public\.(sales|rounds)/i.test(migration), "la migración no es destructiva");
+-ok(/20260815-existencias-tocables-v2/.test(sw), "service worker usa el build nuevo");
++ok(/20260815-admin-inicio-y-refresco/.test(sw), "service worker usa el build nuevo");
+ 
+ console.log(`simplified-container-flow: ${checks}/${checks} PASS`);
+diff --git a/tests/supabase-client-uuid-load.test.cjs b/tests/supabase-client-uuid-load.test.cjs
+index 4f744e5..71c824e 100644
+--- a/tests/supabase-client-uuid-load.test.cjs
++++ b/tests/supabase-client-uuid-load.test.cjs
+@@ -6,7 +6,7 @@ const { safeRandomUUID } = require("../js/safe-uuid.js");
+ const root = path.resolve(__dirname, "..");
+ const clientPath = path.join(root, "js/data/supabase-client.js");
+ const source = fs.readFileSync(clientPath, "utf8");
+-const build = "20260815-existencias-tocables-v2";
++const build = "20260815-admin-inicio-y-refresco";
+ 
+ assert.doesNotMatch(source, /crypto\.randomUUID\s*\(/);
+ assert.doesNotMatch(source, /\.randomUUID\s*\(/);
+-- 
+2.43.0
+
