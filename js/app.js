@@ -1846,7 +1846,7 @@
       month: "long",
       year: "numeric",
     }).format(new Date());
-    $("reportMonth").value = monthKey(nowISO());
+    $("reportMonth")?.value && ($("reportMonth").value = monthKey(nowISO()));
     sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
     employeeSession = null;
     adminMode = false;
