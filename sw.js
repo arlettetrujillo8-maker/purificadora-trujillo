@@ -1,4 +1,4 @@
-const BUILD = "20260815-envases-pendientes";
+const BUILD = "20260816-fix-mobile-login";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",

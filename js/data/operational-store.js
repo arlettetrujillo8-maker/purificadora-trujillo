@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260815-envases-pendientes";
-import { clientsRepository } from "./clients-repository.js?v=20260815-envases-pendientes";
-import { salesRepository } from "./sales-repository.js?v=20260815-envases-pendientes";
-import { ledgerRepository } from "./ledger-repository.js?v=20260815-envases-pendientes";
-import { cashRepository } from "./cash-repository.js?v=20260815-envases-pendientes";
-import { inventoryRepository } from "./inventory-repository.js?v=20260815-envases-pendientes";
-import { roundsRepository } from "./rounds-repository.js?v=20260815-envases-pendientes";
-import { suppliesRepository } from "./supplies-repository.js?v=20260815-envases-pendientes";
-import { settingsRepository } from "./settings-repository.js?v=20260815-envases-pendientes";
-import { reportsRepository } from "./reports-repository.js?v=20260815-envases-pendientes";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260815-envases-pendientes";
-import { returnsRepository } from "./returns-repository.js?v=20260815-envases-pendientes";
-import { correctionsRepository } from "./corrections-repository.js?v=20260815-envases-pendientes";
+import { profilesRepository } from "./profiles-repository.js?v=20260816-fix-mobile-login";
+import { clientsRepository } from "./clients-repository.js?v=20260816-fix-mobile-login";
+import { salesRepository } from "./sales-repository.js?v=20260816-fix-mobile-login";
+import { ledgerRepository } from "./ledger-repository.js?v=20260816-fix-mobile-login";
+import { cashRepository } from "./cash-repository.js?v=20260816-fix-mobile-login";
+import { inventoryRepository } from "./inventory-repository.js?v=20260816-fix-mobile-login";
+import { roundsRepository } from "./rounds-repository.js?v=20260816-fix-mobile-login";
+import { suppliesRepository } from "./supplies-repository.js?v=20260816-fix-mobile-login";
+import { settingsRepository } from "./settings-repository.js?v=20260816-fix-mobile-login";
+import { reportsRepository } from "./reports-repository.js?v=20260816-fix-mobile-login";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260816-fix-mobile-login";
+import { returnsRepository } from "./returns-repository.js?v=20260816-fix-mobile-login";
+import { correctionsRepository } from "./corrections-repository.js?v=20260816-fix-mobile-login";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
-import { supabase } from "./supabase-client.js?v=20260815-envases-pendientes";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-fix-mobile-login";
+import { supabase } from "./supabase-client.js?v=20260816-fix-mobile-login";
 
 export const salesRepository = {
   list: () =>

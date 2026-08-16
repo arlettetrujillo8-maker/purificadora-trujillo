@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260815-envases-pendientes";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-fix-mobile-login";
 
 export const maintenanceRepository = {
   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),
