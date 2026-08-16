@@ -638,7 +638,7 @@ function bindAuthUi() {
   }
 
   const clearAuthMessages = () => {
-    errorBox.textContent = "";
+    if (errorBox) errorBox.textContent = "";
     if (noticeBox) {
       noticeBox.textContent = "";
       noticeBox.classList.add("hidden");
@@ -673,9 +673,10 @@ function bindAuthUi() {
   forgotPasswordButton?.addEventListener("click", async () => {
     clearAuthMessages();
     const emailInput = document.getElementById("v3AuthEmail");
+    if (!emailInput) return;
     const email = emailInput.value.trim();
     if (!email || !emailInput.checkValidity()) {
-      errorBox.textContent = "Escribe primero un correo válido.";
+      if (errorBox) errorBox.textContent = "Escribe primero un correo válido.";
       emailInput.focus();
       return;
     }
@@ -692,7 +693,7 @@ function bindAuthUi() {
         "Enlace enviado. Abre el correo de recuperación en este mismo dispositivo y crea tu contraseña nueva.",
       );
     } catch (error) {
-      errorBox.textContent =
+      if (errorBox) errorBox.textContent =
         error?.message || "No se pudo enviar el enlace de recuperación.";
     } finally {
       forgotPasswordButton.disabled = false;
@@ -700,14 +701,17 @@ function bindAuthUi() {
     }
   });
 
-  form.addEventListener("submit", async (event) => {
+  form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearAuthMessages();
-    submitButton.disabled = true;
-    submitButton.textContent = "Conectando…";
+    if (submitButton) submitButton.disabled = true;
+    if (submitButton) submitButton.textContent = "Conectando…";
     try {
-      const email = document.getElementById("v3AuthEmail").value.trim();
-      const password = document.getElementById("v3AuthPassword").value;
+      const emailEl = document.getElementById("v3AuthEmail");
+      const passEl = document.getElementById("v3AuthPassword");
+      if (!emailEl || !passEl) return;
+      const email = emailEl.value.trim();
+      const password = passEl.value;
       setRememberDevicePreference();
       localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
       const authData = await signIn(email, password);
@@ -715,8 +719,8 @@ function bindAuthUi() {
       if (!profile?.active)
         throw new Error("La cuenta no tiene un perfil operativo activo.");
       setAuthButton(authData.session, profile);
-      document.getElementById("v3AuthPassword").value = "";
-      dialog.close();
+      passEl.value = "";
+      dialog?.close?.();
     } catch (error) {
       try {
         await client.auth.signOut();
@@ -730,33 +734,36 @@ function bindAuthUi() {
       diagnosticState.realtime = "CLOSED";
       diagnosticState.realtimeError = sanitizeDiagnosticError(error);
       renderDiagnosticPanel();
-      errorBox.textContent =
+      if (errorBox) errorBox.textContent =
         error?.message === "Invalid login credentials"
           ? "Correo o contraseña incorrectos. Escribe manualmente la contraseña nueva; no uses una contraseña guardada de Supabase."
           : error?.message || "No se pudo conectar la cuenta central.";
     } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = "Conectar";
+      if (submitButton) submitButton.disabled = false;
+      if (submitButton) submitButton.textContent = "Conectar";
     }
   });
 
   recoveryForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    recoveryErrorBox.textContent = "";
-    const password = document.getElementById("v3NewPassword").value;
-    const confirmation = document.getElementById("v3ConfirmPassword").value;
+    if (recoveryErrorBox) recoveryErrorBox.textContent = "";
+    const newPassEl = document.getElementById("v3NewPassword");
+    const confirmEl = document.getElementById("v3ConfirmPassword");
+    if (!newPassEl || !confirmEl) return;
+    const password = newPassEl.value;
+    const confirmation = confirmEl.value;
     if (password.length < 8) {
-      recoveryErrorBox.textContent =
+      if (recoveryErrorBox) recoveryErrorBox.textContent =
         "La contraseña debe tener al menos 8 caracteres.";
       return;
     }
     if (password !== confirmation) {
-      recoveryErrorBox.textContent = "Las contraseñas no coinciden.";
+      if (recoveryErrorBox) recoveryErrorBox.textContent = "Las contraseñas no coinciden.";
       return;
     }
 
-    recoverySubmitButton.disabled = true;
-    recoverySubmitButton.textContent = "Guardando…";
+    if (recoverySubmitButton) recoverySubmitButton.disabled = true;
+    if (recoverySubmitButton) recoverySubmitButton.textContent = "Guardando…";
     try {
       const { data: sessionData } = await client.auth.getSession();
       if (!sessionData.session)
@@ -767,23 +774,25 @@ function bindAuthUi() {
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
       await client.auth.signOut({ scope: "local" });
-      document.getElementById("v3NewPassword").value = "";
-      document.getElementById("v3ConfirmPassword").value = "";
-      if (recoveryDialog.open) recoveryDialog.close();
-      document.getElementById("v3AuthEmail").value = email;
-      document.getElementById("v3AuthPassword").value = "";
+      newPassEl.value = "";
+      confirmEl.value = "";
+      if (recoveryDialog?.open) recoveryDialog?.close?.();
+      const authEmailEl = document.getElementById("v3AuthEmail");
+      if (authEmailEl) authEmailEl.value = email;
+      const authPassEl = document.getElementById("v3AuthPassword");
+      if (authPassEl) authPassEl.value = "";
       clearAuthMessages();
       showAuthNotice(
         "Contraseña actualizada. Ya puedes entrar con la contraseña nueva.",
       );
-      if (!dialog.open) dialog.showModal();
-      document.getElementById("v3AuthPassword").focus();
+      if (dialog && !dialog.open) dialog.showModal();
+      authPassEl?.focus();
     } catch (error) {
-      recoveryErrorBox.textContent =
+      if (recoveryErrorBox) recoveryErrorBox.textContent =
         error?.message || "No se pudo guardar la contraseña nueva.";
     } finally {
-      recoverySubmitButton.disabled = false;
-      recoverySubmitButton.textContent = "Guardar contraseña";
+      if (recoverySubmitButton) recoverySubmitButton.disabled = false;
+      if (recoverySubmitButton) recoverySubmitButton.textContent = "Guardar contraseña";
     }
   });
 }
