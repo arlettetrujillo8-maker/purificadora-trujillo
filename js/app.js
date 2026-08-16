@@ -1846,7 +1846,6 @@
       month: "long",
       year: "numeric",
     }).format(new Date());
-    $("reportMonth")?.value && ($("reportMonth").value = monthKey(nowISO()));
     sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
     employeeSession = null;
     adminMode = false;
@@ -2244,7 +2243,6 @@
       restorePreviousState,
     );
     $("manualRecoveryResetBtn").addEventListener("click", openRecoveryReset);
-    $("reportMonth")?.addEventListener("change", renderReports);
     $("resetMaintenanceBtn").addEventListener("click", resetMaintenance);
     $("saveMaintenanceThresholdBtn").addEventListener(
       "click",
@@ -5107,7 +5105,9 @@
     showManagedDialog($("cashDetailDialog"));
   }
   function renderReports() {
-    const period = $("reportPeriod").value || "dia";
+    // El <select> se genera dentro de esta misma funcion, asi que en el primer
+    // render todavia no existe: se cae al periodo por defecto.
+    const period = $("reportPeriod")?.value || "dia";
     const now = new Date();
     let startDate, endDate = now;
 
@@ -5160,7 +5160,7 @@
         <div class="report-filters">
           <label>
             Período:
-            <select id="reportPeriod" onchange="renderReports()">
+            <select id="reportPeriod">
               <option value="dia" ${period === "dia" ? "selected" : ""}>Hoy</option>
               <option value="semana" ${period === "semana" ? "selected" : ""}>Últimos 7 días</option>
               <option value="mes" ${period === "mes" ? "selected" : ""}>Este mes</option>
@@ -5229,7 +5229,12 @@
       </div>
     `;
 
-    $("reportsContent").innerHTML = html;
+    const container = $("reportsContent");
+    if (!container) return;
+    container.innerHTML = html;
+    // renderReports vive dentro del IIFE, asi que no se puede llamar desde un
+    // onchange inline: se reengancha el listener despues de pintar el select.
+    $("reportPeriod")?.addEventListener("change", renderReports);
   }
   async function openCash(e) {
     e.preventDefault();
@@ -6446,82 +6451,6 @@
     populateEmployeeLogin();
     renderAll();
     toast("Empleado guardado");
-  }
-
-  function renderReports() {
-    const ym = $("reportMonth")?.value || monthKey(nowISO());
-    const sales = state.sales
-        .filter((s) => sameMonth(s.date, ym) && isEffectiveSale(s))
-        .map(netSale),
-      expenses = state.expenses.filter((e) => sameMonth(e.date, ym)),
-      ledger = state.ledger.filter((l) => sameMonth(l.date, ym)),
-      debtPayments = ledger.filter((l) => l.type === "payment");
-    const units = sales.reduce((a, s) => a + s.qty, 0),
-      revenue = sales.reduce((a, s) => a + s.total, 0),
-      collected =
-        sales.reduce((a, s) => a + s.paid, 0) +
-        debtPayments.reduce((a, l) => a + l.payment, 0),
-      credit = sales.reduce((a, s) => a + s.credit, 0),
-      recovered = debtPayments.reduce((a, l) => a + l.payment, 0),
-      exp = expenses.reduce((a, e) => a + e.amount, 0);
-    const [year, month] = ym.split("-").map(Number),
-      monthStart = new Date(year, month - 1, 1).getTime(),
-      monthEnd = new Date(year, month, 1).getTime() - 1;
-    const openingDebt = state.clients.reduce(
-        (a, c) => a + Math.max(0, clientBalanceAt(c.id, monthStart - 1)),
-        0,
-      ),
-      closingDebt = state.clients.reduce(
-        (a, c) => a + Math.max(0, clientBalanceAt(c.id, monthEnd)),
-        0,
-      ),
-      currentDebt = state.clients.reduce(
-        (a, c) => a + Math.max(0, clientBalance(c.id)),
-        0,
-      );
-    $("reportMetrics").innerHTML = [
-      metric("Garrafones", int(units)),
-      metric("Ventas", money(revenue)),
-      metric("Cobrado", money(collected)),
-      metric(
-        "Gastos",
-        money(exp),
-        `Utilidad operativa ${money(revenue - exp)}`,
-      ),
-    ].join("");
-    const ch = Object.keys(CHANNELS).map((k) => ({
-      k,
-      val: sales
-        .filter((s) => s.channel === k)
-        .reduce((a, s) => a + s.total, 0),
-    }));
-    const max = Math.max(1, ...ch.map((x) => x.val));
-    $("reportChannels").innerHTML = ch
-      .map(
-        (x) =>
-          `<div class="bar-row"><span>${CHANNELS[x.k]}</span><div class="bar-track"><div class="bar-fill" style="width:${(x.val / max) * 100}%"></div></div><strong>${money(x.val)}</strong></div>`,
-      )
-      .join("");
-    $("reportDebt").innerHTML =
-      `<div class="list-row"><span>Saldo inicial del mes</span><strong>${money(openingDebt)}</strong></div><div class="list-row"><span>Fiado generado</span><strong>${money(credit)}</strong></div><div class="list-row"><span>Fiado recuperado</span><strong>${money(recovered)}</strong></div><div class="list-row"><span>Saldo al cierre del mes</span><strong>${money(closingDebt)}</strong></div><div class="list-row"><span>Deuda actual</span><strong>${money(currentDebt)}</strong></div>`;
-    const clients = state.clients
-      .map((c) => {
-        const ss = sales.filter((s) => s.clientId === c.id),
-          ll = debtPayments.filter((l) => l.clientId === c.id);
-        return {
-          c,
-          units: ss.reduce((a, s) => a + s.qty, 0),
-          purchases: ss.length,
-          credit: ss.reduce((a, s) => a + s.credit, 0),
-          payments: ll.reduce((a, l) => a + l.payment, 0),
-          closing: clientBalanceAt(c.id, monthEnd),
-        };
-      })
-      .filter((x) => x.purchases || x.payments)
-      .sort((a, b) => b.units - a.units);
-    $("reportClients").innerHTML = clients.length
-      ? `<div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Garrafones</th><th>Compras</th><th>Fiado</th><th>Pagos</th><th>Saldo resultante</th></tr></thead><tbody>${clients.map((x) => `<tr><td>${esc(x.c.name)}</td><td>${int(x.units)}</td><td>${int(x.purchases)}</td><td>${money(x.credit)}</td><td>${money(x.payments)}</td><td>${money(x.closing)}</td></tr>`).join("")}</tbody></table></div>`
-      : '<div class="empty">Sin actividad para este mes.</div>';
   }
 
   function renderSettings() {

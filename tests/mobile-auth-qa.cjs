@@ -30,7 +30,7 @@ async function openPage(browser, viewport, withoutNativeUuid = false) {
     const mobile = await openPage(browser, { width: 390, height: 844 }, true);
     assert.equal(
       await mobile.page.locator('meta[name="app-build"]').getAttribute("content"),
-      "20260815-envases-pendientes",
+      "20260816-fix-mobile-login",
     );
     assert.match(
       await mobile.page.evaluate(() => window.PurificadoraCrypto.safeRandomUUID()),

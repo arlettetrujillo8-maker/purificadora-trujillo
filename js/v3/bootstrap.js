@@ -701,7 +701,7 @@ function bindAuthUi() {
     }
   });
 
-  form?.addEventListener("submit", async (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearAuthMessages();
     if (submitButton) submitButton.disabled = true;
@@ -720,7 +720,7 @@ function bindAuthUi() {
         throw new Error("La cuenta no tiene un perfil operativo activo.");
       setAuthButton(authData.session, profile);
       passEl.value = "";
-      dialog?.close?.();
+      dialog.close();
     } catch (error) {
       try {
         await client.auth.signOut();
