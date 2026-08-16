@@ -2244,7 +2244,7 @@
       restorePreviousState,
     );
     $("manualRecoveryResetBtn").addEventListener("click", openRecoveryReset);
-    $("reportMonth").addEventListener("change", renderReports);
+    $("reportMonth")?.addEventListener("change", renderReports);
     $("resetMaintenanceBtn").addEventListener("click", resetMaintenance);
     $("saveMaintenanceThresholdBtn").addEventListener(
       "click",
@@ -6449,7 +6449,7 @@
   }
 
   function renderReports() {
-    const ym = $("reportMonth").value || monthKey(nowISO());
+    const ym = $("reportMonth")?.value || monthKey(nowISO());
     const sales = state.sales
         .filter((s) => sameMonth(s.date, ym) && isEffectiveSale(s))
         .map(netSale),
