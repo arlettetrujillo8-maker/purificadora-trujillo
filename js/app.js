@@ -5216,93 +5216,6 @@
     }
     showManagedDialog($("closeWorkDayDialog"));
   }
-  function openWorkDaySummary() {
-    const u = activeUser();
-    const allSales = todaySales();
-    const allExpenses = todayExpenses();
-    const allPayments = state.ledger.filter(
-      (x) => sameDay(x.date) && x.type === "payment",
-    );
-    const openCashes = state.cashSessions.filter((s) => !s.closedAt);
-    const activeRounds = state.rounds.filter((r) => r.status !== "cerrada");
-    const units = allSales.reduce((a, s) => a + s.qty, 0);
-    const revenue = allSales.reduce((a, s) => a + s.total, 0);
-    const collected =
-      allSales.reduce((a, s) => a + s.paid, 0) +
-      allPayments.reduce((a, x) => a + x.payment, 0);
-    const credit = allSales.reduce((a, s) => a + s.credit, 0);
-    const expenses = allExpenses.reduce((a, e) => a + e.amount, 0);
-    const byChannel = Object.keys(CHANNELS).map((k) => ({
-      channel: CHANNELS[k],
-      sales: allSales
-        .filter((s) => s.channel === k)
-        .reduce((a, s) => a + s.total, 0),
-      units: allSales.filter((s) => s.channel === k).reduce((a, s) => a + s.qty, 0),
-    }));
-    const html = `
-      <div class="close-work-day-summary">
-        <div class="summary-header">
-          <h1>Resumen de jornada</h1>
-          <p>${new Date().toLocaleDateString("es-MX", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
-        </div>
-        <div class="summary-grid">
-          <div class="summary-metric">
-            <span class="label">Garrafones</span>
-            <strong>${int(units)}</strong>
-            <small>vendidos</small>
-          </div>
-          <div class="summary-metric">
-            <span class="label">Ventas</span>
-            <strong>${money(revenue)}</strong>
-            <small>total</small>
-          </div>
-          <div class="summary-metric">
-            <span class="label">Cobrado</span>
-            <strong>${money(collected)}</strong>
-            <small>ventas + pagos</small>
-          </div>
-          <div class="summary-metric">
-            <span class="label">Fiado</span>
-            <strong>${money(credit)}</strong>
-            <small>generado</small>
-          </div>
-          <div class="summary-metric">
-            <span class="label">Gastos</span>
-            <strong>${money(expenses)}</strong>
-            <small>registrados</small>
-          </div>
-          <div class="summary-metric">
-            <span class="label">Neto</span>
-            <strong>${money(revenue - expenses)}</strong>
-            <small>operativo</small>
-          </div>
-        </div>
-        <div class="summary-section">
-          <h2>Por canal</h2>
-          <table class="summary-table">
-            <tbody>
-              ${byChannel
-                .map(
-                  (c) =>
-                    `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td>${money(c.sales)}</td></tr>`,
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </div>
-        <div class="summary-section">
-          <h2>Estado operativo</h2>
-          <ul class="summary-list">
-            <li>Cajas abiertas: <strong>${int(openCashes.length)}</strong></li>
-            <li>Rondas activas: <strong>${int(activeRounds.length)}</strong></li>
-            <li>Clientes con deuda: <strong>${int(state.clients.filter((c) => clientBalance(c.id) > 0.009).length)}</strong></li>
-          </ul>
-        </div>
-      </div>
-    `;
-    $("closeWorkDaySummaryContent").innerHTML = html;
-    window.print();
-  }
   async function closeWorkDay(e) {
     if (e) e.preventDefault();
     if (!requirePermission("close_work_day")) return;
@@ -5350,7 +5263,6 @@
     }
     $("closeWorkDayDialog").close();
     renderAll();
-    openWorkDaySummary();
     toast(`Jornada cerrada · ${closedCount} elemento(s)`);
   }
   async function saveCashMovement(e) {

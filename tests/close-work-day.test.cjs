@@ -166,29 +166,6 @@ describe("Close Work Day", () => {
     });
   });
 
-  describe("openWorkDaySummary()", () => {
-    it("should generate summary HTML with metrics", () => {
-      const summary = generateSummaryHTML(mockState);
-      assert.strictEqual(typeof summary, "string");
-      assert(summary.includes("Resumen de jornada"));
-      assert(summary.includes("close-work-day-summary"));
-    });
-
-    it("should calculate totals correctly", () => {
-      const summary = generateSummaryHTML(mockState);
-      assert(summary.includes("summary-metric") || summary.length > 0);
-    });
-
-    it("should include channel breakdown", () => {
-      const summary = generateSummaryHTML(mockState);
-      assert(summary.includes("Por canal") || summary.includes("channel"));
-    });
-
-    it("should include operational state section", () => {
-      const summary = generateSummaryHTML(mockState);
-      assert(summary.includes("Estado operativo") || summary.includes("operational"));
-    });
-  });
 
   describe("Permissions", () => {
     it("should require close_work_day permission", () => {
@@ -218,27 +195,3 @@ describe("Close Work Day", () => {
     });
   });
 });
-
-function generateSummaryHTML(state) {
-  return `<div class="close-work-day-summary">
-    <div class="summary-header">
-      <h1>Resumen de jornada</h1>
-      <p>${new Date().toLocaleDateString("es-MX")}</p>
-    </div>
-    <div class="summary-grid">
-      <div class="summary-metric"><span class="label">Garrafones</span><strong>0</strong><small>vendidos</small></div>
-      <div class="summary-metric"><span class="label">Ventas</span><strong>$0.00</strong><small>total</small></div>
-    </div>
-    <div class="summary-section">
-      <h2>Por canal</h2>
-      <table class="summary-table"><tbody></tbody></table>
-    </div>
-    <div class="summary-section">
-      <h2>Estado operativo</h2>
-      <ul class="summary-list">
-        <li>Cajas abiertas: <strong>${state.cashSessions.filter((s) => !s.closedAt).length}</strong></li>
-        <li>Rondas activas: <strong>${state.rounds.filter((r) => r.status !== "cerrada").length}</strong></li>
-      </ul>
-    </div>
-  </div>`;
-}
