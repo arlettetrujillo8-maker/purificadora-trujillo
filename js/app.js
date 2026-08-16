@@ -3537,6 +3537,12 @@
       setSaleSubmitting(false);
       return;
     }
+    if (client) {
+      const netContainers = qty - containerEffect.emptyReturnQty - containerEffect.damagedReturnQty;
+      if (netContainers > 0) {
+        client.containerDebt = (client.containerDebt || 0) + netContainers;
+      }
+    }
     resetSaleForm();
     renderAll();
     toast("Venta registrada correctamente");

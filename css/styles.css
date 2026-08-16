@@ -1270,6 +1270,8 @@ dialog::backdrop {
   text-align: center;
   font-size: 20px;
   font-weight: 800;
+  min-width: 70px;
+  padding: 0 8px;
 }
 .payment-options {
   display: grid;
