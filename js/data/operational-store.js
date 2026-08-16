@@ -567,11 +567,17 @@ export class OperationalStore {
       (item) => item.type === "payment",
     );
     const newSessions = added(before.cashSessions, draft.cashSessions);
+    const autoClosedSessions = draft.cashSessions.filter((item) => {
+      const old = before.cashSessions.find(
+        (candidate) => candidate.id === item.id,
+      );
+      return old && !old.closedAt && item.closedAt && item.autoClosedWorkDay;
+    });
     const closedSession = draft.cashSessions.find((item) => {
       const old = before.cashSessions.find(
         (candidate) => candidate.id === item.id,
       );
-      return old && !old.closedAt && item.closedAt;
+      return old && !old.closedAt && item.closedAt && !item.autoClosedWorkDay;
     });
     const newCashMovement = added(before.cashMovements, draft.cashMovements)[0];
     const newCashTransfer = added(before.cashTransfers, draft.cashTransfers)[0];
@@ -580,9 +586,13 @@ export class OperationalStore {
       const old = before.rounds.find((candidate) => candidate.id === item.id);
       return old && Number(item.reloadQty || 0) > Number(old.reloadQty || 0);
     });
+    const autoClosedRounds = draft.rounds.filter((item) => {
+      const old = before.rounds.find((candidate) => candidate.id === item.id);
+      return old && old.status !== "cerrada" && item.status === "cerrada" && item.autoClosedWorkDay;
+    });
     const closedRound = draft.rounds.find((item) => {
       const old = before.rounds.find((candidate) => candidate.id === item.id);
-      return old && old.status !== "cerrada" && item.status === "cerrada";
+      return old && old.status !== "cerrada" && item.status === "cerrada" && !item.autoClosedWorkDay;
     });
     const returnedRound = draft.rounds.find((item) => {
       const old = before.rounds.find((candidate) => candidate.id === item.id);
@@ -637,6 +647,11 @@ export class OperationalStore {
       });
     else if (updatedClient) await clientsRepository.update(updatedClient);
     else if (newSessions[0]) await cashRepository.open(newSessions[0]);
+    else if (autoClosedSessions.length > 0) {
+      for (const session of autoClosedSessions) {
+        await cashRepository.close(session);
+      }
+    }
     else if (closedSession) await cashRepository.close(closedSession);
     else if (newCashMovement) await cashRepository.movement(newCashMovement);
     else if (newCashTransfer) await cashRepository.transfer(newCashTransfer);
@@ -650,6 +665,11 @@ export class OperationalStore {
       });
     }
     else if (returnedRound) await roundsRepository.registerReturn(returnedRound);
+    else if (autoClosedRounds.length > 0) {
+      for (const round of autoClosedRounds) {
+        await roundsRepository.finalize(round);
+      }
+    }
     else if (closedRound) await roundsRepository.finalize(closedRound);
     else if (newRounds[0]) await roundsRepository.start(newRounds[0]);
     else if (
