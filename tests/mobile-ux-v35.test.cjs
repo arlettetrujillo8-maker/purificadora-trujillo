@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
 assert.match(bootstrap, /host\.appendChild\(panel\)/);
 assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
 assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
-assert.match(sw, /20260817-vacios-ronda/);
+assert.match(sw, /20260817-rondas-una-tarjeta/);
 assert.match(html, /class="panel sales-list-panel"/);
 assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
 assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);
@@ -36,7 +36,21 @@ assert.match(css, /@media \(max-width: 850px\)[\s\S]*?\.route-header-secondary\s
 assert.match(css, /\.route-header-secondary\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 assert.match(css, /\.route-header-secondary button\s*\{[\s\S]*?min-width: 0[\s\S]*?white-space: normal/);
 assert.match(css, /\.route-header-secondary \.text-btn\s*\{\s*color: #fff/);
-assert.match(app, /route-header-secondary[\s\S]*Recargar[\s\S]*Regreso[\s\S]*Cobrar[\s\S]*Registrar gasto[\s\S]*Corregir vacíos/);
+// Las acciones secundarias las arma routeStepPlan y se pintan dentro del
+// <details> "Otras acciones"; antes iban todas sueltas sobre la tarjeta.
+assert.match(app, /route-more[\s\S]*?route-header-secondary/);
+for (const accion of [
+  "Recargar garrafones",
+  "Cobrar a clientes",
+  "Registrar regreso",
+  "Registrar gasto",
+  "Corregir vacíos",
+])
+  assert.match(
+    app,
+    new RegExp(`secondary\\.push\\([\\s\\S]{0,260}?${accion}`),
+    `${accion} debe seguir disponible`,
+  );
 assert.match(app, /window\.scrollTo\(\{ top: 0, left: 0, behavior: "auto" \}\)/);
 assert.doesNotMatch(app, /behavior: "smooth"/);
 assert.match(

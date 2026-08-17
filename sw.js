@@ -1,4 +1,4 @@
-const BUILD = "20260817-vacios-ronda";
+const BUILD = "20260817-rondas-una-tarjeta";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",

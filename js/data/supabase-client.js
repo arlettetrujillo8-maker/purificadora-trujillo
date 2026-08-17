@@ -1,7 +1,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/+esm";
-import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260817-vacios-ronda";
+import { SUPABASE_CONFIG } from "../v3/supabase-config.js?v=20260817-rondas-una-tarjeta";
 
-export const SUPABASE_CLIENT_BUILD = "20260817-vacios-ronda";
+export const SUPABASE_CLIENT_BUILD = "20260817-rondas-una-tarjeta";
 export const DEVICE_KEY = "purificadora_v3_device_id";
 export const DEVICE_NAME_KEY = "purificadora_v3_device_name";
 export const AUTH_STORAGE_KEY = "purificadora_v3_auth";
@@ -50,7 +50,7 @@ export function getDeviceId() {
   if (!id) {
     const uuidHelper = globalThis.PurificadoraCrypto?.safeRandomUUID;
     if (typeof uuidHelper !== "function")
-      throw new Error("El generador UUID compatible no estÃ¡ cargado");
+      throw new Error("El generador UUID compatible no está cargado");
     id = uuidHelper();
     localStorage.setItem(DEVICE_KEY, id);
   }

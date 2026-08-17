@@ -494,6 +494,74 @@ textarea {
 #clientNotes {
   min-height: 120px;
 }
+/* Tarjeta unica de ronda: una accion principal, el resto plegado.
+   Ojo: .route-ops-header es un degradado azul oscuro con texto blanco, asi
+   que todo lo de aqui se estila claro-sobre-oscuro. */
+.route-load-line {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 12px;
+}
+.route-load-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.route-load-bar span {
+  display: block;
+  height: 100%;
+  background: #fff;
+  border-radius: 999px;
+}
+.route-load-line small,
+.route-day-note {
+  color: rgba(255, 255, 255, 0.82);
+}
+.route-day-note {
+  display: block;
+  margin: 10px 0 12px;
+}
+/* Un boton en gris sin motivo era la razon principal de que el repartidor no
+   supiera que hacer. Ahora se dice que pasa y como destrabarlo. */
+.route-blocked {
+  border-left: 4px solid #fbbf24;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #fff;
+}
+.route-more {
+  margin-top: 10px;
+}
+.route-more > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  color: #fff;
+}
+.route-more .route-header-secondary {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+/* El rojo de .amount-danger esta pensado para fondo claro; sobre el azul
+   oscuro de la tarjeta casi no se lee. */
+.route-ops-header .amount-danger {
+  color: #ffd166;
+}
+/* Un boton deshabilitado que se ve igual que uno activo vuelve a dejar al
+   repartidor tocando algo que no responde. */
+.route-ops-header .primary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 /* Reconciliacion de vacios en el regreso de ronda: se muestra la cuenta en
    vez de dictar un numero, y se explica la diferencia en lenguaje del
    negocio. El color distingue de un vistazo sobrante de faltante. */
@@ -643,15 +711,6 @@ tbody tr:hover {
   height: 100%;
   background: var(--primary);
   border-radius: 999px;
-}
-.route-card .route-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-.route-card .route-number {
-  font-size: 30px;
-  font-weight: 800;
 }
 .inventory-grid {
   display: grid;
@@ -1580,12 +1639,6 @@ dialog::backdrop {
   background: #fff6df;
   color: #805500;
 }
-.round-card {
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  background: #fff;
-}
 .round-progress {
   height: 9px;
   border-radius: 99px;
@@ -1667,12 +1720,6 @@ details.full summary {
   }
   .toolbar-actions > * {
     flex: 1;
-  }
-  .round-card .dialog-actions {
-    flex-direction: column;
-  }
-  .round-card .dialog-actions > * {
-    width: 100%;
   }
 }
 
@@ -2267,8 +2314,9 @@ details.full summary {
   .mobile-card-actions button:last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
-  #view-rutas #activeRounds,
-  #view-rutas > .two-col:not(#activeRounds),
+  /* Los bloques duplicados de ronda ya no existen; en movil se seguian
+     ocultando aqui, que es por lo que el triple render solo se veia en
+     escritorio. Queda el panel de tablas, que si sigue vivo. */
   #view-rutas > .table-panel {
     display: none;
   }

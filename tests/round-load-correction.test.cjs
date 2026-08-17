@@ -16,10 +16,22 @@ assert.match(
 // El botón solo debe ofrecerse a Administrador, con ronda activa (no
 // "regresada"), y solo cuando NO hay ya una inconsistencia (esa tiene su
 // propio flujo: Resolver ronda activa).
+// Las 3 condiciones viven ahora en routeStepPlan, que decide el paso de la
+// ronda; `inconsistent` y `returned` son sus nombres locales.
 assert.match(
   app,
-  /adminMode && !metrics\?\.inconsistencyQty && round\.status !== "regresada"[\s\S]*?correct-round-load/,
+  /if \(adminMode && !inconsistent && !returned\)\s*\n\s*secondary\.push\(\s*\n\s*`<button class="secondary-btn correct-round-load"/,
   "el botón Corregir carga respeta las 3 condiciones",
+);
+assert.match(
+  app,
+  /const inconsistent = Number\(metrics\?\.inconsistencyQty \|\| 0\) > 0/,
+  "inconsistent debe derivarse de inconsistencyQty",
+);
+assert.match(
+  app,
+  /const returned = round\.status === "regresada"/,
+  "returned debe derivarse del estado regresada",
 );
 
 // openRoundLoadCorrection debe rechazar si hay inconsistencia (evita pisar

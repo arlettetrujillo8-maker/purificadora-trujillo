@@ -1,7 +1,7 @@
 import {
   supabase,
   getDeviceId,
-} from "./supabase-client.js?v=20260817-vacios-ronda";
+} from "./supabase-client.js?v=20260817-rondas-una-tarjeta";
 
 const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
 const CENTRAL_SESSION_ERROR = "central_session_expired";

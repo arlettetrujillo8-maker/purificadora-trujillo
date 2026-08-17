@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-vacios-ronda";
+  const APP_SCRIPT_BUILD = "20260817-rondas-una-tarjeta";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -4364,6 +4364,94 @@
     toast("Entrega de envases registrada");
   }
 
+  // Una ronda tiene un solo siguiente paso. Antes la pantalla ofrecia hasta
+  // ocho botones a la vez, varios repetidos en otros dos bloques, y los que no
+  // aplicaban salian en gris sin decir por que: el repartidor no sabia que
+  // tocar. Aqui se decide UNA accion principal segun el estado, y cuando algo
+  // esta bloqueado se dice el motivo y como destrabarlo.
+  // El vocabulario sigue al rotulo del tracker (Preparando / En ruta /
+  // Regreso), en vez de mezclar "Regreso", "Regresar" y "Cerrar ronda".
+  function routeStepPlan(route, round, metrics) {
+    const wide = (html) => html;
+    if (!round)
+      return {
+        stateLabel: "Sin iniciar",
+        blockedReason: can("rounds")
+          ? ""
+          : "Tu usuario no puede iniciar rondas. Pídeselo al administrador.",
+        primary: wide(
+          `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`,
+        ),
+        secondary: [],
+      };
+
+    const secondary = [];
+    const inconsistent = Number(metrics?.inconsistencyQty || 0) > 0;
+    const returned = round.status === "regresada";
+
+    if (!returned && !inconsistent)
+      secondary.push(
+        `<button class="secondary-btn reload-round" data-id="${round.id}">Recargar garrafones</button>`,
+      );
+    secondary.push(`<button class="secondary-btn" data-go="fiado">Cobrar a clientes</button>`);
+    if (adminMode && !inconsistent && !returned)
+      secondary.push(
+        `<button class="secondary-btn correct-round-load" data-id="${round.id}">Corregir carga</button>`,
+      );
+    if (adminMode && can("create_expense"))
+      secondary.push(
+        `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>`,
+      );
+    // Vacios y no llenos: durante la ronda, los llenos que se ven en pantalla
+    // son metrics.availableFull, no state.inventory[route], y corregir ese
+    // ultimo no arreglaria lo que el repartidor esta mirando.
+    if (can("adjust_inventory"))
+      secondary.push(
+        `<button class="text-btn" data-inventory-quick="adjust" data-location="empty_${route}">Corregir vacíos</button>`,
+      );
+
+    if (inconsistent) {
+      const qty = int(metrics.inconsistencyQty);
+      return {
+        stateLabel: "Requiere revisión",
+        blockedReason: adminMode
+          ? `Se vendieron ${qty} garrafones más de los cargados. Resuélvelo con un motivo; no se tocará ninguna venta.`
+          : `Se vendieron ${qty} garrafones más de los cargados. No puedes vender ni cerrar hasta que un administrador lo resuelva.`,
+        primary: adminMode
+          ? wide(
+              `<button class="primary-btn wide recover-round" data-id="${round.id}">Resolver ronda</button>`,
+            )
+          : wide(
+              `<button class="primary-btn wide" disabled>Registrar venta</button>`,
+            ),
+        secondary,
+      };
+    }
+
+    if (returned)
+      return {
+        stateLabel: "Regreso registrado",
+        blockedReason: "",
+        primary: wide(
+          `<button class="primary-btn wide return-round" data-id="${round.id}">Cerrar ronda</button>`,
+        ),
+        secondary,
+      };
+
+    // En ruta: vender es lo que hace el repartidor casi todo el dia, asi que
+    // es la accion principal; registrar el regreso queda a un toque.
+    secondary.push(
+      `<button class="secondary-btn return-round" data-id="${round.id}">Registrar regreso</button>`,
+    );
+    return {
+      stateLabel: "En ruta",
+      blockedReason: "",
+      primary: wide(
+        `<button class="primary-btn wide" data-go="ventas" data-channel="${route}">Registrar venta</button>`,
+      ),
+      secondary,
+    };
+  }
   function renderRoutes() {
     const u = activeUser(),
       ownRoute = !adminMode && u?.role === "repartidor";
@@ -4379,7 +4467,41 @@
         const trackerLineHtml = (index) =>
           `<div class="route-progress-line${trackerStep >= index ? " is-done" : ""}"></div>`;
         const routeTrackerHtml = `<div class="route-progress-track">${trackerStepHtml(0, "Preparando")}${trackerLineHtml(1)}${trackerStepHtml(1, "En ruta")}${trackerLineHtml(2)}${trackerStepHtml(2, "Regreso")}</div>`;
-        return `<section class="route-ops-header"><div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${round ? round.status === "regresada" ? "Regreso registrado" : "En ruta" : "Sin iniciar"}</span></div>${routeTrackerHtml}<div class="route-ops-metrics"><div><small>Llenos</small><strong class="${metrics?.inconsistencyQty ? "amount-danger" : ""}${!round && can("adjust_inventory") ? " route-stock-inline-edit" : ""}" ${!round && can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${metrics ? int(metrics.availableFull) : int(state.inventory[route] || 0)}</strong></div><div><small>Vacíos</small><strong class="${can("adjust_inventory") ? "route-stock-inline-edit" : ""}" ${can("adjust_inventory") ? `data-inventory-quick="adjust" data-location="empty_${route}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(state.inventory[`empty_${route}`] || 0)}</strong></div><div><small>Caja</small><strong>${cashOpen ? "Abierta" : "Cerrada"}</strong></div><div><small>Datos</small><strong>${state.central ? "Sincronizados" : "Pendientes"}</strong></div></div>${round ? `<button class="primary-btn wide" data-go="ventas" data-channel="${route}" ${metrics?.inconsistencyQty || round.status === "regresada" ? "disabled" : ""}>Nueva venta</button><div class="route-header-secondary"><button class="secondary-btn reload-round" data-id="${round.id}" ${round.status === "regresada" ? "disabled" : ""}>Recargar</button><button class="secondary-btn return-round" data-id="${round.id}" ${metrics?.inconsistencyQty && !adminMode ? "disabled" : ""}>${round.status === "regresada" ? "Cerrar ronda" : "Regreso"}</button>${adminMode && metrics?.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${round.id}">Resolver ronda activa</button>` : ""}${adminMode && !metrics?.inconsistencyQty && round.status !== "regresada" ? `<button class="secondary-btn correct-round-load" data-id="${round.id}">Corregir carga</button>` : ""}<button class="secondary-btn" data-go="fiado">Cobrar</button>${adminMode && can("create_expense") ? `<button class="secondary-btn" data-go="gastos" data-expense-center="${route}">Registrar gasto</button>` : ""}${can("adjust_inventory") ? `<button class="text-btn" data-inventory-quick="adjust" data-location="empty_${route}">Corregir vacíos</button>` : ""}</div>` : `<button class="primary-btn wide route-start-round" type="button" data-route="${route}" ${can("rounds") ? "" : "disabled"}>Iniciar ronda</button>`}</section>`;
+        const step = routeStepPlan(route, round, metrics);
+        const daySales = todaySales().filter(
+          (s) => s.channel === route && (!ownRoute || s.userId === u?.id),
+        );
+        const sold = daySales.reduce((a, s) => a + s.qty, 0),
+          revenue = daySales.reduce((a, s) => a + s.total, 0),
+          credit = daySales.reduce((a, s) => a + s.credit, 0);
+        const progressPct = metrics?.totalLoaded
+          ? Math.min(100, (metrics.netSold / metrics.totalLoaded) * 100)
+          : 0;
+        // Los Llenos solo son tocables SIN ronda activa: corregir el stock de
+        // ruta a media ronda descuadraria su conciliacion. Los Vacios si,
+        // siempre. Es una restriccion de integridad, no de permisos.
+        const fullEditable = !round && can("adjust_inventory");
+        const emptyEditable = can("adjust_inventory");
+        const stockCell = (location, value, editable, danger = false) =>
+          `<strong class="${danger ? "amount-danger" : ""}${editable ? " route-stock-inline-edit" : ""}" ${editable ? `data-inventory-quick="adjust" data-location="${location}" role="button" tabindex="0" title="Toca para corregir existencias"` : ""}>${int(value)}</strong>`;
+        const loadLine = round
+          ? `<div class="route-load-line"><div class="route-load-bar"><span style="width:${progressPct}%"></span></div><small>Cargados <strong>${int(metrics.totalLoaded)}</strong>${metrics.reloads ? ` (${int(metrics.initialLoad)} + ${int(metrics.reloads)} de recarga)` : ""} · Vendidos <strong>${int(metrics.netSold)}</strong> · Quedan <strong class="${metrics.inconsistencyQty ? "amount-danger" : ""}">${int(Math.max(0, metrics.availableFull))}</strong></small></div>`
+          : "";
+        return `<section class="route-ops-header">
+          <div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${esc(step.stateLabel)}</span></div>
+          ${routeTrackerHtml}
+          ${loadLine}
+          <div class="route-ops-metrics">
+            <div><small>Llenos en ruta</small>${stockCell(route, metrics ? Math.max(0, metrics.availableFull) : state.inventory[route] || 0, fullEditable, Boolean(metrics?.inconsistencyQty))}</div>
+            <div><small>Vacíos en ruta</small>${stockCell(`empty_${route}`, state.inventory[`empty_${route}`] || 0, emptyEditable)}</div>
+            <div><small>Vendido hoy</small><strong>${money(revenue)}</strong></div>
+            <div><small>Fiado hoy</small><strong class="${credit > 0 ? "amount-danger" : ""}">${money(credit)}</strong></div>
+          </div>
+          <small class="route-day-note">${int(sold)} garrafones vendidos hoy · Caja ${cashOpen ? "abierta" : "cerrada"} · Datos ${state.central ? "sincronizados" : "pendientes"}</small>
+          ${step.blockedReason ? `<div class="route-blocked">${esc(step.blockedReason)}</div>` : ""}
+          ${step.primary}
+          ${step.secondary.length ? `<details class="route-more"><summary>Otras acciones</summary><div class="route-header-secondary">${step.secondary.join("")}</div></details>` : ""}
+        </section>`;
       })
       .join("");
 
@@ -4403,30 +4525,9 @@
       : '<div class="empty">No hay clientes asignados a esta ruta.</div>';
     $("startRoundBtn").hidden = !can("rounds");
     $("fillContainersBtn").hidden = !can("rounds");
-    $("activeRounds").innerHTML = ["ruta1", "ruta2"]
-      .filter((r) => !ownRoute || r === u.center)
-      .map((route) => {
-        const r = activeRound(route);
-        if (!r)
-          return `<div class="round-card"><span class="eyebrow">${CHANNELS[route]}</span><h3>Sin ronda activa</h3><p class="muted">Prepara una salida para comenzar.</p></div>`;
-        const metrics = roundMetrics(r),
-          pct = metrics.totalLoaded
-            ? (metrics.netSold / metrics.totalLoaded) * 100
-            : 0;
-        return `<div class="round-card"><span class="eyebrow">${CHANNELS[route]}</span><h3>Ronda ${r.number} · ${r.status === "regresada" ? "Regreso registrado" : "En ruta"}</h3><div class="round-progress"><span style="width:${Math.min(100, pct)}%"></span></div><p>Carga inicial <strong>${int(metrics.initialLoad)}</strong> · Recargas <strong>${int(metrics.reloads)}</strong> · Total <strong>${int(metrics.totalLoaded)}</strong><br>Vendidos netos <strong>${int(metrics.netSold)}</strong> · Disponibles <strong class="${metrics.inconsistencyQty ? "amount-danger" : ""}">${int(metrics.availableFull)}</strong></p>${metrics.inconsistencyQty ? `<div class="danger-box">Ronda con inconsistencia: se vendieron ${int(metrics.inconsistencyQty)} más de los cargados. Requiere recuperación administrativa con motivo; no se modificarán ventas.</div>` : ""}<div class="dialog-actions"><button class="primary-btn" data-go="ventas" data-channel="${route}" ${metrics.inconsistencyQty || r.status === "regresada" ? "disabled" : ""}>Nueva venta</button><button class="secondary-btn reload-round" data-id="${r.id}" ${r.status === "regresada" ? "disabled" : ""}>Recargar ruta</button><button class="secondary-btn" data-go="fiado">Cobrar</button><button class="secondary-btn return-round" data-id="${r.id}" ${metrics.inconsistencyQty && !adminMode ? "disabled" : ""}>${r.status === "regresada" ? "Cerrar ronda" : "Regresar"}</button>${adminMode && metrics.inconsistencyQty ? `<button class="secondary-btn recover-round" data-id="${r.id}">Resolver ronda activa</button>` : ""}</div></div>`;
-      })
-      .join("");
-    ["ruta1", "ruta2"].forEach((r, i) => {
-      const card = $(`route${i + 1}Card`);
-      card.hidden = ownRoute && r !== u.center;
-      const sales = todaySales().filter(
-          (s) => s.channel === r && (!ownRoute || s.userId === u.id),
-        ),
-        units = sales.reduce((a, s) => a + s.qty, 0),
-        rev = sales.reduce((a, s) => a + s.total, 0),
-        credit = sales.reduce((a, s) => a + s.credit, 0);
-      card.innerHTML = `<div class="route-top"><div><span class="eyebrow">${CHANNELS[r]}</span><div class="route-number">${int(units)}</div><div class="muted">garrafones vendidos hoy</div></div><div><strong>${money(rev)}</strong><br><small class="muted">Fiado ${money(credit)}</small></div></div><hr style="border:0;border-top:1px solid #edf0f5;margin:18px 0"><div class="list-row"><span>Llenos en ruta</span><strong>${int(state.inventory[r])}</strong></div><div class="list-row"><span>Vacíos en ruta</span><strong>${int(state.inventory[`empty_${r}`] || 0)}</strong></div><button class="primary-btn wide" data-go="ventas" data-channel="${r}">Registrar venta</button>`;
-    });
+    // Antes aqui se pintaban otras dos veces la misma ronda (#activeRounds y
+    // #route1Card/#route2Card), con "Nueva venta", "Recargar", "Cobrar" y
+    // "Regresar" repetidos. Todo eso vive ahora en la tarjeta unica de arriba.
     const arr = todaySales().filter(
       (s) =>
         (s.channel === "ruta1" || s.channel === "ruta2") &&

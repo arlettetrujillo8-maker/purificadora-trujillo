@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-vacios-ronda";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-rondas-una-tarjeta";
 
 // Frontera de jornada. Cada renglon es un cierre; la jornada en curso es todo
 // lo ocurrido despues del ultimo closed_at. No se guarda work_day_id en las

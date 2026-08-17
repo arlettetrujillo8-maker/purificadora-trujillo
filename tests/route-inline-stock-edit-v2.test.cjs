@@ -11,23 +11,39 @@ const css = fs.readFileSync("css/styles.css", "utf8");
 // ofrecerse como si fuera a corregir lo que se ve en pantalla.
 assert.match(
   app,
-  /!round && can\("adjust_inventory"\) \? ` ?data-inventory-quick="adjust" data-location="\$\{route\}"/,
+  /const fullEditable = !round && can\("adjust_inventory"\)/,
   "la cifra de Llenos solo es tocable cuando NO hay ronda activa",
+);
+assert.match(
+  app,
+  /Llenos en ruta<\/small>\$\{stockCell\([\s\S]{0,200}?fullEditable/,
+  "la celda de Llenos debe usar esa condición, no una propia",
 );
 
 // Vacíos SIEMPRE lee state.inventory[`empty_${route}`] sin importar si hay
 // ronda activa o no, así que debe seguir siendo tocable en ambos casos.
 assert.match(
   app,
-  /route-stock-inline-edit[\s\S]*?can\("adjust_inventory"\) \? `data-inventory-quick="adjust" data-location="empty_\$\{route\}"/,
+  /const emptyEditable = can\("adjust_inventory"\)/,
   "la cifra de Vacíos siempre es tocable si el usuario tiene el permiso",
 );
+assert.match(
+  app,
+  /Vacíos en ruta<\/small>\$\{stockCell\([\s\S]{0,200}?emptyEditable/,
+  "la celda de Vacíos debe usar esa condición",
+);
+// La celda no reintroduce su propia regla: la decisión vive fuera de ella.
+assert.match(
+  app,
+  /const stockCell = \(location, value, editable, danger = false\)/,
+  "stockCell recibe la decisión, no la calcula",
+);
 
-// El botón de texto que queda visible durante una ronda activa corrige
+// El botón de texto que queda disponible durante una ronda activa corrige
 // vacíos (que sí es correcto en ese contexto), no llenos.
 assert.match(
   app,
-  /can\("adjust_inventory"\) \? `<button class="text-btn" data-inventory-quick="adjust" data-location="empty_\$\{route\}">Corregir vacíos<\/button>/,
+  /data-inventory-quick="adjust" data-location="empty_\$\{route\}">Corregir vacíos<\/button>/,
   "durante una ronda activa, el botón secundario corrige vacíos, no llenos",
 );
 
@@ -52,4 +68,4 @@ assert.match(
   "objetivo táctil >=44px",
 );
 
-console.log("route-inline-stock-edit-v2: 6/6 PASS");
+console.log("route-inline-stock-edit-v2: 9/9 PASS");
