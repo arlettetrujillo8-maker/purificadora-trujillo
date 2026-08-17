@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260816-reportes-duplicado-fix";
+  const APP_SCRIPT_BUILD = "20260816-reporte-y-envases-fix";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2009,6 +2009,7 @@
     });
     document.addEventListener("focusin", captureDialogBaseline, true);
     document.addEventListener("pointerdown", captureDialogBaseline, true);
+    document.addEventListener("focusin", scrollFieldIntoViewOnFocus);
     $("keepEditingBtn").addEventListener("click", () => {
       $("discardChangesDialog").close();
       pendingDialogClose = null;
@@ -2056,6 +2057,14 @@
     return Boolean(
       form?.dataset.baseline && form.dataset.baseline !== formSnapshot(form),
     );
+  }
+  function scrollFieldIntoViewOnFocus(e) {
+    const field = e.target;
+    if (!field.matches?.("input, textarea, select")) return;
+    if (!field.closest("dialog")) return;
+    window.setTimeout(() => {
+      field.scrollIntoView({ block: "center", behavior: "auto" });
+    }, 300);
   }
   function showManagedDialog(dialog) {
     const form = dialog.querySelector("[data-dirty-guard]");
@@ -5120,10 +5129,13 @@
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    const sales = todaySales().filter((s) => {
-      const d = new Date(s.date);
-      return d >= startDate && d <= endDate;
-    });
+    const sales = state.sales
+      .filter(isEffectiveSale)
+      .map(netSale)
+      .filter((s) => {
+        const d = new Date(s.date);
+        return d >= startDate && d <= endDate;
+      });
     const expenses = state.expenses.filter((e) => {
       const d = new Date(e.date);
       return d >= startDate && d <= endDate;
@@ -5137,11 +5149,25 @@
     const collected = sales.reduce((a, s) => a + s.paid, 0) + payments.reduce((a, p) => a + p.payment, 0);
     const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0);
     const totalCredit = sales.reduce((a, s) => a + s.credit, 0);
+    const unreturnedContainers = (s) =>
+      Math.max(
+        0,
+        Number(s.qty || 0) -
+          Number(s.emptyReturnQty ?? s.qty ?? 0) -
+          Number(s.damagedReturnQty || 0),
+      );
+    const totalUnreturned = sales.reduce(
+      (a, s) => a + unreturnedContainers(s),
+      0,
+    );
 
     const byChannel = Object.keys(CHANNELS).map((k) => ({
       channel: CHANNELS[k],
       sales: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.total, 0),
       units: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.qty, 0),
+      unreturned: sales
+        .filter((s) => s.channel === k)
+        .reduce((a, s) => a + unreturnedContainers(s), 0),
     }));
 
     const clientsWithDebt = state.clients
@@ -5190,42 +5216,53 @@
           <strong>${money(totalCredit)}</strong>
           <small>A recuperar</small>
         </div>
+        <div class="metric-card">
+          <span class="label">Garrafones no regresados</span>
+          <strong>${int(totalUnreturned)}</strong>
+          <small>En el período seleccionado</small>
+        </div>
       </div>
 
       <div class="reports-section">
         <h3>Por canal</h3>
-        <table class="reports-table">
-          <thead>
-            <tr><th>Canal</th><th>Garrafones</th><th>Ventas</th></tr>
-          </thead>
-          <tbody>
-            ${byChannel.map((c) => `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td>${money(c.sales)}</td></tr>`).join("")}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="reports-table">
+            <thead>
+              <tr><th>Canal</th><th>Garrafones</th><th>No regresados</th><th>Ventas</th></tr>
+            </thead>
+            <tbody>
+              ${byChannel.map((c) => `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td class="${c.unreturned > 0 ? "amount-danger" : ""}">${int(c.unreturned)}</td><td>${money(c.sales)}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="reports-section">
         <h3>Top 10 - Clientes con deuda</h3>
-        <table class="reports-table">
-          <thead>
-            <tr><th>Cliente</th><th>Deuda</th></tr>
-          </thead>
-          <tbody>
-            ${clientsWithDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${money(clientBalance(c.id))}</td></tr>`).join("")}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="reports-table">
+            <thead>
+              <tr><th>Cliente</th><th>Deuda</th></tr>
+            </thead>
+            <tbody>
+              ${clientsWithDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${money(clientBalance(c.id))}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="reports-section">
         <h3>Top 10 - Garrafones pendientes por cliente</h3>
-        <table class="reports-table">
-          <thead>
-            <tr><th>Cliente</th><th>Garrafones</th></tr>
-          </thead>
-          <tbody>
-            ${clientsWithContainerDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${int(c.containerDebt || 0)}</td></tr>`).join("")}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="reports-table">
+            <thead>
+              <tr><th>Cliente</th><th>Garrafones</th></tr>
+            </thead>
+            <tbody>
+              ${clientsWithContainerDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${int(c.containerDebt || 0)}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
 

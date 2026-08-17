@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260816-reportes-duplicado-fix";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260816-reporte-y-envases-fix";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

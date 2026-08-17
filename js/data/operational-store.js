@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260816-reportes-duplicado-fix";
-import { clientsRepository } from "./clients-repository.js?v=20260816-reportes-duplicado-fix";
-import { salesRepository } from "./sales-repository.js?v=20260816-reportes-duplicado-fix";
-import { ledgerRepository } from "./ledger-repository.js?v=20260816-reportes-duplicado-fix";
-import { cashRepository } from "./cash-repository.js?v=20260816-reportes-duplicado-fix";
-import { inventoryRepository } from "./inventory-repository.js?v=20260816-reportes-duplicado-fix";
-import { roundsRepository } from "./rounds-repository.js?v=20260816-reportes-duplicado-fix";
-import { suppliesRepository } from "./supplies-repository.js?v=20260816-reportes-duplicado-fix";
-import { settingsRepository } from "./settings-repository.js?v=20260816-reportes-duplicado-fix";
-import { reportsRepository } from "./reports-repository.js?v=20260816-reportes-duplicado-fix";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260816-reportes-duplicado-fix";
-import { returnsRepository } from "./returns-repository.js?v=20260816-reportes-duplicado-fix";
-import { correctionsRepository } from "./corrections-repository.js?v=20260816-reportes-duplicado-fix";
+import { profilesRepository } from "./profiles-repository.js?v=20260816-reporte-y-envases-fix";
+import { clientsRepository } from "./clients-repository.js?v=20260816-reporte-y-envases-fix";
+import { salesRepository } from "./sales-repository.js?v=20260816-reporte-y-envases-fix";
+import { ledgerRepository } from "./ledger-repository.js?v=20260816-reporte-y-envases-fix";
+import { cashRepository } from "./cash-repository.js?v=20260816-reporte-y-envases-fix";
+import { inventoryRepository } from "./inventory-repository.js?v=20260816-reporte-y-envases-fix";
+import { roundsRepository } from "./rounds-repository.js?v=20260816-reporte-y-envases-fix";
+import { suppliesRepository } from "./supplies-repository.js?v=20260816-reporte-y-envases-fix";
+import { settingsRepository } from "./settings-repository.js?v=20260816-reporte-y-envases-fix";
+import { reportsRepository } from "./reports-repository.js?v=20260816-reporte-y-envases-fix";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260816-reporte-y-envases-fix";
+import { returnsRepository } from "./returns-repository.js?v=20260816-reporte-y-envases-fix";
+import { correctionsRepository } from "./corrections-repository.js?v=20260816-reporte-y-envases-fix";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
@@ -301,6 +301,8 @@ export class OperationalStore {
         clientName: clientMap.get(item.client_id)?.name || "Público general",
         channel: item.channel,
         qty: item.quantity,
+        emptyReturnQty: item.empty_return_quantity ?? item.quantity,
+        damagedReturnQty: item.damaged_return_quantity || 0,
         price: fromCents(item.unit_price_cents),
         unitPrice: fromCents(item.unit_price_cents),
         total: fromCents(item.total_cents),

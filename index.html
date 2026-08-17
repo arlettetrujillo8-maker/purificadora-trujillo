@@ -2,8 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20260816-reportes-duplicado-fix" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="app-build" content="20260816-reporte-y-envases-fix" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+    />
     <meta name="theme-color" content="#0d6efd" />
     <title>Purificadora Trujillo · ERP V3.6</title>
     <link rel="manifest" href="manifest.webmanifest" />
@@ -12,7 +15,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20260816-reportes-duplicado-fix" />
+    <link rel="stylesheet" href="css/styles.css?v=20260816-reporte-y-envases-fix" />
   </head>
   <body>
     <div class="app-shell">
@@ -336,9 +339,9 @@
                       type="number"
                       min="1"
                       step="1"
+                      inputmode="numeric"
                       value="1"
                       required
-                      inputmode="numeric"
                     />
                     <button
                       id="saleQtyPlus"
@@ -356,6 +359,7 @@
                     type="number"
                     min="0"
                     step="0.01"
+                    inputmode="decimal"
                     value="30"
                     required
                   />
@@ -425,6 +429,7 @@
                     type="number"
                     min="0"
                     step="0.01"
+                    inputmode="decimal"
                     value="0"
                   />
                 </label>
@@ -635,6 +640,7 @@
                     type="number"
                     min="0.01"
                     step="0.01"
+                    inputmode="decimal"
                     required /></label
                 ><label>Motivo<input id="cashMovementReason" required /></label
                 ><button class="secondary-btn" type="submit">
@@ -653,6 +659,7 @@
                     type="number"
                     min="0.01"
                     step="0.01"
+                    inputmode="decimal"
                     required /></label
                 ><label>Nota<input id="cashDeliveryNotes" /></label
                 ><button class="secondary-btn" type="submit">
@@ -696,6 +703,7 @@
                     type="number"
                     min="1"
                     value="1"
+                    inputmode="numeric"
                     required
                 /></label>
               </div>
@@ -718,6 +726,7 @@
                     type="number"
                     min="0"
                     value="0"
+                    inputmode="numeric"
                     required
                 /></label>
                 <label class="full"
@@ -806,6 +815,7 @@
                   type="number"
                   min="1"
                   step="1"
+                  inputmode="numeric"
                 />
               </label>
               <small
@@ -843,6 +853,7 @@
                     type="number"
                     min="0"
                     step="0.01"
+                    inputmode="decimal"
                     required
                 /></label>
                 <label>Centro<select id="expenseCenter"></select></label>
@@ -926,6 +937,7 @@
                   type="number"
                   min="0"
                   step="0.01"
+                  inputmode="decimal"
               /></label>
               <button id="saveSettingsBtn" class="primary-btn wide">
                 Guardar precio y configuración
@@ -1285,6 +1297,7 @@
               type="number"
               min="0"
               step="0.01"
+              inputmode="decimal"
           /></label>
           <label
             >Cliente frecuente<select id="clientFrequent">
@@ -1381,6 +1394,7 @@
             type="number"
             min="0.01"
             step="0.01"
+            inputmode="decimal"
             required
         /></label>
         <div class="payment-amount-actions" aria-label="Monto del abono">
@@ -1424,6 +1438,7 @@
             type="number"
             min="1"
             step="1"
+            inputmode="numeric"
             required
         /></label>
         <label
@@ -1815,6 +1830,7 @@
             type="number"
             min="0"
             step="0.01"
+            inputmode="decimal"
             value="0"
             required
         /></label>
@@ -2118,6 +2134,7 @@
               type="number"
               min="0"
               step="0.01"
+              inputmode="decimal"
           /></label>
         </div>
         <div
@@ -2178,6 +2195,7 @@
               type="number"
               min="1"
               step="1"
+              inputmode="numeric"
               required
           /></label>
           <label
@@ -2186,6 +2204,7 @@
               type="number"
               min="0"
               step="0.01"
+              inputmode="decimal"
               required
           /></label>
           <label
@@ -2198,6 +2217,7 @@
           >
           <label
             >Pagado<input id="correctionPaid" type="number" min="0" step="0.01"
+              inputmode="decimal"
           /></label>
           <label
             >Canal<select id="correctionChannel">
@@ -2239,7 +2259,7 @@
         <input id="returnSaleId" type="hidden" />
         <div id="returnSaleSummary" class="info-box"></div>
         <label>Cantidad a devolver
-          <input id="returnSaleQty" type="number" min="1" step="1" required />
+          <input id="returnSaleQty" type="number" min="1" step="1" required inputmode="numeric" />
         </label>
         <div id="returnSaleAmounts" class="info-box"></div>
         <label>Motivo *
@@ -2294,6 +2314,7 @@
             type="number"
             min="1"
             step="1"
+            inputmode="numeric"
             required
         /></label>
         <label>Notas<textarea id="roundStartNotes" rows="2"></textarea></label>
@@ -2327,6 +2348,7 @@
             type="number"
             min="1"
             step="1"
+            inputmode="numeric"
             required
         /></label>
         <label
@@ -2368,6 +2390,7 @@
             type="number"
             min="0"
             step="1"
+            inputmode="numeric"
             required
         /></label>
         <div id="roundLoadCorrectionDifference" class="info-box"></div>
@@ -2414,6 +2437,7 @@
               type="number"
               min="0"
               step="1"
+              inputmode="numeric"
               required /></label
           ><label
             >Vacíos recolectados<input
@@ -2421,6 +2445,7 @@
               type="number"
               min="0"
               step="1"
+              inputmode="numeric"
               required /></label
           ><label
             >Dañados<input
@@ -2428,6 +2453,7 @@
               type="number"
               min="0"
               step="1"
+              inputmode="numeric"
               value="0"
               required /></label
           ><input id="roundLost" type="hidden" value="0" /><label class="full"
@@ -2479,6 +2505,7 @@
             type="number"
             min="1"
             step="1"
+            inputmode="numeric"
             required /></label
         ><label
           >Notas<textarea id="fillContainersNotes" rows="2"></textarea></label
@@ -2546,6 +2573,7 @@
               type="number"
               min="0"
               step="0.01"
+              inputmode="decimal"
               value="0" /></label
           ><label
             >Existencia mínima<input
@@ -2553,6 +2581,7 @@
               type="number"
               min="0"
               step="0.01"
+              inputmode="decimal"
               value="0" /></label
           ><label
             >Costo unitario<input
@@ -2560,6 +2589,7 @@
               type="number"
               min="0"
               step="0.01"
+              inputmode="decimal"
               value="0" /></label
           ><label>Proveedor<input id="supplySupplier" /></label
           ><label
@@ -2568,6 +2598,7 @@
               type="number"
               min="0"
               step="0.01"
+              inputmode="decimal"
               value="0" /></label
           ><label class="full"
             >Notas<textarea id="supplyNotes" rows="2"></textarea>
@@ -2607,6 +2638,7 @@
             type="number"
             min="0"
             step="0.01"
+            inputmode="decimal"
             required
         /></label>
         <div id="supplyPurchaseFields">
@@ -2615,7 +2647,8 @@
               id="supplyPurchaseUnitCost"
               type="number"
               min="0"
-              step="0.01" /></label
+              step="0.01"
+              inputmode="decimal" /></label
           ><label>Proveedor<input id="supplyPurchaseSupplier" /></label
           ><label
             >Forma de pago<select id="supplyPurchaseMethod">
@@ -2679,12 +2712,12 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20260816-reportes-duplicado-fix"></script>
-    <script src="js/safe-uuid.js?v=20260816-reportes-duplicado-fix"></script>
-    <script src="js/presentation-labels.js?v=20260816-reportes-duplicado-fix"></script>
-    <script src="js/user-display.js?v=20260816-reportes-duplicado-fix"></script>
-    <script src="js/sale-client-selection.js?v=20260816-reportes-duplicado-fix"></script>
-    <script src="js/app.js?v=20260816-reportes-duplicado-fix"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20260816-reportes-duplicado-fix"></script>
+    <script src="js/central-auth-ui.js?v=20260816-reporte-y-envases-fix"></script>
+    <script src="js/safe-uuid.js?v=20260816-reporte-y-envases-fix"></script>
+    <script src="js/presentation-labels.js?v=20260816-reporte-y-envases-fix"></script>
+    <script src="js/user-display.js?v=20260816-reporte-y-envases-fix"></script>
+    <script src="js/sale-client-selection.js?v=20260816-reporte-y-envases-fix"></script>
+    <script src="js/app.js?v=20260816-reporte-y-envases-fix"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20260816-reporte-y-envases-fix"></script>
   </body>
 </html>

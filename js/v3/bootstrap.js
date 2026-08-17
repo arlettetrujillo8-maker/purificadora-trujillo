@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260816-reportes-duplicado-fix";
-import { OperationalStore } from "../data/operational-store.js?v=20260816-reportes-duplicado-fix";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260816-reportes-duplicado-fix";
-import { clientsRepository } from "../data/clients-repository.js?v=20260816-reportes-duplicado-fix";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260816-reportes-duplicado-fix";
+} from "../data/supabase-client.js?v=20260816-reporte-y-envases-fix";
+import { OperationalStore } from "../data/operational-store.js?v=20260816-reporte-y-envases-fix";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260816-reporte-y-envases-fix";
+import { clientsRepository } from "../data/clients-repository.js?v=20260816-reporte-y-envases-fix";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260816-reporte-y-envases-fix";
 
-const BOOTSTRAP_BUILD = "20260816-reportes-duplicado-fix";
+const BOOTSTRAP_BUILD = "20260816-reporte-y-envases-fix";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
