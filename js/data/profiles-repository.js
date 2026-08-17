@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260817-jornada-cliente";
-import { selectAll, rpc } from "./repository-utils.js?v=20260817-jornada-cliente";
+} from "./supabase-client.js?v=20260817-vacios-ronda";
+import { selectAll, rpc } from "./repository-utils.js?v=20260817-vacios-ronda";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

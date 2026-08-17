@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260817-jornada-cliente";
-import { OperationalStore } from "../data/operational-store.js?v=20260817-jornada-cliente";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260817-jornada-cliente";
-import { clientsRepository } from "../data/clients-repository.js?v=20260817-jornada-cliente";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-jornada-cliente";
+} from "../data/supabase-client.js?v=20260817-vacios-ronda";
+import { OperationalStore } from "../data/operational-store.js?v=20260817-vacios-ronda";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260817-vacios-ronda";
+import { clientsRepository } from "../data/clients-repository.js?v=20260817-vacios-ronda";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-vacios-ronda";
 
-const BOOTSTRAP_BUILD = "20260817-jornada-cliente";
+const BOOTSTRAP_BUILD = "20260817-vacios-ronda";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

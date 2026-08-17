@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-jornada-cliente";
-import { supabase } from "./supabase-client.js?v=20260817-jornada-cliente";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-vacios-ronda";
+import { supabase } from "./supabase-client.js?v=20260817-vacios-ronda";
 
 export const salesRepository = {
   list: () =>

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-jornada-cliente";
+  const APP_SCRIPT_BUILD = "20260817-vacios-ronda";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -4825,9 +4825,14 @@
     $("roundReturnedFull").value = isReturned
       ? int(round.returnedFullQty || 0)
       : int(Math.max(0, metrics.availableFull));
+    // Antes se prellenaba con los vendidos, dando por hecho un vacio de vuelta
+    // por cada lleno vendido. Cuando el cliente devuelve envases que traia
+    // debiendo, ese numero es falso y el repartidor lo firmaba sin saber que
+    // podia cambiarlo. Se deja vacio: que capture lo que fisicamente trae.
     $("roundReturnedEmpty").value = isReturned
       ? int(round.returnedEmptyQty || 0)
-      : int(metrics.netSold);
+      : "";
+    $("roundReturnedEmpty").placeholder = `¿Cuántos traes?`;
     $("roundDamaged").value = int(round.damagedQty || 0);
     $("roundLost").value = 0;
     $("roundReturnNotes").value = round.notes || "";
@@ -4840,7 +4845,43 @@
       : "Registrar regreso";
     $("returnRoundSubmitBtn").disabled = false;
     $("roundReturnTrace").hidden = true;
+    renderEmptyReconcile(round, metrics);
+    $("roundReturnedEmpty").oninput = () => renderEmptyReconcile(round, metrics);
     showManagedDialog($("returnRoundDialog"));
+  }
+  // Envases que los clientes de una ruta traen debiendo. Sirve de cota de
+  // cordura: un sobrante mayor que toda la deuda de la ruta huele a dedazo.
+  function routeContainerDebt(route) {
+    return state.clients
+      .filter((c) => c.active !== false && c.route === route)
+      .reduce((sum, c) => sum + Number(c.containerDebt || 0), 0);
+  }
+  // Reconciliacion a la vista: se dice cuantos vacios corresponden a las
+  // ventas de la ronda, cuantos trae, y que significa la diferencia en
+  // lenguaje del negocio. Nunca bloquea el cierre.
+  function renderEmptyReconcile(round, metrics) {
+    const box = $("roundEmptyReconcile");
+    if (!box) return;
+    const field = $("roundReturnedEmpty");
+    const captured = field.value.trim();
+    const expected = Number(metrics.netSold || 0);
+    if (captured === "") {
+      box.className = "full empty-reconcile";
+      box.innerHTML = `<div class="reconcile-row"><span>Vacíos por las ventas de esta ronda</span><strong>${int(expected)}</strong></div><small class="muted">Captura los que traes de verdad, aunque no coincidan.</small>`;
+      return;
+    }
+    const brought = Number(captured || 0),
+      result = window.PurificadoraEmptyReconcile.emptyReconcileState({
+        expected,
+        brought,
+        routeDebt: routeContainerDebt(round.route),
+      });
+    box.className = `full empty-reconcile is-${result.state}`;
+    box.innerHTML =
+      `<div class="reconcile-row"><span>Vacíos por las ventas de esta ronda</span><strong>${int(expected)}</strong></div>` +
+      `<div class="reconcile-row"><span>Vacíos que traes</span><strong>${int(brought)}</strong></div>` +
+      `<div class="reconcile-row is-total"><span>Diferencia</span><strong>${result.difference > 0 ? "+" : ""}${int(result.difference)}</strong></div>` +
+      `<small>${esc(result.message)}</small>`;
   }
   async function closeRound(e) {
     e.preventDefault();
@@ -4897,6 +4938,24 @@
         difference > 0
           ? `Faltan asignar ${int(difference)} garrafones entre llenos y dañados.`
           : `Se capturaron ${int(-difference)} garrafones de más.`,
+        "error",
+      );
+    }
+    // Los vacios NO se topan: obligar a teclear un numero falso para poder
+    // cerrar es peor que un descuadre visible. Pero si no cuadran con las
+    // ventas, se exige explicarlo, que es lo que faltaba para rastrearlo.
+    const emptyCheck = window.PurificadoraEmptyReconcile.emptyReconcileState({
+      expected: metrics.netSold,
+      brought: empty,
+      routeDebt: routeContainerDebt(round.route),
+    });
+    if (emptyCheck.requiresNote && !$("roundReturnNotes").value.trim()) {
+      submit.disabled = false;
+      $("roundReturnNotes").focus();
+      return toast(
+        emptyCheck.state === "surplus"
+          ? `Traes ${int(emptyCheck.difference)} vacíos de más. Escribe en la observación de quién son.`
+          : `Faltan ${int(-emptyCheck.difference)} vacíos. Escribe en la observación con quién quedaron.`,
         "error",
       );
     }

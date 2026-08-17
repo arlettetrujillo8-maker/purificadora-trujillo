@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-jornada-cliente";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-vacios-ronda";
 
 export const returnsRepository = {
   list: async () => {

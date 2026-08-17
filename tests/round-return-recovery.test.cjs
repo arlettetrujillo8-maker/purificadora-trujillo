@@ -11,7 +11,9 @@ const repository = read("js/data/rounds-repository.js");
 const migration = read("supabase/migrations/20260814153453_round_return_recovery.sql");
 
 assert.match(html, /id="returnRoundDialogTitle"[\s\S]*Registrar regreso/);
-assert.match(html, /Llenos que regresan[\s\S]*Vacíos recolectados[\s\S]*Dañados[\s\S]*Observación/);
+// "Vacios que traes", no "recolectados": es la pregunta que el repartidor
+// responde con lo que fisicamente carga, sin que la app le dicte el numero.
+assert.match(html, /Llenos que regresan[\s\S]*Vacíos que traes[\s\S]*Dañados[\s\S]*Observación/);
 assert.match(html, /id="roundRecoveryReason"[\s\S]*id="returnRoundSubmitBtn"/);
 assert.match(app, /route-return-click[\s\S]*round_id[\s\S]*rpc-start[\s\S]*rpc-success[\s\S]*rpc-error/);
 assert.match(app, /function canRecoverRound[\s\S]*role === "administrador"/);

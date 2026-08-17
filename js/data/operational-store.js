@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260817-jornada-cliente";
-import { clientsRepository } from "./clients-repository.js?v=20260817-jornada-cliente";
-import { salesRepository } from "./sales-repository.js?v=20260817-jornada-cliente";
-import { ledgerRepository } from "./ledger-repository.js?v=20260817-jornada-cliente";
-import { cashRepository } from "./cash-repository.js?v=20260817-jornada-cliente";
-import { inventoryRepository } from "./inventory-repository.js?v=20260817-jornada-cliente";
-import { roundsRepository } from "./rounds-repository.js?v=20260817-jornada-cliente";
-import { suppliesRepository } from "./supplies-repository.js?v=20260817-jornada-cliente";
-import { settingsRepository } from "./settings-repository.js?v=20260817-jornada-cliente";
-import { reportsRepository } from "./reports-repository.js?v=20260817-jornada-cliente";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-jornada-cliente";
-import { returnsRepository } from "./returns-repository.js?v=20260817-jornada-cliente";
-import { correctionsRepository } from "./corrections-repository.js?v=20260817-jornada-cliente";
-import { workDaysRepository } from "./work-days-repository.js?v=20260817-jornada-cliente";
+import { profilesRepository } from "./profiles-repository.js?v=20260817-vacios-ronda";
+import { clientsRepository } from "./clients-repository.js?v=20260817-vacios-ronda";
+import { salesRepository } from "./sales-repository.js?v=20260817-vacios-ronda";
+import { ledgerRepository } from "./ledger-repository.js?v=20260817-vacios-ronda";
+import { cashRepository } from "./cash-repository.js?v=20260817-vacios-ronda";
+import { inventoryRepository } from "./inventory-repository.js?v=20260817-vacios-ronda";
+import { roundsRepository } from "./rounds-repository.js?v=20260817-vacios-ronda";
+import { suppliesRepository } from "./supplies-repository.js?v=20260817-vacios-ronda";
+import { settingsRepository } from "./settings-repository.js?v=20260817-vacios-ronda";
+import { reportsRepository } from "./reports-repository.js?v=20260817-vacios-ronda";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-vacios-ronda";
+import { returnsRepository } from "./returns-repository.js?v=20260817-vacios-ronda";
+import { correctionsRepository } from "./corrections-repository.js?v=20260817-vacios-ronda";
+import { workDaysRepository } from "./work-days-repository.js?v=20260817-vacios-ronda";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

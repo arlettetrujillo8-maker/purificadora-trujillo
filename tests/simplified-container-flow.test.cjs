@@ -49,6 +49,6 @@ ok(/finalize_round_close/.test(read("supabase/migrations/20260814153453_round_re
 ok(/audit_log/.test(migration), "preparar llenos registra auditoría");
 ok(/can_operate\('rounds'\)/.test(migration), "los permisos se validan en backend");
 ok(!/drop\s+table|truncate\s+table|delete\s+from\s+public\.(sales|rounds)/i.test(migration), "la migración no es destructiva");
-ok(/20260817-jornada-cliente/.test(sw), "service worker usa el build nuevo");
+ok(/20260817-vacios-ronda/.test(sw), "service worker usa el build nuevo");
 
 console.log(`simplified-container-flow: ${checks}/${checks} PASS`);
