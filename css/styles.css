@@ -480,6 +480,19 @@ textarea:focus {
 }
 textarea {
   resize: vertical;
+  /* 16 de los 19 textarea traen rows="2" y quedaban en ~60px: no cabe una
+     observacion de dos frases sin perder de vista lo ya escrito. input y
+     select si tenian min-height; el campo donde mas se escribe era el unico
+     sin piso. Crece solo al escribir (autoGrowTextarea en app.js). */
+  min-height: 96px;
+  line-height: 1.45;
+}
+/* Motivos y notas obligatorias: se escribe mas, se les da mas espacio. */
+#roundRecoveryReason,
+#returnSaleReason,
+#correctionReason,
+#clientNotes {
+  min-height: 120px;
 }
 .inline-control {
   display: flex;

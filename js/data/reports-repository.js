@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260817-cierre-jornada-fix";
+import { selectAll } from "./repository-utils.js?v=20260817-campos-escritura";
 
 export const reportsRepository = {
   listAudit: () =>

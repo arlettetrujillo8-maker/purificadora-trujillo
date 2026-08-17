@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260817-cierre-jornada-fix";
-import { OperationalStore } from "../data/operational-store.js?v=20260817-cierre-jornada-fix";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260817-cierre-jornada-fix";
-import { clientsRepository } from "../data/clients-repository.js?v=20260817-cierre-jornada-fix";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-cierre-jornada-fix";
+} from "../data/supabase-client.js?v=20260817-campos-escritura";
+import { OperationalStore } from "../data/operational-store.js?v=20260817-campos-escritura";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260817-campos-escritura";
+import { clientsRepository } from "../data/clients-repository.js?v=20260817-campos-escritura";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-campos-escritura";
 
-const BOOTSTRAP_BUILD = "20260817-cierre-jornada-fix";
+const BOOTSTRAP_BUILD = "20260817-campos-escritura";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

@@ -27,7 +27,7 @@ assert.match(html, /id="v3DiagnosticHost"/);
 assert.match(bootstrap, /host\.appendChild\(panel\)/);
 assert.doesNotMatch(bootstrap, /document\.body\.appendChild\(panel\)/);
 assert.match(css, /button,\s*input,\s*select\s*\{\s*min-height: 44px/);
-assert.match(sw, /20260817-cierre-jornada-fix/);
+assert.match(sw, /20260817-campos-escritura/);
 assert.match(html, /class="panel sales-list-panel"/);
 assert.match(css, /\.sales-list-panel\s*\{\s*container-type: inline-size/);
 assert.match(css, /@container \(max-width: 760px\)[\s\S]*?\.sales-list-panel \.sale-card\s*\{[\s\S]*?grid-template-columns: 1fr/);

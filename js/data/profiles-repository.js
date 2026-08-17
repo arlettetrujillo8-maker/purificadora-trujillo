@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260817-cierre-jornada-fix";
-import { selectAll, rpc } from "./repository-utils.js?v=20260817-cierre-jornada-fix";
+} from "./supabase-client.js?v=20260817-campos-escritura";
+import { selectAll, rpc } from "./repository-utils.js?v=20260817-campos-escritura";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260817-cierre-jornada-fix";
-import { clientsRepository } from "./clients-repository.js?v=20260817-cierre-jornada-fix";
-import { salesRepository } from "./sales-repository.js?v=20260817-cierre-jornada-fix";
-import { ledgerRepository } from "./ledger-repository.js?v=20260817-cierre-jornada-fix";
-import { cashRepository } from "./cash-repository.js?v=20260817-cierre-jornada-fix";
-import { inventoryRepository } from "./inventory-repository.js?v=20260817-cierre-jornada-fix";
-import { roundsRepository } from "./rounds-repository.js?v=20260817-cierre-jornada-fix";
-import { suppliesRepository } from "./supplies-repository.js?v=20260817-cierre-jornada-fix";
-import { settingsRepository } from "./settings-repository.js?v=20260817-cierre-jornada-fix";
-import { reportsRepository } from "./reports-repository.js?v=20260817-cierre-jornada-fix";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-cierre-jornada-fix";
-import { returnsRepository } from "./returns-repository.js?v=20260817-cierre-jornada-fix";
-import { correctionsRepository } from "./corrections-repository.js?v=20260817-cierre-jornada-fix";
+import { profilesRepository } from "./profiles-repository.js?v=20260817-campos-escritura";
+import { clientsRepository } from "./clients-repository.js?v=20260817-campos-escritura";
+import { salesRepository } from "./sales-repository.js?v=20260817-campos-escritura";
+import { ledgerRepository } from "./ledger-repository.js?v=20260817-campos-escritura";
+import { cashRepository } from "./cash-repository.js?v=20260817-campos-escritura";
+import { inventoryRepository } from "./inventory-repository.js?v=20260817-campos-escritura";
+import { roundsRepository } from "./rounds-repository.js?v=20260817-campos-escritura";
+import { suppliesRepository } from "./supplies-repository.js?v=20260817-campos-escritura";
+import { settingsRepository } from "./settings-repository.js?v=20260817-campos-escritura";
+import { reportsRepository } from "./reports-repository.js?v=20260817-campos-escritura";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-campos-escritura";
+import { returnsRepository } from "./returns-repository.js?v=20260817-campos-escritura";
+import { correctionsRepository } from "./corrections-repository.js?v=20260817-campos-escritura";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

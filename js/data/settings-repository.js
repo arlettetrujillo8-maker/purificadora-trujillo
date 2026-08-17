@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-cierre-jornada-fix";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-campos-escritura";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

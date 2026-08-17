@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-cierre-jornada-fix";
+  const APP_SCRIPT_BUILD = "20260817-campos-escritura";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2025,6 +2025,8 @@
     document.addEventListener("focusin", captureDialogBaseline, true);
     document.addEventListener("pointerdown", captureDialogBaseline, true);
     document.addEventListener("focusin", scrollFieldIntoViewOnFocus);
+    document.addEventListener("input", autoGrowTextarea);
+    bindKeyboardAwareScroll();
     $("keepEditingBtn").addEventListener("click", () => {
       $("discardChangesDialog").close();
       pendingDialogClose = null;
@@ -2073,13 +2075,55 @@
       form?.dataset.baseline && form.dataset.baseline !== formSnapshot(form),
     );
   }
+  // El campo enfocado debe quedar visible cuando sube el teclado. Un solo
+  // timeout de 300ms no basta: en iOS el teclado no reduce el layout (el meta
+  // interactive-widget solo aplica en Chrome Android), asi que el campo queda
+  // debajo sin que cambie nada medible. visualViewport si reporta el area real
+  // en ambos, y avisa cuando el teclado termina de animar.
+  let focusedField = null;
+  function fieldIsHiddenByKeyboard(field) {
+    const view = window.visualViewport;
+    if (!view) return false;
+    const box = field.getBoundingClientRect();
+    return box.bottom > view.height - 12 || box.top < 0;
+  }
+  function revealFocusedField() {
+    if (!focusedField?.isConnected) return;
+    if (!fieldIsHiddenByKeyboard(focusedField)) return;
+    focusedField.scrollIntoView({ block: "center", behavior: "auto" });
+  }
   function scrollFieldIntoViewOnFocus(e) {
     const field = e.target;
     if (!field.matches?.("input, textarea, select")) return;
     if (!field.closest("dialog")) return;
-    window.setTimeout(() => {
-      field.scrollIntoView({ block: "center", behavior: "auto" });
-    }, 300);
+    focusedField = field;
+    // Sin visualViewport (navegadores viejos) se conserva el timeout ciego.
+    if (!window.visualViewport) {
+      window.setTimeout(() => field.scrollIntoView({ block: "center" }), 300);
+      return;
+    }
+    window.setTimeout(revealFocusedField, 300);
+  }
+  function bindKeyboardAwareScroll() {
+    const view = window.visualViewport;
+    if (!view) return;
+    view.addEventListener("resize", revealFocusedField);
+    view.addEventListener("scroll", revealFocusedField);
+    document.addEventListener("focusout", (e) => {
+      if (e.target === focusedField) focusedField = null;
+    });
+  }
+  // Los textarea traen rows="2"; en vez de tocar los 19 uno por uno, crecen
+  // solos conforme se escribe. El tope evita que empujen el boton de guardar
+  // fuera de la pantalla.
+  const TEXTAREA_MAX_GROW = 260;
+  function autoGrowTextarea(e) {
+    const field = e.target;
+    if (!field.matches?.("textarea")) return;
+    field.style.height = "auto";
+    field.style.height = `${Math.min(field.scrollHeight, TEXTAREA_MAX_GROW)}px`;
+    field.style.overflowY =
+      field.scrollHeight > TEXTAREA_MAX_GROW ? "auto" : "hidden";
   }
   function showManagedDialog(dialog) {
     const form = dialog.querySelector("[data-dirty-guard]");

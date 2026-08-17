@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-cierre-jornada-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-campos-escritura";
 
 function payload(client) {
   return {
