@@ -1,16 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260817-campos-escritura";
-import { clientsRepository } from "./clients-repository.js?v=20260817-campos-escritura";
-import { salesRepository } from "./sales-repository.js?v=20260817-campos-escritura";
-import { ledgerRepository } from "./ledger-repository.js?v=20260817-campos-escritura";
-import { cashRepository } from "./cash-repository.js?v=20260817-campos-escritura";
-import { inventoryRepository } from "./inventory-repository.js?v=20260817-campos-escritura";
-import { roundsRepository } from "./rounds-repository.js?v=20260817-campos-escritura";
-import { suppliesRepository } from "./supplies-repository.js?v=20260817-campos-escritura";
-import { settingsRepository } from "./settings-repository.js?v=20260817-campos-escritura";
-import { reportsRepository } from "./reports-repository.js?v=20260817-campos-escritura";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-campos-escritura";
-import { returnsRepository } from "./returns-repository.js?v=20260817-campos-escritura";
-import { correctionsRepository } from "./corrections-repository.js?v=20260817-campos-escritura";
+import { profilesRepository } from "./profiles-repository.js?v=20260817-jornada-cliente";
+import { clientsRepository } from "./clients-repository.js?v=20260817-jornada-cliente";
+import { salesRepository } from "./sales-repository.js?v=20260817-jornada-cliente";
+import { ledgerRepository } from "./ledger-repository.js?v=20260817-jornada-cliente";
+import { cashRepository } from "./cash-repository.js?v=20260817-jornada-cliente";
+import { inventoryRepository } from "./inventory-repository.js?v=20260817-jornada-cliente";
+import { roundsRepository } from "./rounds-repository.js?v=20260817-jornada-cliente";
+import { suppliesRepository } from "./supplies-repository.js?v=20260817-jornada-cliente";
+import { settingsRepository } from "./settings-repository.js?v=20260817-jornada-cliente";
+import { reportsRepository } from "./reports-repository.js?v=20260817-jornada-cliente";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-jornada-cliente";
+import { returnsRepository } from "./returns-repository.js?v=20260817-jornada-cliente";
+import { correctionsRepository } from "./corrections-repository.js?v=20260817-jornada-cliente";
+import { workDaysRepository } from "./work-days-repository.js?v=20260817-jornada-cliente";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
@@ -74,6 +75,7 @@ export class OperationalStore {
       maintenance,
       settings,
       audit,
+      workDays,
     ] = await Promise.all([
       profilesRepository.current(),
       profilesRepository.list(),
@@ -95,6 +97,7 @@ export class OperationalStore {
       maintenanceRepository.list(),
       settingsRepository.list(),
       reportsRepository.listAudit(),
+      workDaysRepository.list(),
     ]);
     if (!profile?.active)
       throw new Error("La cuenta no tiene un perfil operativo activo.");
@@ -523,6 +526,12 @@ export class OperationalStore {
         ),
         maintenanceThreshold: Number(settingsMap.maintenance?.threshold ?? 375),
       },
+      workDays: workDays.map((item) => ({
+        id: item.id,
+        closedAt: item.closed_at,
+        closedBy: item.closed_by,
+        notes: item.notes,
+      })),
       audit: audit.map((item) => ({
         id: item.id,
         timestamp: item.created_at,
@@ -628,6 +637,9 @@ export class OperationalStore {
       for (const round of autoClosedRounds)
         await roundsRepository.finalize(round);
       // Cero elementos abiertos es un cierre valido, no un error.
+      // La marca durable va al final, cuando ya no queda nada abierto: la RPC
+      // rechaza el cierre si sigue habiendo caja o ronda viva.
+      await workDaysRepository.close(draft.workDayCloseNotes || "");
     } else if (newUsers[0])
       await profilesRepository.save({ ...newUsers[0], id: null });
     else if (deletedUser) await profilesRepository.remove(deletedUser.id);

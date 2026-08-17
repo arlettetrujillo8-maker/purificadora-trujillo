@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-campos-escritura";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-jornada-cliente";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

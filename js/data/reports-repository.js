@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260817-campos-escritura";
+import { selectAll } from "./repository-utils.js?v=20260817-jornada-cliente";
 
 export const reportsRepository = {
   listAudit: () =>

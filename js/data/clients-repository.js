@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-campos-escritura";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-jornada-cliente";
 
 function payload(client) {
   return {

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-campos-escritura";
+  const APP_SCRIPT_BUILD = "20260817-jornada-cliente";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -344,6 +344,7 @@
     maintenance: { count: 0, history: [] },
     activity: [],
     audit: [],
+    workDays: [],
   });
 
   let recoveryRequired = false;
@@ -414,6 +415,7 @@
       "expenses",
       "clients",
       "users",
+      "workDays",
     ].forEach((key) => {
       hydrated[key] = Array.isArray(source[key]) ? source[key] : base[key];
     });
@@ -1296,11 +1298,31 @@
       .filter((x) => x.clientId === id && isEffectiveSale(x))
       .sort((a, b) => b.date.localeCompare(a.date))[0];
   }
+  // Inicio de la jornada en curso: el ultimo cierre registrado en el servidor.
+  // Antes de que exista el primer cierre no hay frontera, y se cae al dia
+  // natural para no vaciar las pantallas de golpe.
+  function currentWorkDayStart() {
+    const closes = state.workDays || [];
+    if (!closes.length) return null;
+    return closes.reduce(
+      (latest, item) =>
+        !latest || String(item.closedAt) > latest ? String(item.closedAt) : latest,
+      null,
+    );
+  }
+  // La jornada, no el dia natural: si se cierra a las 8pm y se sigue vendiendo,
+  // o si la jornada cruza la medianoche, sameDay() da el corte equivocado.
+  function inCurrentWorkDay(date) {
+    const start = currentWorkDayStart();
+    return start ? String(date) > start : sameDay(date);
+  }
   function todaySales() {
-    return state.sales.filter((s) => sameDay(s.date) && isEffectiveSale(s)).map(netSale);
+    return state.sales
+      .filter((s) => inCurrentWorkDay(s.date) && isEffectiveSale(s))
+      .map(netSale);
   }
   function todayExpenses() {
-    return state.expenses.filter((e) => sameDay(e.date));
+    return state.expenses.filter((e) => inCurrentWorkDay(e.date));
   }
   function getOpenCashSession(userId = activeUser()?.id) {
     if (!userId) return null;
@@ -3619,6 +3641,7 @@
   function scopedLatestSales(limit = 20) {
     const u = activeUser();
     return [...state.sales]
+      .filter((s) => inCurrentWorkDay(s.date))
       .filter(
         (s) =>
           adminMode ||
