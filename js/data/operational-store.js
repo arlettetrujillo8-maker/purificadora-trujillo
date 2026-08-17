@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260816-reporte-y-envases-fix";
-import { clientsRepository } from "./clients-repository.js?v=20260816-reporte-y-envases-fix";
-import { salesRepository } from "./sales-repository.js?v=20260816-reporte-y-envases-fix";
-import { ledgerRepository } from "./ledger-repository.js?v=20260816-reporte-y-envases-fix";
-import { cashRepository } from "./cash-repository.js?v=20260816-reporte-y-envases-fix";
-import { inventoryRepository } from "./inventory-repository.js?v=20260816-reporte-y-envases-fix";
-import { roundsRepository } from "./rounds-repository.js?v=20260816-reporte-y-envases-fix";
-import { suppliesRepository } from "./supplies-repository.js?v=20260816-reporte-y-envases-fix";
-import { settingsRepository } from "./settings-repository.js?v=20260816-reporte-y-envases-fix";
-import { reportsRepository } from "./reports-repository.js?v=20260816-reporte-y-envases-fix";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260816-reporte-y-envases-fix";
-import { returnsRepository } from "./returns-repository.js?v=20260816-reporte-y-envases-fix";
-import { correctionsRepository } from "./corrections-repository.js?v=20260816-reporte-y-envases-fix";
+import { profilesRepository } from "./profiles-repository.js?v=20260816-sesion-y-inventario-fix";
+import { clientsRepository } from "./clients-repository.js?v=20260816-sesion-y-inventario-fix";
+import { salesRepository } from "./sales-repository.js?v=20260816-sesion-y-inventario-fix";
+import { ledgerRepository } from "./ledger-repository.js?v=20260816-sesion-y-inventario-fix";
+import { cashRepository } from "./cash-repository.js?v=20260816-sesion-y-inventario-fix";
+import { inventoryRepository } from "./inventory-repository.js?v=20260816-sesion-y-inventario-fix";
+import { roundsRepository } from "./rounds-repository.js?v=20260816-sesion-y-inventario-fix";
+import { suppliesRepository } from "./supplies-repository.js?v=20260816-sesion-y-inventario-fix";
+import { settingsRepository } from "./settings-repository.js?v=20260816-sesion-y-inventario-fix";
+import { reportsRepository } from "./reports-repository.js?v=20260816-sesion-y-inventario-fix";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260816-sesion-y-inventario-fix";
+import { returnsRepository } from "./returns-repository.js?v=20260816-sesion-y-inventario-fix";
+import { correctionsRepository } from "./corrections-repository.js?v=20260816-sesion-y-inventario-fix";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

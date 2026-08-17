@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-reporte-y-envases-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-sesion-y-inventario-fix";
 
 export const suppliesRepository = {
   list: () => selectAll("supplies", "*", (query) => query.order("name")),

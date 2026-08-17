@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260816-reporte-y-envases-fix";
-import { selectAll, rpc } from "./repository-utils.js?v=20260816-reporte-y-envases-fix";
+} from "./supabase-client.js?v=20260816-sesion-y-inventario-fix";
+import { selectAll, rpc } from "./repository-utils.js?v=20260816-sesion-y-inventario-fix";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

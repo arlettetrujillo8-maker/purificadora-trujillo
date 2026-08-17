@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260816-reporte-y-envases-fix";
+  const APP_SCRIPT_BUILD = "20260816-sesion-y-inventario-fix";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -1618,6 +1618,18 @@
     openEmployeeLogin();
   }
 
+  // Cerrar el login con la "x" dejaba el dashboard accesible sin turno: la
+  // pantalla quedaba operable con el chip "Sin sesion". Si al cerrarse no hay
+  // usuario activo, se regresa a la eleccion de acceso, que es modal y no
+  // tiene boton de cierre.
+  function guardSessionDialogClose() {
+    if (activeUser()) return;
+    if ($("accessChoiceDialog")?.open) return;
+    // El flujo sigue vivo esperando a la cuenta central; no lo interrumpimos.
+    if (pendingAccessFlow || $("v3AuthDialog")?.open) return;
+    openAccessChoice();
+  }
+
   function beginAccessFlow(flow) {
     setPendingAccessFlow(flow);
     if (centralAccessState === "ready") return resumePendingAccessFlow();
@@ -2007,6 +2019,9 @@
         if (form) delete form.dataset.baseline;
       });
     });
+    ["employeeLoginDialog", "adminLoginDialog"].forEach((id) =>
+      $(id).addEventListener("close", guardSessionDialogClose),
+    );
     document.addEventListener("focusin", captureDialogBaseline, true);
     document.addEventListener("pointerdown", captureDialogBaseline, true);
     document.addEventListener("focusin", scrollFieldIntoViewOnFocus);

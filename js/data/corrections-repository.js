@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-reporte-y-envases-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-sesion-y-inventario-fix";
 
 const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
 
