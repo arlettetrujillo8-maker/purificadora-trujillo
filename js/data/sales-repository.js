@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-caja-automatica";
-import { supabase } from "./supabase-client.js?v=20260817-caja-automatica";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-envases-en-la-venta";
+import { supabase } from "./supabase-client.js?v=20260817-envases-en-la-venta";
 
 export const salesRepository = {
   list: () =>

@@ -1,7 +1,10 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { emptyReconcileState } = require("../js/empty-reconcile.js");
+const {
+  emptyReconcileState,
+  containerDebtPrompt,
+} = require("../js/empty-reconcile.js");
 
 const root = path.resolve(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
@@ -67,4 +70,39 @@ assert.match(app, /requiresNote && !\$\("roundReturnNotes"\)\.value\.trim\(\)/);
 assert.match(html, /empty-reconcile\.js\?v=/, "el modulo debe cargarse");
 assert.match(html, /id="roundEmptyReconcile"/);
 
-console.log("empty-reconcile: 24/24 PASS");
+// --- Aviso de envases pendientes en la venta ---
+// Se atiende donde SI se sabe de quien son los envases: frente al cliente.
+
+const conDeuda = containerDebtPrompt({ name: "Doña Mari", containerDebt: 3 });
+assert.equal(conDeuda.show, true);
+assert.equal(conDeuda.debt, 3);
+assert.match(conDeuda.message, /Doña Mari tiene 3 envase/);
+assert.match(conDeuda.message, /Recibió más vacíos/, "debe decir qué opción elegir");
+
+// Sin deuda no se estorba: la venta normal no cambia en nada.
+for (const sinDeuda of [
+  { name: "Juan", containerDebt: 0 },
+  { name: "Juan" },
+  { name: "Juan", containerDebt: null },
+  null,
+  undefined,
+])
+  assert.equal(
+    containerDebtPrompt(sinDeuda).show,
+    false,
+    `no debe avisar para ${JSON.stringify(sinDeuda)}`,
+  );
+
+// Una deuda negativa por datos sucios tampoco debe disparar el aviso.
+assert.equal(containerDebtPrompt({ name: "X", containerDebt: -2 }).show, false);
+// Sin nombre no se imprime "undefined" en la cara del repartidor.
+assert.match(containerDebtPrompt({ containerDebt: 2 }).message, /^Este cliente tiene 2/);
+
+// Cableado: el rótulo deja de llamarle "excepción" a algo de todos los días.
+assert.match(html, /<span>Envases del cliente<\/span>/);
+assert.doesNotMatch(html, /Envases \/ excepción/);
+assert.match(html, /id="saleContainerDebtHint"/);
+// Se abre una sola vez por cliente, para no pelear si el usuario lo cierra.
+assert.match(app, /if \(containerPromptClientId !== client\.id\)[\s\S]{0,120}details\.open = true/);
+
+console.log("empty-reconcile: 38/38 PASS");

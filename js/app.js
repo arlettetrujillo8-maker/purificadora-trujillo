@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-caja-automatica";
+  const APP_SCRIPT_BUILD = "20260817-envases-en-la-venta";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -357,6 +357,8 @@
   // intentionally left untouched as a recoverable pre-migration backup.
   let state = defaultState();
   let selectedClientId = null;
+  // Cliente al que ya se le mostro el aviso de envases pendientes en la venta.
+  let containerPromptClientId = null;
   const saleClientSelection =
     window.PurificadoraSaleClientSelection.createSaleClientSelection();
   let debtFilter = "all";
@@ -3280,6 +3282,7 @@
   }
   function resetSaleForm() {
     $("saleForm").reset();
+    containerPromptClientId = null;
     saleClientSelection.clear();
     $("saleClientId").value = "";
     $("saleClientSearch").value = "";
@@ -3442,6 +3445,37 @@
         new: "Envase adicional / nuevo",
       };
     $("saleContainerExchangeSummary").textContent = labels[mode];
+    updateSaleContainerDebtPrompt();
+  }
+  // El intercambio de envases ya existia, pero vivia plegado bajo el rotulo
+  // "excepcion" y con "Intercambio normal 1:1" ya contestado, asi que nadie lo
+  // abria. Por eso los vacios que un cliente devolvia de visitas anteriores no
+  // le bajaban su deuda, y el descuadre aparecia hasta el cierre de ronda,
+  // cuando ya nadie recuerda de quien eran.
+  //
+  // El unico momento en que se sabe de quien son los envases es frente al
+  // cliente. Aqui se avisa ahi mismo, y solo cuando ese cliente debe algo: si
+  // no debe, la venta normal no cambia en nada.
+  function updateSaleContainerDebtPrompt() {
+    const hint = $("saleContainerDebtHint"),
+      details = $("saleContainerException");
+    if (!hint || !details) return;
+    const client = clientById($("saleClientId").value),
+      prompt = window.PurificadoraEmptyReconcile.containerDebtPrompt(client);
+    if (!prompt.show) {
+      hint.hidden = true;
+      hint.textContent = "";
+      if (!client) containerPromptClientId = null;
+      return;
+    }
+    hint.hidden = false;
+    hint.textContent = prompt.message;
+    // Se abre una sola vez por cliente: si el repartidor lo cierra, no se le
+    // vuelve a abrir en cada tecla.
+    if (containerPromptClientId !== client.id) {
+      containerPromptClientId = client.id;
+      details.open = true;
+    }
   }
   function updateSaleSummary() {
     $$(".channel-option").forEach((b) =>

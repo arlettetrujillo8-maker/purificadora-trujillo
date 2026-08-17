@@ -562,6 +562,17 @@ textarea {
   opacity: 0.55;
   cursor: not-allowed;
 }
+/* Aviso de envases pendientes dentro de la venta: aparece solo si ese cliente
+   debe algo, que es el momento y el lugar donde se sabe de quien son. */
+.container-debt-hint {
+  border-left: 4px solid var(--primary);
+  background: #f2f7ff;
+  border-radius: 12px;
+  padding: 11px 13px;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 600;
+}
 /* Reconciliacion de vacios en el regreso de ronda: se muestra la cuenta en
    vez de dictar un numero, y se explica la diferencia en lenguaje del
    negocio. El color distingue de un vistazo sobrante de faltante. */

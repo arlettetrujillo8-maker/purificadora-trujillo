@@ -57,7 +57,28 @@
     };
   }
 
-  const api = Object.freeze({ emptyReconcileState });
+  // Aviso de envases pendientes dentro de la venta.
+  //
+  // El intercambio de envases ya existia en el formulario, pero plegado bajo
+  // el rotulo "excepcion" y con "Intercambio normal 1:1" ya contestado. Nadie
+  // lo abria, asi que los vacios que un cliente devolvia de visitas anteriores
+  // no le bajaban SU deuda, y el descuadre aparecia hasta cerrar la ronda,
+  // cuando ya nadie recuerda de quien eran.
+  //
+  // El unico momento en que se sabe de quien son los envases es frente al
+  // cliente. Por eso se avisa ahi, y solo si ese cliente debe algo.
+  function containerDebtPrompt(client) {
+    const debt = toInt(client?.containerDebt);
+    if (!client || debt <= 0) return { show: false, debt: 0, message: "" };
+    const name = String(client.name || "Este cliente").trim() || "Este cliente";
+    return {
+      show: true,
+      debt,
+      message: `${name} tiene ${debt} envase(s) pendiente(s). Si hoy te los devolvió, elige "Recibió más vacíos" para descontárselos.`,
+    };
+  }
+
+  const api = Object.freeze({ emptyReconcileState, containerDebtPrompt });
   globalScope.PurificadoraEmptyReconcile = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

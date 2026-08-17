@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260817-caja-automatica";
-import { OperationalStore } from "../data/operational-store.js?v=20260817-caja-automatica";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260817-caja-automatica";
-import { clientsRepository } from "../data/clients-repository.js?v=20260817-caja-automatica";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-caja-automatica";
+} from "../data/supabase-client.js?v=20260817-envases-en-la-venta";
+import { OperationalStore } from "../data/operational-store.js?v=20260817-envases-en-la-venta";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260817-envases-en-la-venta";
+import { clientsRepository } from "../data/clients-repository.js?v=20260817-envases-en-la-venta";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-envases-en-la-venta";
 
-const BOOTSTRAP_BUILD = "20260817-caja-automatica";
+const BOOTSTRAP_BUILD = "20260817-envases-en-la-venta";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

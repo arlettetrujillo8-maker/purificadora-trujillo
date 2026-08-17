@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-caja-automatica";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-envases-en-la-venta";
 
 export const roundsRepository = {
   list: () =>
