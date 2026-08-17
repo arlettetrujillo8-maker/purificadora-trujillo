@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-sesion-y-inventario-fix";
-import { supabase } from "./supabase-client.js?v=20260816-sesion-y-inventario-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-cierre-jornada-fix";
+import { supabase } from "./supabase-client.js?v=20260817-cierre-jornada-fix";
 
 export const salesRepository = {
   list: () =>

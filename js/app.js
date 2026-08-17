@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260816-sesion-y-inventario-fix";
+  const APP_SCRIPT_BUILD = "20260817-cierre-jornada-fix";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -5413,6 +5413,13 @@
     const previousState = structuredClone(state);
     const timestamp = nowISO();
     let closedCount = 0;
+    // Marca explicita de la operacion. Sin ella, cerrar una jornada que no
+    // tiene cajas ni rondas abiertas produce un diff que solo toca activity y
+    // audit, y el despachador de operational-store no sabe que comando central
+    // invocar: aborta con "Esta operacion todavia no tiene un comando central
+    // seguro". La marca es transitoria; la proyeccion del servidor no la
+    // devuelve, asi que se limpia sola en el siguiente commit.
+    state.workDayClosedAt = timestamp;
     state.cashSessions.forEach((session) => {
       if (!session.closedAt) {
         session.closedAt = timestamp;

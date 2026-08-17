@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260816-sesion-y-inventario-fix";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-cierre-jornada-fix";
 
 const expensePaymentMethod = (value) => {
   const normalized = String(value || "otro").trim().toLowerCase();

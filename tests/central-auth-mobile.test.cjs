@@ -17,7 +17,7 @@ const dataModules = fs
 const moduleGraph = `${bootstrap}\n${dataModules}`;
 
 assert.match(html, /id="v3OpenAuthBtn"[\s\S]*?type="button"[\s\S]*?aria-controls="v3AuthDialog"/);
-assert.match(html, /meta name="app-build" content="20260816-sesion-y-inventario-fix"/);
+assert.match(html, /meta name="app-build" content="20260817-cierre-jornada-fix"/);
 assert.match(html, /id="v3AuthTrace"/);
 assert.match(html, /central-auth-ui\.js no cargado/);
 assert.match(authUi, /bindStableAuthDelegation\(document\)/);
@@ -41,7 +41,7 @@ assert.match(bootstrap, /Bootstrap build:/);
 assert.match(bootstrap, /Central auth UI build:/);
 assert.match(bootstrap, /Service-worker\/cache version:/);
 assert.match(css, /#v3OpenAuthBtn[\s\S]*?touch-action: manipulation/);
-assert.match(sw, /20260816-sesion-y-inventario-fix/);
+assert.match(sw, /20260817-cierre-jornada-fix/);
 assert.match(app, /PurificadoraAppScriptBuild = APP_SCRIPT_BUILD/);
 assert.match(bootstrap, /APP_SCRIPT_BUILD = window\.PurificadoraAppScriptBuild/);
 assert.match(sw, /GET_PURIFICADORA_BUILD/);
@@ -54,7 +54,7 @@ assert.doesNotMatch(
 );
 assert.match(
   bootstrap,
-  /operational-store\.js\?v=20260816-sesion-y-inventario-fix/,
+  /operational-store\.js\?v=20260817-cierre-jornada-fix/,
 );
 
 const submitStart = bootstrap.indexOf('form.addEventListener("submit"');

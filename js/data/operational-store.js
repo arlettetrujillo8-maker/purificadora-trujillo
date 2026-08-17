@@ -1,16 +1,16 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260816-sesion-y-inventario-fix";
-import { clientsRepository } from "./clients-repository.js?v=20260816-sesion-y-inventario-fix";
-import { salesRepository } from "./sales-repository.js?v=20260816-sesion-y-inventario-fix";
-import { ledgerRepository } from "./ledger-repository.js?v=20260816-sesion-y-inventario-fix";
-import { cashRepository } from "./cash-repository.js?v=20260816-sesion-y-inventario-fix";
-import { inventoryRepository } from "./inventory-repository.js?v=20260816-sesion-y-inventario-fix";
-import { roundsRepository } from "./rounds-repository.js?v=20260816-sesion-y-inventario-fix";
-import { suppliesRepository } from "./supplies-repository.js?v=20260816-sesion-y-inventario-fix";
-import { settingsRepository } from "./settings-repository.js?v=20260816-sesion-y-inventario-fix";
-import { reportsRepository } from "./reports-repository.js?v=20260816-sesion-y-inventario-fix";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260816-sesion-y-inventario-fix";
-import { returnsRepository } from "./returns-repository.js?v=20260816-sesion-y-inventario-fix";
-import { correctionsRepository } from "./corrections-repository.js?v=20260816-sesion-y-inventario-fix";
+import { profilesRepository } from "./profiles-repository.js?v=20260817-cierre-jornada-fix";
+import { clientsRepository } from "./clients-repository.js?v=20260817-cierre-jornada-fix";
+import { salesRepository } from "./sales-repository.js?v=20260817-cierre-jornada-fix";
+import { ledgerRepository } from "./ledger-repository.js?v=20260817-cierre-jornada-fix";
+import { cashRepository } from "./cash-repository.js?v=20260817-cierre-jornada-fix";
+import { inventoryRepository } from "./inventory-repository.js?v=20260817-cierre-jornada-fix";
+import { roundsRepository } from "./rounds-repository.js?v=20260817-cierre-jornada-fix";
+import { suppliesRepository } from "./supplies-repository.js?v=20260817-cierre-jornada-fix";
+import { settingsRepository } from "./settings-repository.js?v=20260817-cierre-jornada-fix";
+import { reportsRepository } from "./reports-repository.js?v=20260817-cierre-jornada-fix";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-cierre-jornada-fix";
+import { returnsRepository } from "./returns-repository.js?v=20260817-cierre-jornada-fix";
+import { correctionsRepository } from "./corrections-repository.js?v=20260817-cierre-jornada-fix";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
@@ -568,6 +568,9 @@ export class OperationalStore {
     const newLedger = added(before.ledger, draft.ledger).find(
       (item) => item.type === "payment",
     );
+    const workDayClosed =
+      Boolean(draft.workDayClosedAt) &&
+      draft.workDayClosedAt !== before.workDayClosedAt;
     const newSessions = added(before.cashSessions, draft.cashSessions);
     const autoClosedSessions = draft.cashSessions.filter((item) => {
       const old = before.cashSessions.find(
@@ -616,7 +619,16 @@ export class OperationalStore {
       draft.inventoryMovements,
     );
 
-    if (newUsers[0])
+    // El cierre de jornada no encaja en la cadena de una-rama-por-commit:
+    // puede cerrar cajas Y rondas a la vez, y con todo cerrado no cambia nada.
+    // Se atiende aparte y primero, identificado por su marca explicita.
+    if (workDayClosed) {
+      for (const session of autoClosedSessions)
+        await cashRepository.close(session);
+      for (const round of autoClosedRounds)
+        await roundsRepository.finalize(round);
+      // Cero elementos abiertos es un cierre valido, no un error.
+    } else if (newUsers[0])
       await profilesRepository.save({ ...newUsers[0], id: null });
     else if (deletedUser) await profilesRepository.remove(deletedUser.id);
     else if (
@@ -649,11 +661,6 @@ export class OperationalStore {
       });
     else if (updatedClient) await clientsRepository.update(updatedClient);
     else if (newSessions[0]) await cashRepository.open(newSessions[0]);
-    else if (autoClosedSessions.length > 0) {
-      for (const session of autoClosedSessions) {
-        await cashRepository.close(session);
-      }
-    }
     else if (closedSession) await cashRepository.close(closedSession);
     else if (newCashMovement) await cashRepository.movement(newCashMovement);
     else if (newCashTransfer) await cashRepository.transfer(newCashTransfer);
@@ -667,11 +674,6 @@ export class OperationalStore {
       });
     }
     else if (returnedRound) await roundsRepository.registerReturn(returnedRound);
-    else if (autoClosedRounds.length > 0) {
-      for (const round of autoClosedRounds) {
-        await roundsRepository.finalize(round);
-      }
-    }
     else if (closedRound) await roundsRepository.finalize(closedRound);
     else if (newRounds[0]) await roundsRepository.start(newRounds[0]);
     else if (
