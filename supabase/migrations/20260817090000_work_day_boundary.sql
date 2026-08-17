@@ -108,3 +108,8 @@ begin
   end if;
 end;
 $$;
+
+-- Sin esto, PostgREST sigue con el esquema en cache y la app falla al
+-- consultar la tabla con "Could not find the table public.work_days in the
+-- schema cache". Mismo remedio que 20260814155522.
+notify pgrst, 'reload schema';

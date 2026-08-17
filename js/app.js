@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-rondas-una-tarjeta";
+  const APP_SCRIPT_BUILD = "20260817-caja-automatica";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -796,8 +796,11 @@
         `Inventario insuficiente en ${inventoryLocationLabel(newCenter)}.`,
         "error",
       );
-    const newCash = type === "efectivo" ? total : type === "mixto" ? paid : 0,
-      cashPlan = correctionCashPlan(original, newCash, reason);
+    const newCash = type === "efectivo" ? total : type === "mixto" ? paid : 0;
+    // correctionCashPlan es sincrona y solo consulta la sesion; se asegura
+    // antes para que no tenga que rechazar la correccion por falta de caja.
+    await ensureCashSession({ method: "efectivo", amount: newCash });
+    const cashPlan = correctionCashPlan(original, newCash, reason);
     if (!cashPlan) return;
     const previousState = structuredClone(state),
       date = nowISO(),
@@ -1327,6 +1330,50 @@
   function getOpenCashSession(userId = activeUser()?.id) {
     if (!userId) return null;
     return state.cashSessions.find((s) => s.userId === userId && !s.closedAt);
+  }
+  // Abrir la caja dejo de ser un requisito previo para poder trabajar. Si una
+  // operacion mueve efectivo y no hay sesion, se abre sola con fondo 0 en vez
+  // de detener al usuario. No se quita el vinculo con la sesion: es lo que
+  // hace que el corte cuadre y que el dinero quede atribuido. El fondo se
+  // ajusta despues desde Caja.
+  // Son dos operaciones centrales (abrir, y luego la del usuario) porque el
+  // despachador solo admite una por commit.
+  async function ensureCashSession({ method = "efectivo", amount = 0 } = {}) {
+    const needsCash =
+      String(method).toLowerCase() === "efectivo" && Number(amount) > 0;
+    if (!needsCash) return true;
+    const user = activeUser();
+    if (!user) return false;
+    if (getOpenCashSession(user.id)) return true;
+    // Sin permiso para abrir caja no se puede resolver solo; se avisa como antes.
+    if (!can("open_cash")) {
+      if ($("cashRequiredDialog") && !$("cashRequiredDialog").open)
+        $("cashRequiredDialog").showModal();
+      return false;
+    }
+    const previousState = structuredClone(state),
+      session = {
+        id: uid("cash"),
+        userId: user.id,
+        center: user.center,
+        openedAt: nowISO(),
+        openingAmount: 0,
+        closedAt: null,
+        status: "abierta",
+      };
+    state.cashSessions.push(session);
+    addActivity(`Caja abierta automáticamente por ${user.name}`);
+    audit(
+      "open_cash",
+      "cash",
+      session.id,
+      "Caja abierta automáticamente al primer movimiento en efectivo",
+      null,
+      session,
+    );
+    if (!(await commitState(previousState))) return false;
+    toast("Se abrió tu caja con fondo $0. Ajústalo en Caja si hace falta.");
+    return Boolean(getOpenCashSession(user.id));
   }
   function requireOpenCashSession({ method = "efectivo", amount = 0 } = {}) {
     const required =
@@ -3517,12 +3564,15 @@
       inventoryCheck = validateInventoryMovement(center, -qty);
     if (!inventoryCheck.valid)
       return fail(`Inventario insuficiente en ${inventoryLocationLabel(center)}`);
-    const cashAmount =
-        type === "efectivo" ? total : type === "mixto" ? paid : 0,
-      cashCheck = requireOpenCashSession({
-        method: cashAmount > 0 ? "efectivo" : type,
-        amount: cashAmount,
-      });
+    const cashAmount = type === "efectivo" ? total : type === "mixto" ? paid : 0;
+    await ensureCashSession({
+      method: cashAmount > 0 ? "efectivo" : type,
+      amount: cashAmount,
+    });
+    const cashCheck = requireOpenCashSession({
+      method: cashAmount > 0 ? "efectivo" : type,
+      amount: cashAmount,
+    });
     if (cashCheck.required && !cashCheck.session) return fail();
     const previousState = structuredClone(state),
       date = nowISO(),
@@ -3778,6 +3828,7 @@
     if (!reason) return toast("El motivo es obligatorio.", "error");
     const amounts = proportionalReturnAmounts(sale, qty);
     const refundMethod = amounts.refund > 0 ? (sale.paymentType === "transferencia" ? "transferencia" : "efectivo") : "sin_reembolso";
+    await ensureCashSession({ method: refundMethod, amount: amounts.refund });
     const cashCheck = requireOpenCashSession({ method: refundMethod, amount: amounts.refund });
     if (cashCheck.required && !cashCheck.session) return;
     const previousState = structuredClone(state);
@@ -3990,8 +4041,11 @@
         `Inventario insuficiente en ${inventoryLocationLabel(newCenter)}.`,
         "error",
       );
-    const newCash = type === "efectivo" ? total : type === "mixto" ? paid : 0,
-      cashPlan = correctionCashPlan(original, newCash, reason);
+    const newCash = type === "efectivo" ? total : type === "mixto" ? paid : 0;
+    // correctionCashPlan es sincrona y solo consulta la sesion; se asegura
+    // antes para que no tenga que rechazar la correccion por falta de caja.
+    await ensureCashSession({ method: "efectivo", amount: newCash });
+    const cashPlan = correctionCashPlan(original, newCash, reason);
     if (!cashPlan) return;
     const previousState = structuredClone(state),
       date = nowISO(),
@@ -4091,6 +4145,12 @@
         "La venta tiene abonos posteriores y no puede anularse automáticamente.",
         "error",
       );
+    // Anular devuelve el efectivo que se habia cobrado, asi que tambien
+    // necesita una sesion aunque el nuevo importe sea cero.
+    await ensureCashSession({
+      method: "efectivo",
+      amount: saleCashAmount(sale),
+    });
     const cashPlan = correctionCashPlan(sale, 0, reason);
     if (!cashPlan) return;
     const previousState = structuredClone(state),
@@ -4180,6 +4240,7 @@
       return toast("El monto debe ser mayor a cero", "error");
     if (amount > bal + 0.001)
       return toast("El pago no puede exceder el saldo pendiente", "error");
+    await ensureCashSession({ method, amount });
     const cashCheck = requireOpenCashSession({ method, amount });
     if (cashCheck.required && !cashCheck.session) return;
     const previousState = structuredClone(state),
@@ -6206,11 +6267,13 @@
         type === "purchase"
           ? Number($("supplyPurchaseUnitCost").value || 0)
           : Number(supply.costPerUnit || 0),
-      total = type === "purchase" ? qty * unitCost : 0,
-      cashCheck = requireOpenCashSession({
-        method: affectsCash ? method : "sin_efectivo",
-        amount: affectsCash ? total : 0,
-      });
+      total = type === "purchase" ? qty * unitCost : 0;
+    const cashArgs = {
+      method: affectsCash ? method : "sin_efectivo",
+      amount: affectsCash ? total : 0,
+    };
+    await ensureCashSession(cashArgs);
+    const cashCheck = requireOpenCashSession(cashArgs);
     if (cashCheck.required && !cashCheck.session) return;
     const previousState = structuredClone(state),
       before = Number(supply.currentStock);
@@ -6379,10 +6442,12 @@
       amount = Number($("expenseAmount").value);
     if (!$("expenseConcept").value.trim() || amount <= 0)
       return toast("Completa concepto y monto", "error");
-    const cashCheck = requireOpenCashSession({
+    const cashArgs = {
       method: affectsCash ? method : "sin_efectivo",
       amount: affectsCash ? amount : 0,
-    });
+    };
+    await ensureCashSession(cashArgs);
+    const cashCheck = requireOpenCashSession(cashArgs);
     if (cashCheck.required && !cashCheck.session) return;
     const previousState = structuredClone(state),
       obj = {

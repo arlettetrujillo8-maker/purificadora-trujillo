@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260817-rondas-una-tarjeta";
-import { selectAll, rpc } from "./repository-utils.js?v=20260817-rondas-una-tarjeta";
+} from "./supabase-client.js?v=20260817-caja-automatica";
+import { selectAll, rpc } from "./repository-utils.js?v=20260817-caja-automatica";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

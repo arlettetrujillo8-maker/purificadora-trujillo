@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-rondas-una-tarjeta";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-caja-automatica";
 
 export const maintenanceRepository = {
   list: () => selectAll("maintenance_events", "*", (query) => query.order("created_at", { ascending: false }).limit(1000)),

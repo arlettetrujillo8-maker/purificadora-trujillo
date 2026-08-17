@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260817-rondas-una-tarjeta";
-import { clientsRepository } from "./clients-repository.js?v=20260817-rondas-una-tarjeta";
-import { salesRepository } from "./sales-repository.js?v=20260817-rondas-una-tarjeta";
-import { ledgerRepository } from "./ledger-repository.js?v=20260817-rondas-una-tarjeta";
-import { cashRepository } from "./cash-repository.js?v=20260817-rondas-una-tarjeta";
-import { inventoryRepository } from "./inventory-repository.js?v=20260817-rondas-una-tarjeta";
-import { roundsRepository } from "./rounds-repository.js?v=20260817-rondas-una-tarjeta";
-import { suppliesRepository } from "./supplies-repository.js?v=20260817-rondas-una-tarjeta";
-import { settingsRepository } from "./settings-repository.js?v=20260817-rondas-una-tarjeta";
-import { reportsRepository } from "./reports-repository.js?v=20260817-rondas-una-tarjeta";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-rondas-una-tarjeta";
-import { returnsRepository } from "./returns-repository.js?v=20260817-rondas-una-tarjeta";
-import { correctionsRepository } from "./corrections-repository.js?v=20260817-rondas-una-tarjeta";
-import { workDaysRepository } from "./work-days-repository.js?v=20260817-rondas-una-tarjeta";
+import { profilesRepository } from "./profiles-repository.js?v=20260817-caja-automatica";
+import { clientsRepository } from "./clients-repository.js?v=20260817-caja-automatica";
+import { salesRepository } from "./sales-repository.js?v=20260817-caja-automatica";
+import { ledgerRepository } from "./ledger-repository.js?v=20260817-caja-automatica";
+import { cashRepository } from "./cash-repository.js?v=20260817-caja-automatica";
+import { inventoryRepository } from "./inventory-repository.js?v=20260817-caja-automatica";
+import { roundsRepository } from "./rounds-repository.js?v=20260817-caja-automatica";
+import { suppliesRepository } from "./supplies-repository.js?v=20260817-caja-automatica";
+import { settingsRepository } from "./settings-repository.js?v=20260817-caja-automatica";
+import { reportsRepository } from "./reports-repository.js?v=20260817-caja-automatica";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-caja-automatica";
+import { returnsRepository } from "./returns-repository.js?v=20260817-caja-automatica";
+import { correctionsRepository } from "./corrections-repository.js?v=20260817-caja-automatica";
+import { workDaysRepository } from "./work-days-repository.js?v=20260817-caja-automatica";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
@@ -97,7 +97,14 @@ export class OperationalStore {
       maintenanceRepository.list(),
       settingsRepository.list(),
       reportsRepository.listAudit(),
-      workDaysRepository.list(),
+      // La frontera de jornada es una mejora, no debe poder tumbar la carga
+      // entera. Si la tabla todavia no existe o PostgREST no la publica (el
+      // "Could not find the table ... in the schema cache" clasico tras una
+      // migracion), se sigue sin frontera y las vistas caen al dia natural.
+      workDaysRepository.list().catch((error) => {
+        console.warn("No se pudo leer la frontera de jornada", error);
+        return [];
+      }),
     ]);
     if (!profile?.active)
       throw new Error("La cuenta no tiene un perfil operativo activo.");

@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260817-rondas-una-tarjeta";
+import { selectAll } from "./repository-utils.js?v=20260817-caja-automatica";
 
 export const reportsRepository = {
   listAudit: () =>

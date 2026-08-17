@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-rondas-una-tarjeta";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-caja-automatica";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

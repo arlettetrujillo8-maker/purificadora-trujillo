@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-rondas-una-tarjeta";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-caja-automatica";
 
 function payload(client) {
   return {
