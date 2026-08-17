@@ -52,4 +52,23 @@ Mantén la ventana del servidor abierta y permite el acceso a la red privada si 
 Get-ChildItem tests -Filter *.test.cjs | ForEach-Object { node $_.FullName }
 ```
 
-Build actual: `20260815-envases-pendientes`.
+## Identificador de build
+
+El build (`20260816-reporte-y-envases-fix`, etc.) aparece repetido en ~58 lugares:
+`index.html`, `sw.js`, cada `?v=` de los módulos y varios tests. Un bump parcial
+hace que el service worker sirva código viejo mezclado con nuevo, así que **no se
+edita a mano**:
+
+```bash
+node scripts/bump-build.cjs 20260817-mi-cambio
+```
+
+El valor canónico es el `<meta name="app-build">` de `index.html`. Para revisar
+sin cambiar nada:
+
+```bash
+node scripts/bump-build.cjs --check
+```
+
+`tests/build-consistency.test.cjs` corre esa misma verificación, de modo que un
+bump incompleto falla en las pruebas en vez de romper el arranque en producción.
