@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260818-modo-offline-v3";
-import { selectAll, rpc } from "./repository-utils.js?v=20260818-modo-offline-v3";
+} from "./supabase-client.js?v=20260818-ux-movil-v1";
+import { selectAll, rpc } from "./repository-utils.js?v=20260818-ux-movil-v1";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

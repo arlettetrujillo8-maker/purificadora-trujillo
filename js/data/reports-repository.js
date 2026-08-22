@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260818-modo-offline-v3";
+import { selectAll } from "./repository-utils.js?v=20260818-ux-movil-v1";
 
 export const reportsRepository = {
   listAudit: () =>

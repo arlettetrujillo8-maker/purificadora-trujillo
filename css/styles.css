@@ -549,6 +549,9 @@ textarea {
   padding: 11px 12px;
   color: var(--text);
   outline: none;
+  /* >=16px evita el zoom automatico de iOS Safari al enfocar un campo y
+     mejora la lectura; si fuera menor, el iPhone "brinca" la pagina. */
+  font-size: 16px;
 }
 input:focus,
 select:focus,
