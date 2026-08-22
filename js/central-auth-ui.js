@@ -1,7 +1,7 @@
 (function exposeCentralAuthUi(globalScope) {
   "use strict";
 
-  const BUILD = "20260817-ronda-cierre-limpio";
+  const BUILD = "20260818-pendientes-venta-ronda";
   const TRIGGER_SELECTOR =
     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
   const bindings = new WeakMap();

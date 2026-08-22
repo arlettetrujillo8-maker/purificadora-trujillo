@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-ronda-cierre-limpio";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
 
 const expensePaymentMethod = (value) => {
   const normalized = String(value || "otro").trim().toLowerCase();

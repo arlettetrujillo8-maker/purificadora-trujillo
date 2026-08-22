@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-ronda-cierre-limpio";
-import { supabase } from "./supabase-client.js?v=20260817-ronda-cierre-limpio";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
+import { supabase } from "./supabase-client.js?v=20260818-pendientes-venta-ronda";
 
 export const salesRepository = {
   list: () =>

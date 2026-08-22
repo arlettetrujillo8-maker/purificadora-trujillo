@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-ronda-cierre-limpio";
+  const APP_SCRIPT_BUILD = "20260818-pendientes-venta-ronda";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -3719,12 +3719,9 @@
       setSaleSubmitting(false);
       return;
     }
-    if (client) {
-      const netContainers = qty - containerEffect.emptyReturnQty - containerEffect.damagedReturnQty;
-      if (netContainers > 0) {
-        client.containerDebt = (client.containerDebt || 0) + netContainers;
-      }
-    }
+    // La deuda de envases del cliente la calcula y guarda el servidor
+    // (apply_sale_container_effect): tras el commit el estado se reemplaza por
+    // la proyeccion, asi que mutar el objeto local aqui no tenia efecto.
     resetSaleForm();
     renderAll();
     toast("Venta registrada correctamente");
@@ -3759,7 +3756,16 @@
     return Math.max(0, Number(sale?.qty || 0) - Number(sale?.returnedQty || 0));
   }
   function canReturnSale(sale) {
-    return Boolean(sale && isEffectiveSale(sale) && saleAvailableToReturn(sale) > 0 && can("return_sale"));
+    if (!sale || !isEffectiveSale(sale) || saleAvailableToReturn(sale) <= 0 || !can("return_sale")) return false;
+    const u = activeUser();
+    if (adminMode && u?.role === "administrador") return true;
+    // Misma ventana que el servidor (sale_change_window_expired): 30 minutos
+    // o caja del turno original aun abierta.
+    const ageMinutes = (Date.now() - new Date(sale.date).getTime()) / 60000,
+      session = sale.cashSessionId
+        ? state.cashSessions.find((s) => s.id === sale.cashSessionId)
+        : null;
+    return ageMinutes <= 30 || Boolean(session && !session.closedAt);
   }
   function latestSalesMarkup(limit = 20, actions = true) {
     const arr = scopedLatestSales(limit);
@@ -3995,16 +4001,20 @@
     };
   }
   function reverseSaleDebt(sale, date, reason, correctionId) {
-    if (!sale.clientId || Number(sale.credit || 0) <= 0) return;
+    const remainingCredit = Math.max(
+      0,
+      Number(sale.credit || 0) - Number(sale.returnedCredit || 0),
+    );
+    if (!sale.clientId || remainingCredit <= 0) return;
     state.ledger.push({
       id: uid("led"),
       date,
       clientId: sale.clientId,
       type: "sale_correction_reversal",
       label: `Reversa ${sale.folio || "venta"} · ${reason}`,
-      qty: -sale.qty,
+      qty: -Math.max(0, Number(sale.qty || 0) - Number(sale.returnedQty || 0)),
       charge: 0,
-      payment: sale.credit,
+      payment: remainingCredit,
       method: "corrección",
       notes: reason,
       saleId: sale.id,
@@ -4214,17 +4224,24 @@
     sale.voidedAt = date;
     sale.voidReason = reason;
     sale.correctionId = correction.id;
-    recordInventoryMovement(
-      sale.center,
-      sale.qty,
-      "anulación_venta",
-      `Anulación ${sale.folio}`,
-      null,
-      { saleId: sale.id, correctionId: correction.id },
+    // El servidor restaura solo el remanente no devuelto (quantity - returned);
+    // la vista previa local debe coincidir para no mostrar inventario de mas.
+    const remainingQty = Math.max(
+      0,
+      Number(sale.qty || 0) - Number(sale.returnedQty || 0),
     );
+    if (remainingQty > 0)
+      recordInventoryMovement(
+        sale.center,
+        remainingQty,
+        "anulación_venta",
+        `Anulación ${sale.folio}`,
+        null,
+        { saleId: sale.id, correctionId: correction.id },
+      );
     state.maintenance.count = Math.max(
       0,
-      Number(state.maintenance.count || 0) - Number(sale.qty),
+      Number(state.maintenance.count || 0) - remainingQty,
     );
     reverseSaleDebt(sale, date, reason, correction.id);
     state.saleCorrections.push(correction);

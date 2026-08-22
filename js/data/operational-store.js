@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260817-ronda-cierre-limpio";
-import { clientsRepository } from "./clients-repository.js?v=20260817-ronda-cierre-limpio";
-import { salesRepository } from "./sales-repository.js?v=20260817-ronda-cierre-limpio";
-import { ledgerRepository } from "./ledger-repository.js?v=20260817-ronda-cierre-limpio";
-import { cashRepository } from "./cash-repository.js?v=20260817-ronda-cierre-limpio";
-import { inventoryRepository } from "./inventory-repository.js?v=20260817-ronda-cierre-limpio";
-import { roundsRepository } from "./rounds-repository.js?v=20260817-ronda-cierre-limpio";
-import { suppliesRepository } from "./supplies-repository.js?v=20260817-ronda-cierre-limpio";
-import { settingsRepository } from "./settings-repository.js?v=20260817-ronda-cierre-limpio";
-import { reportsRepository } from "./reports-repository.js?v=20260817-ronda-cierre-limpio";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-ronda-cierre-limpio";
-import { returnsRepository } from "./returns-repository.js?v=20260817-ronda-cierre-limpio";
-import { correctionsRepository } from "./corrections-repository.js?v=20260817-ronda-cierre-limpio";
-import { workDaysRepository } from "./work-days-repository.js?v=20260817-ronda-cierre-limpio";
+import { profilesRepository } from "./profiles-repository.js?v=20260818-pendientes-venta-ronda";
+import { clientsRepository } from "./clients-repository.js?v=20260818-pendientes-venta-ronda";
+import { salesRepository } from "./sales-repository.js?v=20260818-pendientes-venta-ronda";
+import { ledgerRepository } from "./ledger-repository.js?v=20260818-pendientes-venta-ronda";
+import { cashRepository } from "./cash-repository.js?v=20260818-pendientes-venta-ronda";
+import { inventoryRepository } from "./inventory-repository.js?v=20260818-pendientes-venta-ronda";
+import { roundsRepository } from "./rounds-repository.js?v=20260818-pendientes-venta-ronda";
+import { suppliesRepository } from "./supplies-repository.js?v=20260818-pendientes-venta-ronda";
+import { settingsRepository } from "./settings-repository.js?v=20260818-pendientes-venta-ronda";
+import { reportsRepository } from "./reports-repository.js?v=20260818-pendientes-venta-ronda";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260818-pendientes-venta-ronda";
+import { returnsRepository } from "./returns-repository.js?v=20260818-pendientes-venta-ronda";
+import { correctionsRepository } from "./corrections-repository.js?v=20260818-pendientes-venta-ronda";
+import { workDaysRepository } from "./work-days-repository.js?v=20260818-pendientes-venta-ronda";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

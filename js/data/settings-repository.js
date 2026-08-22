@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-ronda-cierre-limpio";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

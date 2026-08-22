@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260817-ronda-cierre-limpio";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
 
 const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
 
