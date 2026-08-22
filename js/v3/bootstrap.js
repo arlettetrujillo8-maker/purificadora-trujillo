@@ -6,13 +6,18 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260818-pendientes-venta-ronda";
-import { OperationalStore } from "../data/operational-store.js?v=20260818-pendientes-venta-ronda";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260818-pendientes-venta-ronda";
-import { clientsRepository } from "../data/clients-repository.js?v=20260818-pendientes-venta-ronda";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260818-pendientes-venta-ronda";
+} from "../data/supabase-client.js?v=20260818-modo-offline-v1";
+import { OperationalStore } from "../data/operational-store.js?v=20260818-modo-offline-v1";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260818-modo-offline-v1";
+import { clientsRepository } from "../data/clients-repository.js?v=20260818-modo-offline-v1";
+import { salesRepository } from "../data/sales-repository.js?v=20260818-modo-offline-v1";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20260818-modo-offline-v1";
+import { cashRepository } from "../data/cash-repository.js?v=20260818-modo-offline-v1";
+import { roundsRepository } from "../data/rounds-repository.js?v=20260818-modo-offline-v1";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20260818-modo-offline-v1";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260818-modo-offline-v1";
 
-const BOOTSTRAP_BUILD = "20260818-pendientes-venta-ronda";
+const BOOTSTRAP_BUILD = "20260818-modo-offline-v1";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
@@ -25,6 +30,7 @@ let refreshInFlight = false;
 let queuedRefreshSource = null;
 let realtimeRefreshTimer = null;
 let sessionResumeInFlight = false;
+let lastSnapshotWriteAt = 0;
 const CENTRAL_REFRESH_INTERVAL_MS = 10000;
 const CENTRAL_CONFIGURED_KEY = "purificadora_v3_central_configured";
 const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
@@ -312,6 +318,22 @@ async function hydrateOperationalState(source = "manual") {
     renderDiagnosticPanel();
     setBackendStatus("Central conectado · operación V3 online", true);
     emitCentralAccessState(true, source);
+    // Espejo local para el modo offline (con throttle para no escribir a cada
+    // poll de 10 s).
+    const offlineApi = window.PurificadoraOfflineStore;
+    if (offlineApi) {
+      const now = Date.now();
+      if (!lastSnapshotWriteAt || now - lastSnapshotWriteAt > 15000) {
+        lastSnapshotWriteAt = now;
+        offlineApi
+          .saveSnapshot(projection, { profile: store.profile, source })
+          .catch((error) =>
+            console.warn("No se pudo guardar el espejo offline", error),
+          );
+        offlineApi.setCachedProfile(store.profile).catch(() => {});
+        offlineApi.setLastSyncAt().catch(() => {});
+      }
+    }
     return projection;
   } finally {
     refreshInFlight = false;
@@ -452,10 +474,156 @@ async function checkBackend() {
     diagnosticState.realtime = "CLOSED";
     diagnosticState.realtimeError = sanitizeDiagnosticError(error);
     renderDiagnosticPanel();
-    emitCentralAccessState(false, "backend-unavailable");
+    const restored = await restoreOfflineSnapshot();
+    if (!restored) emitCentralAccessState(false, "backend-unavailable");
     return false;
   }
 }
+
+// Abre la app con los datos del ultimo sync guardados localmente (modo offline).
+async function restoreOfflineSnapshot() {
+  const app = window.PurificadoraApp;
+  const offlineApi = window.PurificadoraOfflineStore;
+  if (!app || !offlineApi) return false;
+  // Si ya hay estado local persistido (operaciones offline guardadas en
+  // localStorage), se prefiere; si no, el snapshot de IndexedDB.
+  const current =
+    typeof app.getState === "function" ? app.getState() : null;
+  const currentRev = Number(current?.revision || 0);
+  const snapshot = await offlineApi.loadSnapshot();
+  const snapshotRev = Number(snapshot?.state?.revision || 0);
+  const source =
+    current && currentRev > 0 && currentRev >= snapshotRev
+      ? current
+      : snapshot?.state;
+  if (!source) return false;
+  const profile =
+    (await offlineApi.getCachedProfile()) || snapshot?.meta?.profile || null;
+  app.applyCentralState(source, profile, { offline: true });
+  setBackendStatus(
+    "Sin conexión · operando con datos locales (última sincronización)",
+    false,
+  );
+  emitCentralAccessState(false, "offline-cache");
+  renderPendingQueueBadge();
+  return true;
+}
+
+// Reenvia la cola de operaciones offline al servidor, en orden, reutilizando
+// el mismo operationId (idempotente) para no duplicar en reintentos.
+const syncHandlers = {
+  register_sale: (sale, opId) =>
+    salesRepository.create({ ...sale, operationId: opId }),
+  register_payment: (payment, opId) =>
+    ledgerRepository.registerPayment({ ...payment, operationId: opId }),
+  create_client: (client, opId) =>
+    clientsRepository.create({ ...client, operationId: opId }),
+  update_client: (client, opId) =>
+    clientsRepository.update({ ...client, operationId: opId }),
+  open_cash_session: (session, opId) =>
+    cashRepository.open({ ...session, operationId: opId }),
+  close_cash_session: (session, opId) =>
+    cashRepository.close({ ...session, operationId: opId }),
+  register_cash_movement: (movement, opId) =>
+    cashRepository.movement({ ...movement, operationId: opId }),
+  create_expense: (expense, opId) =>
+    cashRepository.createExpense({ ...expense, operationId: opId }),
+  start_round: (round, opId) =>
+    roundsRepository.start({ ...round, operationId: opId }),
+  reload_round: (round, opId) =>
+    roundsRepository.reload({ ...round, operationId: opId }),
+  register_round_return: (round, opId) =>
+    roundsRepository.registerReturn({ ...round, operationId: opId }),
+  finalize_round_close: (round, opId) =>
+    roundsRepository.finalize({ ...round, operationId: opId }),
+  transfer_inventory: (movement, opId) =>
+    inventoryRepository.transfer({ ...movement, operationId: opId }),
+  adjust_inventory: (movement, opId) =>
+    inventoryRepository.adjust({ ...movement, operationId: opId }),
+};
+
+async function syncQueuedOperations() {
+  const offlineApi = window.PurificadoraOfflineStore;
+  if (!offlineApi) return { synced: 0, failed: 0, conflict: 0 };
+  const queue = await offlineApi.listQueue();
+  const pending = queue.filter(
+    (op) => op.status !== "synced" && op.status !== "conflict",
+  );
+  if (!pending.length) return { synced: 0, failed: 0, conflict: 0 };
+  let synced = 0;
+  let failed = 0;
+  let conflict = 0;
+  for (const op of pending) {
+    const handler = syncHandlers[op.type];
+    if (!handler) {
+      await offlineApi.updateQueueEntry(op.id, {
+        status: "failed",
+        lastError: `Sin sincronizador para ${op.type}`,
+      });
+      failed++;
+      continue;
+    }
+    await offlineApi.updateQueueEntry(op.id, {
+      status: "syncing",
+      attempts: Number(op.attempts || 0) + 1,
+    });
+    try {
+      await handler(op.payload, op.id);
+      await offlineApi.updateQueueEntry(op.id, {
+        status: "synced",
+        lastError: null,
+      });
+      synced++;
+    } catch (error) {
+      const text = String(error?.message || error?.code || error || "");
+      const isConflict = ["idempotency_conflict"].some((key) =>
+        text.includes(key),
+      );
+      const status = isConflict ? "conflict" : "failed";
+      await offlineApi.updateQueueEntry(op.id, {
+        status,
+        lastError: text.slice(0, 240),
+      });
+      if (isConflict) conflict++;
+      else failed++;
+      // Ante un error transitorio (red, permisos), se detiene y se reintenta
+      // en la siguiente reconexion; los conflictos de idempotencia se saltan.
+      if (!isConflict) break;
+    }
+  }
+  if (synced) {
+    await offlineApi.setLastSyncAt();
+    hydrateOperationalState("sync-complete").catch(() => {});
+  }
+  renderPendingQueueBadge();
+  return { synced, failed, conflict };
+}
+
+// Badge del topbar: "· N pendiente(s)" cuando hay operaciones por sincronizar.
+function renderPendingQueueBadge() {
+  const countEl = document.getElementById("offlinePendingCount");
+  const offlineApi = window.PurificadoraOfflineStore;
+  if (!countEl || !offlineApi) return;
+  offlineApi
+    .pendingCount()
+    .then((count) => {
+      countEl.textContent = count ? ` · ${count} pendiente(s)` : "";
+      countEl.classList.toggle("has-pending", Boolean(count));
+    })
+    .catch(() => {});
+}
+
+// Al volver la conexion: sincronizar la cola y recuperar la central.
+window.addEventListener("online", () => {
+  syncQueuedOperations().then(() => {
+    checkBackend().catch(() => {});
+  });
+});
+window.addEventListener("offline", () => {
+  setBackendStatus("Sin conexión · operando con datos locales", false);
+  emitCentralAccessState(false, "offline");
+});
+window.addEventListener("purificadora:queue-changed", renderPendingQueueBadge);
 
 async function signIn(email, password) {
   const result = await client.auth.signInWithPassword({ email, password });
@@ -817,10 +985,20 @@ window.PurificadoraV3 = Object.freeze({
   },
   refresh: hydrateOperationalState,
   commitTransition: async (before, draft) => {
+    const offline =
+      typeof navigator !== "undefined" && navigator.onLine === false;
     const projection = await store.commit(before, draft);
-    window.PurificadoraApp?.applyCentralState(projection, store.profile);
+    window.PurificadoraApp?.applyCentralState(projection, store.profile, {
+      offline,
+    });
     return projection;
   },
+  syncQueuedOperations,
+  queueSummary: () =>
+    window.PurificadoraOfflineStore?.queueSummary?.() ??
+    Promise.resolve({ total: 0, pending: 0, failed: 0, byType: {} }),
+  isOffline: () =>
+    typeof navigator !== "undefined" && navigator.onLine === false,
   toCents,
   fromCents,
   formatMoney,

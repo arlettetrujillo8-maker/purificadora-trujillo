@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
+import { selectAll } from "./repository-utils.js?v=20260818-modo-offline-v1";
 
 export const reportsRepository = {
   listAudit: () =>

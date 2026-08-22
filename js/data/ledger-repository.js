@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
 
 export const ledgerRepository = {
   listPayments: () =>
@@ -12,16 +12,19 @@ export const ledgerRepository = {
   registerPayment: (payment) =>
     rpc(
       "register_payment",
-      commandArgs({
-        p_payment_id: entityId(),
-        p_payload: {
-          client_id: payment.clientId,
-          cash_session_id: payment.cashSessionId || null,
-          amount_cents: Math.round(Number(payment.payment) * 100),
-          payment_method: payment.method,
-          notes: payment.notes || "",
-          occurred_at: payment.date,
+      commandArgs(
+        {
+          p_payment_id: entityId(),
+          p_payload: {
+            client_id: payment.clientId,
+            cash_session_id: payment.cashSessionId || null,
+            amount_cents: Math.round(Number(payment.payment) * 100),
+            payment_method: payment.method,
+            notes: payment.notes || "",
+            occurred_at: payment.date,
+          },
         },
-      }),
+        payment.operationId || null,
+      ),
     ),
 };

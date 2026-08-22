@@ -1,4 +1,4 @@
-const BUILD = "20260818-pendientes-venta-ronda";
+const BUILD = "20260818-modo-offline-v1";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",
@@ -9,6 +9,7 @@ const ASSETS = [
   `./js/presentation-labels.js?v=${BUILD}`,
   `./js/user-display.js?v=${BUILD}`,
   `./js/sale-client-selection.js?v=${BUILD}`,
+  `./js/data/offline-store.js?v=${BUILD}`,
   `./js/app.js?v=${BUILD}`,
   `./js/data/supabase-client.js?v=${BUILD}`,
   `./js/data/repository-utils.js?v=${BUILD}`,

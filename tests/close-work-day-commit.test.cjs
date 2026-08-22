@@ -28,10 +28,12 @@ assert.match(
 );
 
 // 2. La rama de jornada va PRIMERA: si quedara despues de cualquier otra, un
-//    diff ajeno la eclipsaria y volveria el bug.
+//    diff ajeno la eclipsaria y volveria el bug. (El guard offline es un if
+//    aparte antes del despacho; se mide la cadena de despacho, no el archivo.)
 const chain = store.slice(store.indexOf("async commit(before, draft)"));
-const firstBranch = chain.indexOf("if (");
-const workDayBranch = chain.indexOf("if (workDayClosed)");
+const dispatch = chain.slice(chain.indexOf("this.detect(before, draft)"));
+const firstBranch = dispatch.indexOf("if (");
+const workDayBranch = dispatch.indexOf("if (workDayClosed)");
 assert.equal(
   workDayBranch,
   firstBranch,

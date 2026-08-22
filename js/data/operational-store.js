@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260818-pendientes-venta-ronda";
-import { clientsRepository } from "./clients-repository.js?v=20260818-pendientes-venta-ronda";
-import { salesRepository } from "./sales-repository.js?v=20260818-pendientes-venta-ronda";
-import { ledgerRepository } from "./ledger-repository.js?v=20260818-pendientes-venta-ronda";
-import { cashRepository } from "./cash-repository.js?v=20260818-pendientes-venta-ronda";
-import { inventoryRepository } from "./inventory-repository.js?v=20260818-pendientes-venta-ronda";
-import { roundsRepository } from "./rounds-repository.js?v=20260818-pendientes-venta-ronda";
-import { suppliesRepository } from "./supplies-repository.js?v=20260818-pendientes-venta-ronda";
-import { settingsRepository } from "./settings-repository.js?v=20260818-pendientes-venta-ronda";
-import { reportsRepository } from "./reports-repository.js?v=20260818-pendientes-venta-ronda";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260818-pendientes-venta-ronda";
-import { returnsRepository } from "./returns-repository.js?v=20260818-pendientes-venta-ronda";
-import { correctionsRepository } from "./corrections-repository.js?v=20260818-pendientes-venta-ronda";
-import { workDaysRepository } from "./work-days-repository.js?v=20260818-pendientes-venta-ronda";
+import { profilesRepository } from "./profiles-repository.js?v=20260818-modo-offline-v1";
+import { clientsRepository } from "./clients-repository.js?v=20260818-modo-offline-v1";
+import { salesRepository } from "./sales-repository.js?v=20260818-modo-offline-v1";
+import { ledgerRepository } from "./ledger-repository.js?v=20260818-modo-offline-v1";
+import { cashRepository } from "./cash-repository.js?v=20260818-modo-offline-v1";
+import { inventoryRepository } from "./inventory-repository.js?v=20260818-modo-offline-v1";
+import { roundsRepository } from "./rounds-repository.js?v=20260818-modo-offline-v1";
+import { suppliesRepository } from "./supplies-repository.js?v=20260818-modo-offline-v1";
+import { settingsRepository } from "./settings-repository.js?v=20260818-modo-offline-v1";
+import { reportsRepository } from "./reports-repository.js?v=20260818-modo-offline-v1";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260818-modo-offline-v1";
+import { returnsRepository } from "./returns-repository.js?v=20260818-modo-offline-v1";
+import { correctionsRepository } from "./corrections-repository.js?v=20260818-modo-offline-v1";
+import { workDaysRepository } from "./work-days-repository.js?v=20260818-modo-offline-v1";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
@@ -561,7 +561,8 @@ export class OperationalStore {
     return projection;
   }
 
-  async commit(before, draft) {
+  // Detecta los cambios entre before y draft (una operacion por commit).
+  detect(before, draft) {
     const newUsers = added(before.users || [], draft.users || []);
     const deletedUser = removed(before.users || [], draft.users || [])[0];
     const updatedUser = changedItem(before.users || [], draft.users || []);
@@ -634,6 +635,168 @@ export class OperationalStore {
       before.inventoryMovements,
       draft.inventoryMovements,
     );
+    return {
+      newUsers,
+      deletedUser,
+      updatedUser,
+      previousUpdatedUser,
+      newClients,
+      updatedClient,
+      containerReturnClient,
+      newSales,
+      newReturn,
+      newCorrection,
+      newCashAdjustment,
+      newLedger,
+      workDayClosed,
+      newSessions,
+      autoClosedSessions,
+      closedSession,
+      newCashMovement,
+      newCashTransfer,
+      newRounds,
+      reloadedRound,
+      autoClosedRounds,
+      closedRound,
+      returnedRound,
+      newSupply,
+      updatedSupply,
+      newSupplyMovement,
+      newExpense,
+      newMaintenance,
+      newInventory,
+    };
+  }
+
+  // Convierte el diff en una entrada de cola offline (o null si la operacion
+  // no esta soportada sin conexion).
+  detectOfflineOperation(before, draft) {
+    const d = this.detect(before, draft);
+    const makeId = (entity) =>
+      entity?.operationId ||
+      (globalThis.PurificadoraCrypto?.safeRandomUUID
+        ? globalThis.PurificadoraCrypto.safeRandomUUID()
+        : `offline-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+    if (d.newSales[0])
+      return { id: makeId(d.newSales[0]), type: "register_sale", payload: d.newSales[0] };
+    if (d.newLedger)
+      return { id: makeId(d.newLedger), type: "register_payment", payload: d.newLedger };
+    if (d.newClients[0])
+      return { id: makeId(d.newClients[0]), type: "create_client", payload: d.newClients[0] };
+    if (d.updatedClient)
+      return { id: makeId(d.updatedClient), type: "update_client", payload: d.updatedClient };
+    if (d.newSessions[0])
+      return { id: makeId(d.newSessions[0]), type: "open_cash_session", payload: d.newSessions[0] };
+    if (d.closedSession)
+      return { id: makeId(d.closedSession), type: "close_cash_session", payload: d.closedSession };
+    if (d.newCashMovement)
+      return { id: makeId(d.newCashMovement), type: "register_cash_movement", payload: d.newCashMovement };
+    if (d.newRounds[0])
+      return { id: makeId(d.newRounds[0]), type: "start_round", payload: d.newRounds[0] };
+    if (d.reloadedRound) {
+      const old = before.rounds.find((item) => item.id === d.reloadedRound.id);
+      return {
+        id: makeId(d.reloadedRound),
+        type: "reload_round",
+        payload: {
+          id: d.reloadedRound.id,
+          quantity:
+            Number(d.reloadedRound.reloadQty || 0) - Number(old?.reloadQty || 0),
+          notes: d.reloadedRound.lastReloadNotes || "",
+        },
+      };
+    }
+    if (d.returnedRound)
+      return { id: makeId(d.returnedRound), type: "register_round_return", payload: d.returnedRound };
+    if (d.closedRound)
+      return { id: makeId(d.closedRound), type: "finalize_round_close", payload: d.closedRound };
+    if (d.newExpense)
+      return { id: makeId(d.newExpense), type: "create_expense", payload: d.newExpense };
+    if (d.newInventory.some((item) => item.type === "transferencia")) {
+      const out = d.newInventory.find(
+        (item) => item.type === "transferencia" && Number(item.delta) < 0,
+      );
+      return {
+        id: makeId(out),
+        type: "transfer_inventory",
+        payload: {
+          from: out.location,
+          to: out.otherLocation,
+          quantity: Math.abs(out.delta),
+          reason: out.notes,
+        },
+      };
+    }
+    if (d.newInventory.some((item) => item.type === "ajuste")) {
+      const item = d.newInventory.find((movement) => movement.type === "ajuste");
+      return {
+        id: makeId(item),
+        type: "adjust_inventory",
+        payload: {
+          location: item.location,
+          newQuantity: item.after,
+          reason: item.notes,
+        },
+      };
+    }
+    return null;
+  }
+
+  // Sin conexion: encola la operacion y devuelve una proyeccion local.
+  async commitOffline(before, draft) {
+    const op = this.detectOfflineOperation(before, draft);
+    if (!op) {
+      throw new Error(
+        "Esta operación no está disponible sin conexión. Conecta para realizarla.",
+      );
+    }
+    const offlineApi = window.PurificadoraOfflineStore;
+    if (!offlineApi) {
+      throw new Error("El almacenamiento local no está disponible.");
+    }
+    await offlineApi.enqueueOperation(op);
+    const projection = { ...draft, central: false };
+    this.lastProjection = projection;
+    return projection;
+  }
+
+  async commit(before, draft) {
+    // Sin conexion: aplicar en local y encolar para sincronizar despues.
+    if (typeof navigator !== "undefined" && navigator.onLine === false)
+      return this.commitOffline(before, draft);
+
+    const {
+      newUsers,
+      deletedUser,
+      updatedUser,
+      previousUpdatedUser,
+      newClients,
+      updatedClient,
+      containerReturnClient,
+      newSales,
+      newReturn,
+      newCorrection,
+      newCashAdjustment,
+      newLedger,
+      workDayClosed,
+      newSessions,
+      autoClosedSessions,
+      closedSession,
+      newCashMovement,
+      newCashTransfer,
+      newRounds,
+      reloadedRound,
+      autoClosedRounds,
+      closedRound,
+      returnedRound,
+      newSupply,
+      updatedSupply,
+      newSupplyMovement,
+      newExpense,
+      newMaintenance,
+      newInventory,
+    } = this.detect(before, draft);
 
     // El cierre de jornada no encaja en la cadena de una-rama-por-commit:
     // puede cerrar cajas Y rondas a la vez, y con todo cerrado no cambia nada.

@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
 
 function payload(client) {
   return {
@@ -25,17 +25,20 @@ export const clientsRepository = {
       : entityId();
     return rpc(
       "create_client",
-      commandArgs({ p_client_id: id, p_payload: payload(client) }),
+      commandArgs({ p_client_id: id, p_payload: payload(client) }, client.operationId || null),
     );
   },
   update: (client) =>
     rpc(
       "update_client",
-      commandArgs({
-        p_client_id: client.id,
-        p_expected_version: Number(client.version || 1),
-        p_payload: payload(client),
-      }),
+      commandArgs(
+        {
+          p_client_id: client.id,
+          p_expected_version: Number(client.version || 1),
+          p_payload: payload(client),
+        },
+        client.operationId || null,
+      ),
     ),
   merge: (primaryClientId, duplicateClientIds) =>
     rpc(

@@ -125,3 +125,40 @@ Debe salir limpio. No correr `db push` sin `--dry-run` primero.
   (V3.2 del roadmap). Si se pierde conexión, las operaciones fallan con aviso.
 - La sesión central se guarda en `localStorage` (clave `purificadora_v3_auth`).
   No limpiar "site data" del sitio en localhost:8080 salvo que se quiera salir.
+
+---
+
+## 4. Modo offline (build 20260818-modo-offline-v1)
+
+Se implementó la base del funcionamiento offline. Alcance y límites:
+
+### Qué funciona sin señal
+
+- La app abre y muestra los datos de la última sincronización (espejo en
+  IndexedDB + estado local en localStorage).
+- Operaciones del repartidor encoladas y sincronizadas al reconectar:
+  venta, pago/abono, alta y edición de cliente, iniciar/recargar/regresar/
+  cerrar ronda, abrir/cerrar caja, movimiento de caja, gasto, y
+  transferencia/ajuste de inventario.
+- Al volver la conexión, la cola se reenvía en orden reutilizando el mismo
+  `operationId` (idempotente: un reintento no duplica).
+- Indicador en el topbar: "· N pendiente(s)" mientras haya operaciones sin
+  sincronizar.
+
+### Qué NO funciona sin señal (avisa "requiere conexión")
+
+- Correcciones, anulaciones, devoluciones de venta.
+- Empleados, insumos, mantenimiento, llenado de garrafones, cierre de jornada.
+- Iniciar sesión (el PIN se valida contra el servidor): el repartidor debe
+  iniciar sesión estando en línea y operar sin cerrar la pestaña; al volver
+  en línea se sincroniza.
+
+### Riesgos conocidos
+
+- Si dos dispositivos operan la misma ruta/caja sin conexión y luego
+  sincronizan, el servidor rechaza la operación conflictiva (la cola la marca
+  como "conflict" y queda para revisión administrativa).
+- La sesión central expira (~1 h): si expira estando offline, la sincronización
+  esperará a reconectar con una sesión válida.
+- Prueba piloto obligatoria antes de producción: un día real con señal
+  intermitente para validar la cola contra el servidor.

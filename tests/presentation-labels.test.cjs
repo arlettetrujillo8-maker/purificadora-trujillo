@@ -33,6 +33,6 @@ assert.match(
 assert.match(app, /register\(`\.\/sw\.js\?v=\$\{encodeURIComponent\(appBuild\)\}`\)/);
 assert.match(bootstrap, /badge\.hidden = centralConnected \|\| noConnection/);
 assert.match(bootstrap, /\? "Conectar"/);
-assert.match(html, /presentation-labels\.js\?v=20260818-pendientes-venta-ronda/);
+assert.match(html, /presentation-labels\.js\?v=20260818-modo-offline-v1/);
 
 console.log("presentation-labels: 17/17 PASS");

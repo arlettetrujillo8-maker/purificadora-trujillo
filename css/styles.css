@@ -280,6 +280,20 @@ p {
   background: #fff2dd;
   color: var(--warning);
 }
+.offline-pending-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warning);
+}
+.offline-pending-count.has-pending::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  margin-right: 6px;
+}
 .central-status-btn {
   border: 0;
   min-height: 44px;

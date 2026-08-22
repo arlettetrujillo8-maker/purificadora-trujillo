@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260818-pendientes-venta-ronda";
+  const APP_SCRIPT_BUILD = "20260818-modo-offline-v1";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -237,6 +237,8 @@
   const $$ = (sel) => [...document.querySelectorAll(sel)];
   const uid = (prefix = "id") =>
     `${prefix}_${window.PurificadoraCrypto.safeRandomUUID()}`;
+  // UUID real para entidades que el servidor acepta tal cual (offline + sync).
+  const bareUuid = () => window.PurificadoraCrypto.safeRandomUUID();
   const nowISO = () => new Date().toISOString();
   const money = (n) =>
     new Intl.NumberFormat("es-MX", {
@@ -387,6 +389,7 @@
   let pendingClientMergeIds = [];
   let quickClientFromSale = false;
   let lastCommitError = null;
+  let offlineMode = false;
   const saleFormOriginalHost = $("saleForm").parentElement;
   const saleFormOriginalNextSibling = $("saleForm").nextElementSibling;
 
@@ -571,7 +574,20 @@
         structuredClone(state),
       );
       state = hydrateState(projection);
-      state.central = true;
+      state.central = !offlineMode;
+      if (offlineMode) {
+        // Persistir localmente para sobrevivir a recargas sin conexion.
+        if (!saveState({ skipConflict: true })) {
+          state = previousState;
+          renderAll();
+          toast(
+            "No se pudo guardar sin conexión en este dispositivo. No se aplicaron cambios.",
+            "error",
+          );
+          return false;
+        }
+        window.dispatchEvent(new CustomEvent("purificadora:queue-changed"));
+      }
       renderAll();
       return true;
     } catch (error) {
@@ -843,7 +859,7 @@
     );
     reverseSaleDebt(original, date, reason, correction.id);
     const newSale = {
-      id: uid("sale"),
+      id: bareUuid(),
       folio: nextFolio("sale", "V"),
       date,
       clientId: client?.id || null,
@@ -1356,7 +1372,7 @@
     }
     const previousState = structuredClone(state),
       session = {
-        id: uid("cash"),
+        id: bareUuid(),
         userId: user.id,
         center: user.center,
         openedAt: nowISO(),
@@ -1904,6 +1920,10 @@
   }
 
   function init() {
+    // Base local persistida (modo offline): si no hay señal y el dispositivo
+    // guardo operaciones locales, se restauran aqui antes de que la central
+    // (si llega) las reemplace por la proyeccion del servidor.
+    state = loadState();
     bindNavigation();
     bindDialogs();
     bindForms();
@@ -2422,9 +2442,16 @@
   }
   function updateOnlineStatus() {
     const on = navigator.onLine;
+    offlineMode = !on;
     $("onlineBadge").textContent = on ? "En línea" : "Sin conexión";
     $("onlineBadge").classList.toggle("offline", !on);
-    renderOperationalStatus();
+    if (!on && state.central) {
+      // Al caer la conexion con datos centrales cargados, se conserva el
+      // estado en memoria y el siguiente commit seguira el camino offline.
+      renderOperationalStatus();
+    } else {
+      renderOperationalStatus();
+    }
   }
 
   function renderAll() {
@@ -2930,7 +2957,7 @@
       );
     const previousState = structuredClone(state),
       client = {
-        id: uid("cli"),
+        id: bareUuid(),
         name,
         phone,
         address,
@@ -3620,7 +3647,7 @@
       date = nowISO(),
       cashSessionId = cashCheck.session?.id || null,
       sale = {
-        id: uid("sale"),
+        id: bareUuid(),
         operationId: pendingSaleOperationId,
         folio: nextFolio("sale", "V"),
         date,
@@ -4138,7 +4165,7 @@
     );
     reverseSaleDebt(original, date, reason, correction.id);
     const newSale = {
-      id: uid("sale"),
+      id: bareUuid(),
       folio: nextFolio("sale", "V"),
       date,
       clientId: client?.id || null,
@@ -4761,7 +4788,7 @@
       number =
         Math.max(0, ...todayRounds.map((r) => Number(r.number || 0))) + 1,
       round = {
-        id: uid("round"),
+        id: bareUuid(),
         number,
         route,
         startedAt: nowISO(),
@@ -7232,13 +7259,14 @@
       : '<div class="empty">No hay eventos que coincidan.</div>';
   }
 
-  function applyCentralState(projection, profile) {
+  function applyCentralState(projection, profile, { offline = false } = {}) {
+    offlineMode = offline;
     const pendingSaleDraft = captureSaleDraftForRefresh();
     const sidebarWasOpen = $("sidebar")?.classList.contains("open") === true;
     const previousEmployeeId = employeeSession?.userId || null;
     const wasAdminMode = adminMode;
     state = hydrateState(projection);
-    state.central = true;
+    state.central = !offline;
     recoveryRequired = false;
     stateConflict = false;
     externalRevision = 0;

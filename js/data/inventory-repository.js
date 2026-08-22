@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
 
 export const inventoryRepository = {
   listLocations: () => selectAll("inventory_locations"),
@@ -9,23 +9,29 @@ export const inventoryRepository = {
   transfer: (movement) =>
     rpc(
       "transfer_inventory",
-      commandArgs({
-        p_reference_id: entityId(),
-        p_from_code: movement.from,
-        p_to_code: movement.to,
-        p_quantity: Number(movement.quantity),
-        p_reason: movement.reason || "",
-      }),
+      commandArgs(
+        {
+          p_reference_id: entityId(),
+          p_from_code: movement.from,
+          p_to_code: movement.to,
+          p_quantity: Number(movement.quantity),
+          p_reason: movement.reason || "",
+        },
+        movement.operationId || null,
+      ),
     ),
   adjust: (movement) =>
     rpc(
       "adjust_inventory",
-      commandArgs({
-        p_reference_id: entityId(),
-        p_location_code: movement.location,
-        p_new_quantity: Number(movement.newQuantity),
-        p_reason: movement.reason,
-      }),
+      commandArgs(
+        {
+          p_reference_id: entityId(),
+          p_location_code: movement.location,
+          p_new_quantity: Number(movement.newQuantity),
+          p_reason: movement.reason,
+        },
+        movement.operationId || null,
+      ),
     ),
   fill: (movement) =>
     rpc(

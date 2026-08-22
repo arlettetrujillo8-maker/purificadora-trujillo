@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260818-modo-offline-v1";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
-import { supabase } from "./supabase-client.js?v=20260818-pendientes-venta-ronda";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
+import { supabase } from "./supabase-client.js?v=20260818-modo-offline-v1";
 
 export const salesRepository = {
   list: () =>

@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-pendientes-venta-ronda";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
 
 const expensePaymentMethod = (value) => {
   const normalized = String(value || "otro").trim().toLowerCase();
@@ -24,33 +24,42 @@ export const cashRepository = {
   open: (session) =>
     rpc(
       "open_cash_session",
-      commandArgs({
-        p_session_id: /^[0-9a-f-]{36}$/i.test(session.id || "")
-          ? session.id
-          : entityId(),
-        p_opening_cents: Math.round(Number(session.openingAmount) * 100),
-      }),
+      commandArgs(
+        {
+          p_session_id: /^[0-9a-f-]{36}$/i.test(session.id || "")
+            ? session.id
+            : entityId(),
+          p_opening_cents: Math.round(Number(session.openingAmount) * 100),
+        },
+        session.operationId || null,
+      ),
     ),
   close: (session) =>
     rpc(
       "close_cash_session",
-      commandArgs({
-        p_session_id: session.id,
-        p_counted_cents: Math.round(Number(session.countedAmount) * 100),
-        p_difference_reason: session.differenceReason || "",
-      }),
+      commandArgs(
+        {
+          p_session_id: session.id,
+          p_counted_cents: Math.round(Number(session.countedAmount) * 100),
+          p_difference_reason: session.differenceReason || "",
+        },
+        session.operationId || null,
+      ),
     ),
   movement: (movement) =>
     rpc(
       "register_cash_movement",
-      commandArgs({
-        p_movement_id: entityId(),
-        p_session_id: movement.cashSessionId,
-        p_movement_type: movement.type === "income" ? "deposit" : "withdrawal",
-        p_direction: movement.type === "income" ? "in" : "out",
-        p_amount_cents: Math.round(Number(movement.amount) * 100),
-        p_reason: movement.reason,
-      }),
+      commandArgs(
+        {
+          p_movement_id: entityId(),
+          p_session_id: movement.cashSessionId,
+          p_movement_type: movement.type === "income" ? "deposit" : "withdrawal",
+          p_direction: movement.type === "income" ? "in" : "out",
+          p_amount_cents: Math.round(Number(movement.amount) * 100),
+          p_reason: movement.reason,
+        },
+        movement.operationId || null,
+      ),
     ),
   transfer: (transfer) =>
     rpc(
@@ -66,18 +75,21 @@ export const cashRepository = {
   createExpense: (expense) =>
     rpc(
       "create_expense",
-      commandArgs({
-        p_expense_id: entityId(),
-        p_payload: {
-          concept: expense.concept,
-          amount_cents: Math.round(Number(expense.amount) * 100),
-          center: expense.center,
-          payment_method: expensePaymentMethod(expense.method),
-          affects_cash: expense.affectsCash !== false,
-          cash_session_id: expense.cashSessionId || null,
-          notes: expense.notes || "",
-          occurred_at: expense.date,
+      commandArgs(
+        {
+          p_expense_id: entityId(),
+          p_payload: {
+            concept: expense.concept,
+            amount_cents: Math.round(Number(expense.amount) * 100),
+            center: expense.center,
+            payment_method: expensePaymentMethod(expense.method),
+            affects_cash: expense.affectsCash !== false,
+            cash_session_id: expense.cashSessionId || null,
+            notes: expense.notes || "",
+            occurred_at: expense.date,
+          },
         },
-      }),
+        expense.operationId || null,
+      ),
     ),
 };
