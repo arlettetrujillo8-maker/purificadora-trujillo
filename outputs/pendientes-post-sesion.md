@@ -128,9 +128,9 @@ Debe salir limpio. No correr `db push` sin `--dry-run` primero.
 
 ---
 
-## 4. Modo offline (build 20260818-modo-offline-v2)
+## 4. Modo offline (build 20260818-modo-offline-v3)
 
-Se implementó el funcionamiento offline. Alcance y límites:
+Se implementó el funcionamiento offline completo. Alcance y límites:
 
 ### Qué funciona sin señal
 
@@ -146,22 +146,29 @@ Se implementó el funcionamiento offline. Alcance y límites:
 - Al volver la conexión, la cola se reenvía en orden reutilizando el mismo
   `operationId` (idempotente: un reintento no duplica).
 - Indicador en el topbar: "· N pendiente(s)" + botón **Sincronizar**.
-- Resumen de la cola en el panel **Diagnóstico** (total/pendientes/errores).
+- **Panel de cola en Diagnóstico**: lista las operaciones pendientes con su
+  estado y error; botones **Reintentar** (fallidas) y **Descartar**
+  (conflictos/fallidas).
+- **Reanudación del turno sin conexión**: si el operador inició sesión en
+  línea y recarga la app sin señal, su turno se reanuda automáticamente (el
+  PIN ya se validó; la sesión central en caché es la autoridad). Al cerrar
+  turno o volver a línea, el flujo normal de PIN vuelve a aplicarse.
 
 ### Qué NO funciona sin señal
 
-- **Iniciar sesión** (el PIN se valida contra el servidor): el repartidor debe
-  iniciar sesión estando en línea y operar sin cerrar la pestaña; al volver en
-  línea se sincroniza. (Permitir login offline requeriría guardar hashes de PIN
-  en el cliente, lo que contradice el modelo de seguridad del proyecto — es una
-  decisión de negocio pendiente.)
-- Empleados (alta/edición de perfiles), configuración.
+- Alta/edición de empleados y configuración (administrativas; requieren
+  conexión).
+- Validar un PIN nuevo sin conexión: el PIN se compara contra el hash del
+  servidor y nunca se guarda en el cliente. La reanudación del turno cubre el
+  caso real (operador que ya inició en línea); iniciar un turno nuevo desde
+  cero sin señal no es posible por diseño de seguridad.
 
 ### Riesgos conocidos
 
 - Si dos dispositivos operan la misma ruta/caja sin conexión y luego
   sincronizan, el servidor rechaza la operación conflictiva (la cola la marca
-  como "conflict" y queda para revisión administrativa).
+  como "conflict"; se revisa y se descarta/reintenta desde el panel de
+  Diagnóstico).
 - La sesión central expira (~1 h): si expira estando offline, la sincronización
   esperará a reconectar con una sesión válida.
 - Prueba piloto obligatoria antes de producción: un día real con señal
