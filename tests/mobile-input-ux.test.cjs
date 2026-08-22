@@ -67,4 +67,17 @@ ok(
   "cierra el teclado antes del dialogo de descarte",
 );
 
+// 8. Blindaje anti-zoom de iOS: viewport con maximum-scale + 16px en el campo
+//    de cliente + touch-action en controles.
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+ok(
+  /maximum-scale=1/.test(html) && /user-scalable=no/.test(html),
+  "viewport bloquea el zoom de iOS",
+);
+ok(
+  /\.inline-control input \{\s*\n\s*flex: 1;[\s\S]{0,80}font-size: 16px/.test(css),
+  "el buscador de cliente tiene 16px explicito",
+);
+ok(/touch-action: manipulation/.test(css), "controles con touch-action");
+
 console.log(`mobile-input-ux: ${passed} PASS`);

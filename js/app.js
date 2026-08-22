@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260818-ux-movil-v2";
+  const APP_SCRIPT_BUILD = "20260818-ux-movil-v3";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2276,9 +2276,11 @@
     if (!view) return;
     // iOS no encoge el layout con el teclado; se agrega un colchon al body
     // equivalente al alto del teclado para que el contenido pueda subir.
+    // Umbral de 40px: ignora los parpadeos durante la animacion de apertura.
     const applyKeyboardInset = () => {
       const offset = Math.max(0, window.innerHeight - view.height);
-      document.body.style.paddingBottom = offset > 0 ? `${offset}px` : "";
+      document.body.style.paddingBottom =
+        offset > 40 ? `${offset}px` : "";
     };
     view.addEventListener("resize", () => {
       applyKeyboardInset();

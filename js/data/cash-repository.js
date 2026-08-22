@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-ux-movil-v2";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-ux-movil-v3";
 
 const expensePaymentMethod = (value) => {
   const normalized = String(value || "otro").trim().toLowerCase();

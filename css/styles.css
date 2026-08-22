@@ -77,6 +77,7 @@ button,
 input,
 select {
   min-height: 44px;
+  touch-action: manipulation;
 }
 button:focus-visible,
 input:focus-visible,
@@ -715,6 +716,8 @@ textarea {
 }
 .inline-control input {
   flex: 1;
+  /* Blindaje anti-zoom de iOS aunque otra regla bajara el tamano. */
+  font-size: 16px;
 }
 .sale-summary,
 .info-box {
