@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-envases-en-la-venta";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260817-ronda-cierre-limpio";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

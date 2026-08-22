@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260817-envases-en-la-venta";
-import { clientsRepository } from "./clients-repository.js?v=20260817-envases-en-la-venta";
-import { salesRepository } from "./sales-repository.js?v=20260817-envases-en-la-venta";
-import { ledgerRepository } from "./ledger-repository.js?v=20260817-envases-en-la-venta";
-import { cashRepository } from "./cash-repository.js?v=20260817-envases-en-la-venta";
-import { inventoryRepository } from "./inventory-repository.js?v=20260817-envases-en-la-venta";
-import { roundsRepository } from "./rounds-repository.js?v=20260817-envases-en-la-venta";
-import { suppliesRepository } from "./supplies-repository.js?v=20260817-envases-en-la-venta";
-import { settingsRepository } from "./settings-repository.js?v=20260817-envases-en-la-venta";
-import { reportsRepository } from "./reports-repository.js?v=20260817-envases-en-la-venta";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-envases-en-la-venta";
-import { returnsRepository } from "./returns-repository.js?v=20260817-envases-en-la-venta";
-import { correctionsRepository } from "./corrections-repository.js?v=20260817-envases-en-la-venta";
-import { workDaysRepository } from "./work-days-repository.js?v=20260817-envases-en-la-venta";
+import { profilesRepository } from "./profiles-repository.js?v=20260817-ronda-cierre-limpio";
+import { clientsRepository } from "./clients-repository.js?v=20260817-ronda-cierre-limpio";
+import { salesRepository } from "./sales-repository.js?v=20260817-ronda-cierre-limpio";
+import { ledgerRepository } from "./ledger-repository.js?v=20260817-ronda-cierre-limpio";
+import { cashRepository } from "./cash-repository.js?v=20260817-ronda-cierre-limpio";
+import { inventoryRepository } from "./inventory-repository.js?v=20260817-ronda-cierre-limpio";
+import { roundsRepository } from "./rounds-repository.js?v=20260817-ronda-cierre-limpio";
+import { suppliesRepository } from "./supplies-repository.js?v=20260817-ronda-cierre-limpio";
+import { settingsRepository } from "./settings-repository.js?v=20260817-ronda-cierre-limpio";
+import { reportsRepository } from "./reports-repository.js?v=20260817-ronda-cierre-limpio";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260817-ronda-cierre-limpio";
+import { returnsRepository } from "./returns-repository.js?v=20260817-ronda-cierre-limpio";
+import { correctionsRepository } from "./corrections-repository.js?v=20260817-ronda-cierre-limpio";
+import { workDaysRepository } from "./work-days-repository.js?v=20260817-ronda-cierre-limpio";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

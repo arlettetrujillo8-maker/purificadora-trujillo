@@ -6,13 +6,13 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260817-envases-en-la-venta";
-import { OperationalStore } from "../data/operational-store.js?v=20260817-envases-en-la-venta";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260817-envases-en-la-venta";
-import { clientsRepository } from "../data/clients-repository.js?v=20260817-envases-en-la-venta";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-envases-en-la-venta";
+} from "../data/supabase-client.js?v=20260817-ronda-cierre-limpio";
+import { OperationalStore } from "../data/operational-store.js?v=20260817-ronda-cierre-limpio";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260817-ronda-cierre-limpio";
+import { clientsRepository } from "../data/clients-repository.js?v=20260817-ronda-cierre-limpio";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260817-ronda-cierre-limpio";
 
-const BOOTSTRAP_BUILD = "20260817-envases-en-la-venta";
+const BOOTSTRAP_BUILD = "20260817-ronda-cierre-limpio";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

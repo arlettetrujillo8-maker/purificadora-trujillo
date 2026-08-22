@@ -1,7 +1,7 @@
 import {
   supabase,
   getDeviceId,
-} from "./supabase-client.js?v=20260817-envases-en-la-venta";
+} from "./supabase-client.js?v=20260817-ronda-cierre-limpio";
 
 const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
 const CENTRAL_SESSION_ERROR = "central_session_expired";
@@ -90,9 +90,9 @@ export async function rpc(name, args) {
   return data;
 }
 
-export function commandArgs(extra = {}) {
+export function commandArgs(extra = {}, operationIdOverride = null) {
   return {
-    p_operation_id: operationId(),
+    p_operation_id: operationIdOverride || operationId(),
     p_device_id: getDeviceId(),
     ...extra,
   };
@@ -168,9 +168,13 @@ export function translateDatabaseError(error) {
       "Solo un Administrador puede resolver esta ronda inconsistente.",
     round_recovery_reason_required:
       "Escribe el motivo de recuperación administrativa.",
+    work_day_has_open_entities:
+      "Hay cajas o rondas abiertas. Ciérralas antes de cerrar la jornada.",
     operation_in_progress:
       "Esta operación ya se está procesando en otro dispositivo. Actualiza en unos segundos.",
     invalid_round_reload: "Captura una recarga válida para la ronda.",
+    invalid_round_scope:
+      "La ronda no está activa o no corresponde a tu ruta. Actualiza la pantalla.",
     invalid_sale_return: "Captura una cantidad y un motivo válidos.",
     return_quantity_exceeded:
       "La cantidad supera los garrafones disponibles para devolver.",

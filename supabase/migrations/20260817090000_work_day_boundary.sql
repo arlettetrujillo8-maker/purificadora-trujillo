@@ -92,6 +92,7 @@ begin
 end;
 $$;
 
+revoke all on function public.close_work_day(uuid, uuid, text) from public, anon, authenticated;
 grant execute on function public.close_work_day(uuid, uuid, text) to authenticated;
 
 -- Realtime, para que cerrar la jornada en un dispositivo reinicie las vistas

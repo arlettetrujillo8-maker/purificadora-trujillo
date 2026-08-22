@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260817-envases-en-la-venta";
+  const APP_SCRIPT_BUILD = "20260817-ronda-cierre-limpio";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -381,6 +381,7 @@
   let saleInitialSnapshot = null;
   let isSaleSubmitting = false;
   let saleReleaseTimer = null;
+  let pendingSaleOperationId = null;
   let pendingDialogClose = null;
   let pendingUserDeleteId = null;
   let pendingClientMergeIds = [];
@@ -3305,6 +3306,7 @@
     applySaleContext(null);
     setSalePaymentType("efectivo");
     captureSaleInitialState();
+    pendingSaleOperationId = null;
   }
 
   function applySaleContext(context) {
@@ -3579,6 +3581,10 @@
     if (!adminMode && u.role === "repartidor") channel = u.center;
     if (!adminMode && u.role === "ventanilla") channel = "ventanilla";
     const round = activeRound(channel);
+    if (round?.status === "regresada")
+      return fail(
+        `La ronda de ${CHANNELS[channel]} ya fue regresada. Ciérrala antes de registrar más ventas.`,
+      );
     if ((channel === "ruta1" || channel === "ruta2") && !round)
       return fail(
         `Inicia una ronda en ${CHANNELS[channel]} antes de registrar la venta.`,
@@ -3608,11 +3614,14 @@
       amount: cashAmount,
     });
     if (cashCheck.required && !cashCheck.session) return fail();
+    if (!pendingSaleOperationId)
+      pendingSaleOperationId = window.PurificadoraCrypto.safeRandomUUID();
     const previousState = structuredClone(state),
       date = nowISO(),
       cashSessionId = cashCheck.session?.id || null,
       sale = {
         id: uid("sale"),
+        operationId: pendingSaleOperationId,
         folio: nextFolio("sale", "V"),
         date,
         clientId: client?.id || null,
@@ -4918,6 +4927,11 @@
     if (!reason) return toast("Escribe el motivo de la corrección.", "error");
     const delta = newAvailable - metrics.availableFull;
     if (delta === 0) return toast("No hay ningún cambio que guardar.", "error");
+    if (delta < 0)
+      return toast(
+        "Reducir la carga de una ronda aún no tiene comando central. Registra el sobrante como un regreso de ronda o un ajuste de inventario.",
+        "error",
+      );
     if (delta > 0 && !validateInventoryMovement("local", -delta).valid)
       return toast(
         "No hay suficientes garrafones llenos en Local para esta corrección.",
@@ -5021,13 +5035,14 @@
     $("roundReturnedFull").value = isReturned
       ? int(round.returnedFullQty || 0)
       : int(Math.max(0, metrics.availableFull));
-    // Antes se prellenaba con los vendidos, dando por hecho un vacio de vuelta
-    // por cada lleno vendido. Cuando el cliente devuelve envases que traia
-    // debiendo, ese numero es falso y el repartidor lo firmaba sin saber que
-    // podia cambiarlo. Se deja vacio: que capture lo que fisicamente trae.
+    // Se prellena con los vacios que el inventario tiene registrados en la
+    // ruta (lo que realmente se recogio en cada venta), NO con los vendidos:
+    // si hubo "Sin devolucion" o "Envase nuevo", esas ventas no regresaron
+    // vacio y el inventario es menor. El repartidor puede ajustarlo si su
+    // conteo fisico difiere de lo registrado.
     $("roundReturnedEmpty").value = isReturned
       ? int(round.returnedEmptyQty || 0)
-      : "";
+      : int(state.inventory[`empty_${round.route}`] || 0);
     $("roundReturnedEmpty").placeholder = `¿Cuántos traes?`;
     $("roundDamaged").value = int(round.damagedQty || 0);
     $("roundLost").value = 0;
@@ -5061,9 +5076,13 @@
     const field = $("roundReturnedEmpty");
     const captured = field.value.trim();
     const expected = Number(metrics.netSold || 0);
+    const available = Number(state.inventory[`empty_${round.route}`] || 0);
     if (captured === "") {
       box.className = "full empty-reconcile";
-      box.innerHTML = `<div class="reconcile-row"><span>Vacíos por las ventas de esta ronda</span><strong>${int(expected)}</strong></div><small class="muted">Captura los que traes de verdad, aunque no coincidan.</small>`;
+      box.innerHTML =
+        `<div class="reconcile-row"><span>Vacíos por las ventas de esta ronda</span><strong>${int(expected)}</strong></div>` +
+        `<div class="reconcile-row"><span>Vacíos en la ruta (inventario)</span><strong>${int(available)}</strong></div>` +
+        `<small class="muted">Captura los que traes de verdad, aunque no coincidan.</small>`;
       return;
     }
     const brought = Number(captured || 0),
@@ -5072,12 +5091,23 @@
         brought,
         routeDebt: routeContainerDebt(round.route),
       });
+    // La advertencia "no puedes traer mas de lo que hay" solo aplica al
+    // registrar el regreso. Al cerrar una ronda ya regresada, el inventario de
+    // vacios ya se movio (queda en 0) y el campo es de solo lectura.
+    const overLimit =
+      round.status !== "regresada" &&
+      round.status !== "cerrada" &&
+      brought > available;
     box.className = `full empty-reconcile is-${result.state}`;
     box.innerHTML =
       `<div class="reconcile-row"><span>Vacíos por las ventas de esta ronda</span><strong>${int(expected)}</strong></div>` +
+      `<div class="reconcile-row"><span>Vacíos en la ruta (inventario)</span><strong>${int(available)}</strong></div>` +
       `<div class="reconcile-row"><span>Vacíos que traes</span><strong>${int(brought)}</strong></div>` +
       `<div class="reconcile-row is-total"><span>Diferencia</span><strong>${result.difference > 0 ? "+" : ""}${int(result.difference)}</strong></div>` +
-      `<small>${esc(result.message)}</small>`;
+      `<small>${esc(result.message)}</small>` +
+      (overLimit
+        ? `<small class="amount-danger">No puedes traer ${int(brought)}: solo hay ${int(available)} vacíos en la ruta.</small>`
+        : "");
   }
   async function closeRound(e) {
     e.preventDefault();
@@ -5159,6 +5189,14 @@
       submit.disabled = false;
       return toast("El inventario de ruta no alcanza para registrar el regreso.", "error");
     }
+    const emptyRoute = `empty_${round.route}`;
+    if (empty && Number(state.inventory[emptyRoute] || 0) < empty) {
+      submit.disabled = false;
+      return toast(
+        `Solo hay ${int(state.inventory[emptyRoute] || 0)} vacíos en la ruta; no puedes traer ${int(empty)}. Revisa la cantidad.`,
+        "error",
+      );
+    }
     if (full) {
       recordInventoryMovement(round.route, -full, "round_return_full", `Regreso Ronda ${round.number}`, "local", { roundId: round.id });
       recordInventoryMovement("local", full, "round_return_full", `Desde ${CHANNELS[round.route]} · Ronda ${round.number}`, round.route, { roundId: round.id });
@@ -5168,11 +5206,6 @@
       recordInventoryMovement("danados", damaged, "round_damaged", `Desde ${CHANNELS[round.route]}`, round.route, { roundId: round.id });
     }
     if (empty) {
-      const emptyRoute = `empty_${round.route}`;
-      if (Number(state.inventory[emptyRoute] || 0) < empty) {
-        submit.disabled = false;
-        return toast("Los vacíos capturados superan los disponibles en la ruta.", "error");
-      }
       recordInventoryMovement(emptyRoute, -empty, "round_return_empty", `Regreso Ronda ${round.number}`, "empty_local", { roundId: round.id });
       recordInventoryMovement("empty_local", empty, "round_return_empty", `Desde ${CHANNELS[round.route]} · Ronda ${round.number}`, emptyRoute, { roundId: round.id });
     }
