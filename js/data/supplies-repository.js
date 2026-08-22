@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v2";
 
 export const suppliesRepository = {
   list: () => selectAll("supplies", "*", (query) => query.order("name")),
@@ -13,56 +13,65 @@ export const suppliesRepository = {
   registerMaintenance: (entry) =>
     rpc(
       "register_maintenance_service",
-      commandArgs({
-        p_reference_id: /^[0-9a-f-]{36}$/i.test(entry.id || "")
-          ? entry.id
-          : entityId(),
-        p_notes: entry.notes || "",
-      }),
+      commandArgs(
+        {
+          p_reference_id: /^[0-9a-f-]{36}$/i.test(entry.id || "")
+            ? entry.id
+            : entityId(),
+          p_notes: entry.notes || "",
+        },
+        entry.operationId || null,
+      ),
     ),
   save: (supply) =>
     rpc(
       "upsert_supply",
-      commandArgs({
-        p_supply_id: /^[0-9a-f-]{36}$/i.test(supply.id || "")
-          ? supply.id
-          : entityId(),
-        p_payload: {
-          name: supply.name,
-          category: supply.category || "general",
-          unit: supply.unit,
-          initial_stock: Number(supply.currentStock || 0),
-          minimum_stock: Number(supply.minimumStock || 0),
-          cost_cents: Math.round(Number(supply.costPerUnit || 0) * 100),
-          consumption_per_unit: Number(supply.consumptionPerUnit || 0),
-          active: supply.active !== false,
+      commandArgs(
+        {
+          p_supply_id: /^[0-9a-f-]{36}$/i.test(supply.id || "")
+            ? supply.id
+            : entityId(),
+          p_payload: {
+            name: supply.name,
+            category: supply.category || "general",
+            unit: supply.unit,
+            initial_stock: Number(supply.currentStock || 0),
+            minimum_stock: Number(supply.minimumStock || 0),
+            cost_cents: Math.round(Number(supply.costPerUnit || 0) * 100),
+            consumption_per_unit: Number(supply.consumptionPerUnit || 0),
+            active: supply.active !== false,
+          },
         },
-      }),
+        supply.operationId || null,
+      ),
     ),
   movement: (movement) =>
     rpc(
       "register_supply_movement",
-      commandArgs({
-        p_reference_id: entityId(),
-        p_supply_id: movement.supplyId,
-        p_payload: {
-          movement_type:
-            movement.type === "consume"
-              ? "consumption"
-              : movement.type === "adjust"
-                ? "adjustment"
-                : movement.type,
-          quantity:
-            movement.type === "adjust"
-              ? Number(movement.balance)
-              : Math.abs(Number(movement.quantity)),
-          unit_cost_cents: Math.round(Number(movement.costPerUnit || 0) * 100),
-          payment_method: movement.method || "otro",
-          affects_cash: Boolean(movement.affectsCash),
-          cash_session_id: movement.cashSessionId || null,
-          expense_id: entityId(),
-          reason: movement.reason || "",
+      commandArgs(
+        {
+          p_reference_id: entityId(),
+          p_supply_id: movement.supplyId,
+          p_payload: {
+            movement_type:
+              movement.type === "consume"
+                ? "consumption"
+                : movement.type === "adjust"
+                  ? "adjustment"
+                  : movement.type,
+            quantity:
+              movement.type === "adjust"
+                ? Number(movement.balance)
+                : Math.abs(Number(movement.quantity)),
+            unit_cost_cents: Math.round(Number(movement.costPerUnit || 0) * 100),
+            payment_method: movement.method || "otro",
+            affects_cash: Boolean(movement.affectsCash),
+            cash_session_id: movement.cashSessionId || null,
+            expense_id: entityId(),
+            reason: movement.reason || "",
+          },
         },
-      }),
+        movement.operationId || null,
+      ),
     ),
 };

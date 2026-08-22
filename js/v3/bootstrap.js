@@ -6,18 +6,23 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260818-modo-offline-v1";
-import { OperationalStore } from "../data/operational-store.js?v=20260818-modo-offline-v1";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260818-modo-offline-v1";
-import { clientsRepository } from "../data/clients-repository.js?v=20260818-modo-offline-v1";
-import { salesRepository } from "../data/sales-repository.js?v=20260818-modo-offline-v1";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20260818-modo-offline-v1";
-import { cashRepository } from "../data/cash-repository.js?v=20260818-modo-offline-v1";
-import { roundsRepository } from "../data/rounds-repository.js?v=20260818-modo-offline-v1";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20260818-modo-offline-v1";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260818-modo-offline-v1";
+} from "../data/supabase-client.js?v=20260818-modo-offline-v2";
+import { OperationalStore } from "../data/operational-store.js?v=20260818-modo-offline-v2";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260818-modo-offline-v2";
+import { clientsRepository } from "../data/clients-repository.js?v=20260818-modo-offline-v2";
+import { salesRepository } from "../data/sales-repository.js?v=20260818-modo-offline-v2";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20260818-modo-offline-v2";
+import { cashRepository } from "../data/cash-repository.js?v=20260818-modo-offline-v2";
+import { roundsRepository } from "../data/rounds-repository.js?v=20260818-modo-offline-v2";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20260818-modo-offline-v2";
+import { returnsRepository } from "../data/returns-repository.js?v=20260818-modo-offline-v2";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20260818-modo-offline-v2";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20260818-modo-offline-v2";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20260818-modo-offline-v2";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20260818-modo-offline-v2";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260818-modo-offline-v2";
 
-const BOOTSTRAP_BUILD = "20260818-modo-offline-v1";
+const BOOTSTRAP_BUILD = "20260818-modo-offline-v2";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
@@ -145,6 +150,19 @@ function renderDiagnosticPanel() {
     `Last query row count: ${diagnosticState.lastQueryRowCount ?? "Sin consulta"} (sales)`,
     `Auth UI event: ${diagnosticState.lastAuthUiEvent || "Ninguno"}`,
   ].join("\n");
+  // Resumen de la cola offline (asincrono, se anexa sin bloquear).
+  window.PurificadoraOfflineStore?.queueSummary?.()
+    .then((summary) => {
+      if (!panel.isConnected) return;
+      content.textContent += `\nCola offline: ${summary.total} total · ${summary.pending} pendientes · ${summary.failed} con error/conflicto`;
+      if (summary.total) {
+        const detail = Object.entries(summary.byType)
+          .map(([type, count]) => `${type}(${count})`)
+          .join(", ");
+        content.textContent += `\n  ${detail}`;
+      }
+    })
+    .catch(() => {});
 }
 
 async function invalidateMixedBuilds(reason) {
@@ -540,6 +558,31 @@ const syncHandlers = {
     inventoryRepository.transfer({ ...movement, operationId: opId }),
   adjust_inventory: (movement, opId) =>
     inventoryRepository.adjust({ ...movement, operationId: opId }),
+  return_sale: (entry, opId) =>
+    returnsRepository.create({ ...entry, operationId: opId }),
+  void_sale: ({ correction, cashSessionId }, opId) =>
+    correctionsRepository.void(
+      { ...correction, operationId: opId },
+      cashSessionId,
+    ),
+  correct_sale: ({ correction, replacement, cashSessionId }, opId) =>
+    correctionsRepository.correct(
+      { ...correction, operationId: opId },
+      { ...replacement, operationId: opId },
+      cashSessionId,
+    ),
+  return_client_containers: (payload, opId) =>
+    clientsRepository.returnContainers({ ...payload, operationId: opId }),
+  upsert_supply: (supply, opId) =>
+    suppliesRepository.save({ ...supply, operationId: opId }),
+  register_supply_movement: (movement, opId) =>
+    suppliesRepository.movement({ ...movement, operationId: opId }),
+  register_maintenance_service: (entry, opId) =>
+    maintenanceRepository.register({ ...entry, operationId: opId }),
+  fill_containers: (payload, opId) =>
+    inventoryRepository.fill({ ...payload, operationId: opId }),
+  close_work_day: ({ notes }, opId) =>
+    workDaysRepository.close(notes || "", opId),
 };
 
 async function syncQueuedOperations() {
@@ -599,18 +642,55 @@ async function syncQueuedOperations() {
   return { synced, failed, conflict };
 }
 
-// Badge del topbar: "· N pendiente(s)" cuando hay operaciones por sincronizar.
+// Badge del topbar: "· N pendiente(s)" + boton Sincronizar cuando hay cola.
 function renderPendingQueueBadge() {
   const countEl = document.getElementById("offlinePendingCount");
+  const syncBtn = document.getElementById("syncNowBtn");
   const offlineApi = window.PurificadoraOfflineStore;
-  if (!countEl || !offlineApi) return;
+  if ((!countEl && !syncBtn) || !offlineApi) return;
   offlineApi
     .pendingCount()
     .then((count) => {
-      countEl.textContent = count ? ` · ${count} pendiente(s)` : "";
-      countEl.classList.toggle("has-pending", Boolean(count));
+      if (countEl) {
+        countEl.textContent = count ? ` · ${count} pendiente(s)` : "";
+        countEl.classList.toggle("has-pending", Boolean(count));
+      }
+      if (syncBtn) syncBtn.classList.toggle("hidden", !count);
     })
     .catch(() => {});
+}
+
+// Sincronizacion manual: la cola se reenvia aunque no haya evento online.
+async function syncNow() {
+  const offlineApi = window.PurificadoraOfflineStore;
+  if (!offlineApi) return { synced: 0, failed: 0, conflict: 0 };
+  const summary = await offlineApi.queueSummary();
+  if (!summary.total) {
+    toastV3("No hay operaciones pendientes por sincronizar.");
+    return { synced: 0, failed: 0, conflict: 0 };
+  }
+  const result = await syncQueuedOperations();
+  const pieces = [];
+  if (result.synced) pieces.push(`${result.synced} sincronizadas`);
+  if (result.conflict) pieces.push(`${result.conflict} en conflicto`);
+  if (result.failed) pieces.push(`${result.failed} con error`);
+  toastV3(
+    pieces.length
+      ? `Sincronización: ${pieces.join(", ")}.`
+      : "Sincronización sin cambios.",
+  );
+  return result;
+}
+
+function toastV3(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  window.clearTimeout(toastV3._timer);
+  toastV3._timer = window.setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3200);
 }
 
 // Al volver la conexion: sincronizar la cola y recuperar la central.
@@ -624,6 +704,9 @@ window.addEventListener("offline", () => {
   emitCentralAccessState(false, "offline");
 });
 window.addEventListener("purificadora:queue-changed", renderPendingQueueBadge);
+document.getElementById("syncNowBtn")?.addEventListener("click", () => {
+  syncNow().catch((error) => toastV3(error?.message || "No se pudo sincronizar."));
+});
 
 async function signIn(email, password) {
   const result = await client.auth.signInWithPassword({ email, password });
@@ -994,6 +1077,7 @@ window.PurificadoraV3 = Object.freeze({
     return projection;
   },
   syncQueuedOperations,
+  syncNow,
   queueSummary: () =>
     window.PurificadoraOfflineStore?.queueSummary?.() ??
     Promise.resolve({ total: 0, pending: 0, failed: 0, byType: {} }),

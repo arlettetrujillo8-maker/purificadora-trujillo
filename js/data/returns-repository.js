@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v2";
 
 export const returnsRepository = {
   list: async () => {
@@ -15,5 +15,5 @@ export const returnsRepository = {
     p_quantity: Number(entry.qty),
     p_cash_session_id: entry.cashSessionId || null,
     p_reason: entry.reason || "",
-  })),
+  }, entry.operationId || null)),
 };

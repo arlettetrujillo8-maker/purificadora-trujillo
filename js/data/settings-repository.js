@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260818-modo-offline-v1";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260818-modo-offline-v2";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

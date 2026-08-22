@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v1";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260818-modo-offline-v2";
 
 const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
 
@@ -33,11 +33,11 @@ export const correctionsRepository = {
       damaged_return_quantity: Number(replacement.damagedReturnQty || 0),
       occurred_at: replacement.date,
     },
-  })),
+  }, correction.operationId || null)),
   void: (correction, cashSessionId = null) => rpc("void_sale", commandArgs({
     p_correction_id: uuid(correction.id),
     p_sale_id: correction.originalSaleId,
     p_cash_session_id: cashSessionId || null,
     p_reason: correction.reason || "",
-  })),
+  }, correction.operationId || null)),
 };

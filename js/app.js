@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260818-modo-offline-v1";
+  const APP_SCRIPT_BUILD = "20260818-modo-offline-v2";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -824,7 +824,7 @@
     const previousState = structuredClone(state),
       date = nowISO(),
       correction = {
-        id: uid("corr"),
+        id: bareUuid(),
         folio: nextFolio("correction", "C"),
         date,
         originalSaleId: original.id,
@@ -3909,7 +3909,7 @@
     if (cashCheck.required && !cashCheck.session) return;
     const previousState = structuredClone(state);
     state.returns.push({
-      id: uid("ret"), date: nowISO(), saleId: sale.id, clientId: sale.clientId,
+      id: bareUuid(), date: nowISO(), saleId: sale.id, clientId: sale.clientId,
       qty, total: amounts.total, refundAmount: amounts.refund,
       cashRefund: refundMethod === "efectivo" ? amounts.refund : 0,
       creditReversal: amounts.credit, refundMethod, reason,
@@ -4130,7 +4130,7 @@
     const previousState = structuredClone(state),
       date = nowISO(),
       correction = {
-        id: uid("corr"),
+        id: bareUuid(),
         folio: nextFolio("correction", "C"),
         date,
         originalSaleId: original.id,
@@ -4237,7 +4237,7 @@
       before = structuredClone(sale),
       date = nowISO(),
       correction = {
-        id: uid("corr"),
+        id: bareUuid(),
         folio: nextFolio("correction", "C"),
         date,
         originalSaleId: sale.id,
@@ -6410,7 +6410,7 @@
     state.supplyMovements.unshift(movement);
     if (type === "purchase") {
       state.expenses.push({
-        id: uid("exp"),
+        id: bareUuid(),
         date: movement.date,
         concept: `Compra de insumo: ${supply.name}`,
         amount: total,
@@ -6562,7 +6562,7 @@
     if (cashCheck.required && !cashCheck.session) return;
     const previousState = structuredClone(state),
       obj = {
-        id: uid("exp"),
+        id: bareUuid(),
         date: nowISO(),
         concept: $("expenseConcept").value.trim(),
         amount,

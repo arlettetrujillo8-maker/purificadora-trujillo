@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20260818-modo-offline-v1";
-import { clientsRepository } from "./clients-repository.js?v=20260818-modo-offline-v1";
-import { salesRepository } from "./sales-repository.js?v=20260818-modo-offline-v1";
-import { ledgerRepository } from "./ledger-repository.js?v=20260818-modo-offline-v1";
-import { cashRepository } from "./cash-repository.js?v=20260818-modo-offline-v1";
-import { inventoryRepository } from "./inventory-repository.js?v=20260818-modo-offline-v1";
-import { roundsRepository } from "./rounds-repository.js?v=20260818-modo-offline-v1";
-import { suppliesRepository } from "./supplies-repository.js?v=20260818-modo-offline-v1";
-import { settingsRepository } from "./settings-repository.js?v=20260818-modo-offline-v1";
-import { reportsRepository } from "./reports-repository.js?v=20260818-modo-offline-v1";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20260818-modo-offline-v1";
-import { returnsRepository } from "./returns-repository.js?v=20260818-modo-offline-v1";
-import { correctionsRepository } from "./corrections-repository.js?v=20260818-modo-offline-v1";
-import { workDaysRepository } from "./work-days-repository.js?v=20260818-modo-offline-v1";
+import { profilesRepository } from "./profiles-repository.js?v=20260818-modo-offline-v2";
+import { clientsRepository } from "./clients-repository.js?v=20260818-modo-offline-v2";
+import { salesRepository } from "./sales-repository.js?v=20260818-modo-offline-v2";
+import { ledgerRepository } from "./ledger-repository.js?v=20260818-modo-offline-v2";
+import { cashRepository } from "./cash-repository.js?v=20260818-modo-offline-v2";
+import { inventoryRepository } from "./inventory-repository.js?v=20260818-modo-offline-v2";
+import { roundsRepository } from "./rounds-repository.js?v=20260818-modo-offline-v2";
+import { suppliesRepository } from "./supplies-repository.js?v=20260818-modo-offline-v2";
+import { settingsRepository } from "./settings-repository.js?v=20260818-modo-offline-v2";
+import { reportsRepository } from "./reports-repository.js?v=20260818-modo-offline-v2";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20260818-modo-offline-v2";
+import { returnsRepository } from "./returns-repository.js?v=20260818-modo-offline-v2";
+import { correctionsRepository } from "./corrections-repository.js?v=20260818-modo-offline-v2";
+import { workDaysRepository } from "./work-days-repository.js?v=20260818-modo-offline-v2";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
@@ -668,8 +668,8 @@ export class OperationalStore {
     };
   }
 
-  // Convierte el diff en una entrada de cola offline (o null si la operacion
-  // no esta soportada sin conexion).
+  // Convierte el diff en una entrada (o secuencia) de cola offline. Devuelve
+  // null si la operacion no esta soportada sin conexion.
   detectOfflineOperation(before, draft) {
     const d = this.detect(before, draft);
     const makeId = (entity) =>
@@ -678,12 +678,69 @@ export class OperationalStore {
         ? globalThis.PurificadoraCrypto.safeRandomUUID()
         : `offline-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
+    // Cierre de jornada: secuencia de cierres (cajas + rondas) + marca durable.
+    if (d.workDayClosed) {
+      const ops = [];
+      for (const session of d.autoClosedSessions)
+        ops.push({
+          id: makeId(session),
+          type: "close_cash_session",
+          payload: session,
+        });
+      for (const round of d.autoClosedRounds)
+        ops.push({
+          id: makeId(round),
+          type: "finalize_round_close",
+          payload: round,
+        });
+      ops.push({
+        id: makeId(draft),
+        type: "close_work_day",
+        payload: { notes: draft.workDayCloseNotes || "" },
+      });
+      return ops;
+    }
+    if (d.newReturn)
+      return { id: makeId(d.newReturn), type: "return_sale", payload: d.newReturn };
+    if (d.newCorrection?.type === "void")
+      return {
+        id: makeId(d.newCorrection),
+        type: "void_sale",
+        payload: {
+          correction: d.newCorrection,
+          cashSessionId: d.newCashAdjustment?.appliedCashSessionId || null,
+        },
+      };
+    if (d.newCorrection && d.newSales[0])
+      return {
+        id: makeId(d.newCorrection),
+        type: "correct_sale",
+        payload: {
+          correction: d.newCorrection,
+          replacement: d.newSales[0],
+          cashSessionId:
+            d.newCashAdjustment?.appliedCashSessionId ||
+            d.newSales[0].cashSessionId ||
+            null,
+        },
+      };
     if (d.newSales[0])
       return { id: makeId(d.newSales[0]), type: "register_sale", payload: d.newSales[0] };
     if (d.newLedger)
       return { id: makeId(d.newLedger), type: "register_payment", payload: d.newLedger };
     if (d.newClients[0])
       return { id: makeId(d.newClients[0]), type: "create_client", payload: d.newClients[0] };
+    if (d.containerReturnClient)
+      return {
+        id: makeId(d.containerReturnClient),
+        type: "return_client_containers",
+        payload: {
+          clientId: d.containerReturnClient.id,
+          quantity: d.containerReturnClient.lastContainerReturnQty,
+          location: d.containerReturnClient.lastContainerReturnLocation,
+          notes: d.containerReturnClient.lastContainerReturnNotes,
+        },
+      };
     if (d.updatedClient)
       return { id: makeId(d.updatedClient), type: "update_client", payload: d.updatedClient };
     if (d.newSessions[0])
@@ -711,8 +768,40 @@ export class OperationalStore {
       return { id: makeId(d.returnedRound), type: "register_round_return", payload: d.returnedRound };
     if (d.closedRound)
       return { id: makeId(d.closedRound), type: "finalize_round_close", payload: d.closedRound };
+    if (
+      d.newSupplyMovement?.type === "production" ||
+      d.newInventory.some((item) => item.type === "containers_filled")
+    ) {
+      const movement = d.newInventory.find(
+        (item) => item.type === "containers_filled" && Number(item.delta) < 0,
+      );
+      return {
+        id: makeId(d.newSupplyMovement || movement),
+        type: "fill_containers",
+        payload: {
+          quantity: Math.abs(Number(movement?.delta || 0)),
+          notes: movement?.notes || "",
+        },
+      };
+    }
+    if (d.newSupply)
+      return { id: makeId(d.newSupply), type: "upsert_supply", payload: d.newSupply };
+    if (d.newSupplyMovement)
+      return {
+        id: makeId(d.newSupplyMovement),
+        type: "register_supply_movement",
+        payload: d.newSupplyMovement,
+      };
+    if (d.updatedSupply)
+      return { id: makeId(d.updatedSupply), type: "upsert_supply", payload: d.updatedSupply };
     if (d.newExpense)
       return { id: makeId(d.newExpense), type: "create_expense", payload: d.newExpense };
+    if (d.newMaintenance)
+      return {
+        id: makeId(d.newMaintenance),
+        type: "register_maintenance_service",
+        payload: d.newMaintenance,
+      };
     if (d.newInventory.some((item) => item.type === "transferencia")) {
       const out = d.newInventory.find(
         (item) => item.type === "transferencia" && Number(item.delta) < 0,
@@ -743,10 +832,11 @@ export class OperationalStore {
     return null;
   }
 
-  // Sin conexion: encola la operacion y devuelve una proyeccion local.
+  // Sin conexion: encola la operacion (o secuencia) y devuelve una proyeccion local.
   async commitOffline(before, draft) {
     const op = this.detectOfflineOperation(before, draft);
-    if (!op) {
+    const ops = Array.isArray(op) ? op : op ? [op] : [];
+    if (!ops.length) {
       throw new Error(
         "Esta operación no está disponible sin conexión. Conecta para realizarla.",
       );
@@ -755,7 +845,7 @@ export class OperationalStore {
     if (!offlineApi) {
       throw new Error("El almacenamiento local no está disponible.");
     }
-    await offlineApi.enqueueOperation(op);
+    for (const item of ops) await offlineApi.enqueueOperation(item);
     const projection = { ...draft, central: false };
     this.lastProjection = projection;
     return projection;

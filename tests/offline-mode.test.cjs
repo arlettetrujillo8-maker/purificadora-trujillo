@@ -40,7 +40,10 @@ ok(
 ok(/navigator\.onLine === false/.test(store), "commit detecta la perdida de red");
 ok(/commitOffline\(before, draft\)/.test(store), "existe commitOffline");
 ok(/detectOfflineOperation\(before, draft\)/.test(store), "existe detectOfflineOperation");
-ok(/enqueueOperation\(op\)/.test(store), "commitOffline encola la operacion");
+ok(
+  /enqueueOperation\(item\)/.test(store) || /enqueueOperation\(op\)/.test(store),
+  "commitOffline encola la operacion",
+);
 ok(
   /register_sale/.test(store) &&
     /register_payment/.test(store) &&
@@ -48,6 +51,15 @@ ok(
     /register_round_return/.test(store) &&
     /finalize_round_close/.test(store),
   "detectOfflineOperation soporta el conjunto del repartidor",
+);
+ok(
+  /type: "return_sale"/.test(store) &&
+    /type: "void_sale"/.test(store) &&
+    /type: "correct_sale"/.test(store) &&
+    /type: "upsert_supply"/.test(store) &&
+    /type: "register_supply_movement"/.test(store) &&
+    /type: "close_work_day"/.test(store),
+  "detectOfflineOperation cubre devoluciones, correcciones, insumos y jornada",
 );
 
 // 4. Sincronizacion: reenvia la cola al reconectar con operationId estable.
@@ -57,6 +69,14 @@ ok(
   /syncHandlers/.test(bootstrap) &&
     /salesRepository\.create\(\{ \.\.\.sale, operationId: opId \}\)/.test(bootstrap),
   "el reenvio reutiliza el operationId de la cola",
+);
+ok(
+  /return_sale:/.test(bootstrap) &&
+    /void_sale:/.test(bootstrap) &&
+    /correct_sale:/.test(bootstrap) &&
+    /upsert_supply:/.test(bootstrap) &&
+    /close_work_day:/.test(bootstrap),
+  "syncHandlers cubre devoluciones, correcciones, insumos y jornada",
 );
 
 // 5. Estado de la app: modo offline persiste localmente.
