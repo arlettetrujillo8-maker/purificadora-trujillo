@@ -128,6 +128,45 @@ Debe salir limpio. No correr `db push` sin `--dry-run` primero.
 
 ---
 
+## 5. Despliegue HTTPS (Vercel) — para el celular
+
+El celular necesita HTTPS para que el service worker se active (app instalable,
+recarga sin red y offline de verdad). Vercel lo da gratis. Ya está preparado
+`vercel.json` en la raíz (estático + `Cache-Control` correcto para `sw.js`).
+
+### Opción A — Importar desde GitHub (recomendada)
+
+1. Sube el proyecto a GitHub (rama `main`).
+2. En **vercel.com** → **Add New → Project** → importa el repo.
+3. Framework: **Other** (no hace build). Deja `Output Directory` vacío o en `.`.
+4. **Deploy**. Listo: `https://purificadora-trujillo.vercel.app`.
+
+### Opción B — Con el CLI (sin GitHub)
+
+Desde la carpeta del proyecto (requiere Node/npx):
+
+```bash
+npx vercel
+```
+
+Sigue el asistente (proyecto nuevo, `npx vercel --prod` al final).
+
+### Después del despliegue
+
+1. Abre la URL en el celular → **"Agregar a pantalla de inicio"**.
+2. Inicia sesión una vez en línea → la app queda instalada.
+3. Prueba: modo avión → la app abre, registra ventas (se encolan) → reconecta → sincroniza.
+
+### Notas
+
+- El login es email/contraseña (sin OAuth): Supabase no necesita cambios de
+  origen para que funcione desde el dominio nuevo.
+- `sw.js` se sirve sin caché para que los cambios de build lleguen a los
+  dispositivos (esto lo hace `vercel.json`).
+- No se despliegan secretos: la URL y la clave pública ya estaban en el repo.
+
+---
+
 ## 4. Modo offline (build 20260818-modo-offline-v3)
 
 Se implementó el funcionamiento offline completo. Alcance y límites:
