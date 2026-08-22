@@ -78,6 +78,11 @@ ok(
     /close_work_day:/.test(bootstrap),
   "syncHandlers cubre devoluciones, correcciones, insumos y jornada",
 );
+// 4b. UI de la cola: reintentar y descartar operaciones pendientes.
+ok(/renderQueuePanel/.test(bootstrap), "existe el panel de cola");
+ok(/retryQueueEntry/.test(bootstrap), "existe reintentar entrada");
+ok(/discardQueueEntry/.test(bootstrap), "existe descartar entrada");
+ok(/v3QueuePanel/.test(bootstrap), "el panel de cola se monta en Diagnóstico");
 
 // 5. Estado de la app: modo offline persiste localmente.
 ok(/offlineMode/.test(app), "app.js conoce el modo offline");
@@ -112,6 +117,23 @@ ok(
     !/id: uid\("round"\)/.test(app) &&
     !/id: uid\("cli"\)/.test(app),
   "venta/ronda/cliente ya no usan ids con prefijo",
+);
+
+// 8. Turno offline: el operador activo se reanuda sin conexion (PIN ya validado).
+ok(/PERSISTED_EMPLOYEE_KEY/.test(app), "existe la persistencia del operador");
+ok(
+  /localStorage\.setItem\(PERSISTED_EMPLOYEE_KEY, user\.id\)/.test(app),
+  "el login persiste el operador activo",
+);
+ok(
+  /localStorage\.removeItem\(PERSISTED_EMPLOYEE_KEY\)/.test(app),
+  "el logout limpia la persistencia",
+);
+ok(
+  /const persistedUser =\s*\n?\s*offlineMode &&\s*\n?\s*persistedEmployeeId/.test(
+    app,
+  ),
+  "init reanuda el turno solo estando sin conexion",
 );
 
 console.log(`offline-mode: ${passed} PASS`);

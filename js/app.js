@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260818-modo-offline-v2";
+  const APP_SCRIPT_BUILD = "20260818-modo-offline-v3";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -26,6 +26,9 @@
     danados: "Dañados",
     };
   const EMPLOYEE_SESSION_KEY = "purificadora_trujillo_employee_session";
+  // Recuerda el operador activo para reanudar el turno sin conexion (solo si
+  // hay sesion central valida en cache; el PIN se valido al iniciar en linea).
+  const PERSISTED_EMPLOYEE_KEY = "purificadora_trujillo_employee_persist";
   const PENDING_ACCESS_KEY = "purificadora_pending_access_flow";
   const ADMIN_PERMISSIONS = [
     "create_sale",
@@ -1788,6 +1791,7 @@
     employeeSession = { userId: user.id, startedAt: nowISO() };
     state.activeUserId = user.id;
     sessionStorage.setItem(EMPLOYEE_SESSION_KEY, user.id);
+    localStorage.setItem(PERSISTED_EMPLOYEE_KEY, user.id);
     audit(
       "login",
       "session",
@@ -1811,6 +1815,7 @@
     audit("logout", "session", user.id, "Cierre de turno");
     saveState();
     sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+    localStorage.removeItem(PERSISTED_EMPLOYEE_KEY);
     openAccessChoice({ clearPending: true });
     renderAll();
   }
@@ -1954,6 +1959,19 @@
     employeeSession = null;
     adminMode = false;
     state.activeUserId = null;
+    // Sin conexion: reanudar el turno del operador activo persistido (el PIN
+    // ya se valido cuando inicio sesion en linea; la sesion central en cache
+    // es la autoridad real). En linea se mantiene el flujo normal de PIN.
+    const persistedEmployeeId = localStorage.getItem(PERSISTED_EMPLOYEE_KEY);
+    const persistedUser =
+      offlineMode &&
+      persistedEmployeeId &&
+      state.users.find((u) => u.id === persistedEmployeeId && u.active);
+    if (persistedUser) {
+      employeeSession = { userId: persistedUser.id, startedAt: nowISO() };
+      state.activeUserId = persistedUser.id;
+      sessionStorage.setItem(EMPLOYEE_SESSION_KEY, persistedUser.id);
+    }
     resetSaleForm();
     renderAll();
     if (recoveryRequired) {
@@ -1963,7 +1981,7 @@
       $("recoveryDialog").showModal();
       return;
     }
-    openAccessChoice();
+    if (!persistedUser) openAccessChoice();
   }
 
   function bindNavigation() {

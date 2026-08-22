@@ -1,4 +1,4 @@
-const BUILD = "20260818-modo-offline-v2";
+const BUILD = "20260818-modo-offline-v3";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",
