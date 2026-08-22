@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260818-ux-movil-v1";
+  const APP_SCRIPT_BUILD = "20260818-ux-movil-v2";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -633,10 +633,46 @@
         toast._home.appendChild(t);
     }, 3800);
   }
+  // ------------------------------------------------------------------ error
+  // Errores inline junto al campo: mas visibles que el toast y no se pierden
+  // detras del teclado en el celular.
+  const FIELD_ERROR_CLASS = "has-field-error";
+  function clearFieldError(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.classList.remove(FIELD_ERROR_CLASS);
+    const next = field.nextElementSibling;
+    if (next?.classList?.contains("field-error")) next.remove();
+  }
+  function fieldError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    clearFieldError(fieldId);
+    field.classList.add(FIELD_ERROR_CLASS);
+    const err = document.createElement("div");
+    err.className = "field-error";
+    err.setAttribute("role", "alert");
+    err.textContent = message;
+    field.insertAdjacentElement("afterend", err);
+    field.focus({ preventScroll: true });
+  }
+  function clearAllFieldErrors(root = document) {
+    root.querySelectorAll(`.${FIELD_ERROR_CLASS}`).forEach((field) => {
+      field.classList.remove(FIELD_ERROR_CLASS);
+      const next = field.nextElementSibling;
+      if (next?.classList?.contains("field-error")) next.remove();
+    });
+  }
+  // Al volver a escribir en un campo, su error desaparece.
+  document.addEventListener("input", (e) => {
+    const field = e.target;
+    if (field?.id && field.classList?.contains(FIELD_ERROR_CLASS))
+      clearFieldError(field.id);
+  });
+
   function migratePermissions(perms, role) {
     let provided = [];
-    if (Array.isArray(perms) && perms.length) {
-      if (perms.some((p) => ADMIN_PERMISSIONS.includes(p)))
+    if (Array.isArray(perms) && perms.length) {      if (perms.some((p) => ADMIN_PERMISSIONS.includes(p)))
         provided = perms.filter((p) => ADMIN_PERMISSIONS.includes(p));
       else {
         const groups = {
@@ -2200,7 +2236,29 @@
   function revealFocusedField() {
     if (!focusedField?.isConnected) return;
     if (!fieldIsHiddenByKeyboard(focusedField)) return;
-    focusedField.scrollIntoView({ block: "center", behavior: "auto" });
+    const view = window.visualViewport;
+    const rect = focusedField.getBoundingClientRect();
+    if (!view) {
+      focusedField.scrollIntoView({ block: "nearest", behavior: "auto" });
+      return;
+    }
+    // Desplazamiento MINIMO: subir el campo apenas para que quede visible
+    // sobre el teclado, sin centrarlo. Centrar esconde el resto del formulario
+    // y se siente como si el teclado tapara toda la pantalla.
+    const visibleTop = view.offsetTop;
+    const visibleBottom = view.offsetTop + view.height;
+    const margin = 16;
+    if (rect.bottom > visibleBottom - margin) {
+      window.scrollBy({
+        top: rect.bottom - (visibleBottom - margin),
+        behavior: "auto",
+      });
+    } else if (rect.top < visibleTop + margin) {
+      window.scrollBy({
+        top: rect.top - (visibleTop + margin),
+        behavior: "auto",
+      });
+    }
   }
   function scrollFieldIntoViewOnFocus(e) {
     const field = e.target;
@@ -2208,7 +2266,7 @@
     focusedField = field;
     // Sin visualViewport (navegadores viejos) se conserva el timeout ciego.
     if (!window.visualViewport) {
-      window.setTimeout(() => field.scrollIntoView({ block: "center" }), 300);
+      window.setTimeout(() => field.scrollIntoView({ block: "nearest" }), 300);
       return;
     }
     window.setTimeout(revealFocusedField, 300);
@@ -2253,6 +2311,10 @@
     if (!dialog?.open) return;
     if (dialog.id !== "discardChangesDialog" && dialogIsDirty(dialog)) {
       pendingDialogClose = dialog;
+      // Cierra el teclado antes de preguntar, para que el dialogo de descarte
+      // no aparezca encima del teclado movil.
+      if (typeof document.activeElement?.blur === "function")
+        document.activeElement.blur();
       if (!$("discardChangesDialog").open)
         $("discardChangesDialog").showModal();
       return;
@@ -3598,33 +3660,59 @@
       fail();
       return openAccessChoice({ clearPending: true });
     }
-    if (!Number.isInteger(qty) || qty <= 0 || price < 0)
-      return fail("Revisa cantidad y precio");
+    if (!Number.isInteger(qty) || qty <= 0 || price < 0) {
+      clearAllFieldErrors();
+      fieldError("saleQty", qty <= 0 ? "Escribe una cantidad mayor a cero." : "Escribe un número entero.");
+      fieldError("salePrice", price < 0 ? "El precio no puede ser negativo." : "");
+      return fail();
+    }
     if (
       !Number.isInteger(containerEffect.emptyReturnQty) ||
       containerEffect.emptyReturnQty < 0 ||
       !Number.isInteger(containerEffect.damagedReturnQty) ||
       containerEffect.damagedReturnQty < 0
-    )
-      return fail("Revisa las cantidades de envases recibidos.");
+    ) {
+      clearAllFieldErrors();
+      fieldError(
+        "saleEmptyReturnQty",
+        "Las cantidades de envases deben ser números enteros no negativos.",
+      );
+      return fail();
+    }
     if (containerEffect.mode === "fewer" && containerEffect.emptyReturnQty >= qty)
       return fail("La devolución parcial debe ser menor que la venta.");
     if (containerEffect.mode === "more" && containerEffect.emptyReturnQty <= qty)
       return fail("Captura más vacíos que garrafones vendidos.");
     if (Math.abs(price - expectedPrice) > 0.009 && !can("override_sale_price"))
       return fail(`El precio autorizado es ${money(expectedPrice)}.`);
-    if (Math.abs(price - expectedPrice) > 0.009 && !priceReason)
-      return fail("Captura el motivo del precio especial.");
-    if ((type === "fiado" || type === "mixto") && !client)
-      return fail("El fiado requiere un cliente registrado");
+    if (Math.abs(price - expectedPrice) > 0.009 && !priceReason) {
+      clearAllFieldErrors();
+      fieldError("salePriceReason", "Escribe el motivo del precio especial.");
+      return fail();
+    }
+    if ((type === "fiado" || type === "mixto") && !client) {
+      clearAllFieldErrors();
+      fieldError("saleClientSearch", "El fiado requiere un cliente registrado.");
+      return fail();
+    }
     let paid =
       type === "fiado"
         ? 0
         : type === "mixto"
           ? Number($("salePaid").value || 0)
           : total;
-    if (!Number.isFinite(paid) || paid < 0 || paid > total)
-      return fail("El pago recibido no puede exceder el total");
+    if (!Number.isFinite(paid) || paid < 0 || paid > total) {
+      clearAllFieldErrors();
+      fieldError(
+        "salePaid",
+        paid < 0
+          ? "El pago no puede ser negativo."
+          : paid > total
+            ? "El pago recibido no puede exceder el total."
+            : "Escribe un monto válido.",
+      );
+      return fail();
+    }
     const credit = total - paid;
     if (
       credit > 0 &&
@@ -4350,10 +4438,19 @@
       bal = clientBalance(id),
       c = clientById(id),
       method = $("paymentMethod").value;
-    if (!c || amount <= 0)
-      return toast("El monto debe ser mayor a cero", "error");
-    if (amount > bal + 0.001)
-      return toast("El pago no puede exceder el saldo pendiente", "error");
+    if (!c || amount <= 0) {
+      clearAllFieldErrors();
+      fieldError("paymentAmount", "El monto debe ser mayor a cero.");
+      return;
+    }
+    if (amount > bal + 0.001) {
+      clearAllFieldErrors();
+      fieldError(
+        "paymentAmount",
+        `El pago no puede exceder el saldo pendiente (${money(bal)}).`,
+      );
+      return;
+    }
     await ensureCashSession({ method, amount });
     const cashCheck = requireOpenCashSession({ method, amount });
     if (cashCheck.required && !cashCheck.session) return;

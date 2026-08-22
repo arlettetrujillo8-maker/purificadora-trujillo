@@ -32,4 +32,39 @@ ok(
   "calcula el alto del teclado con visualViewport",
 );
 
+// 4. Al enfocar se desplaza MINIMO (no centra): centrar esconde el formulario
+//    detras del teclado.
+ok(
+  !/scrollIntoView\(\{ block: "center"/.test(app),
+  "no centra el campo al enfocar",
+);
+ok(
+  /block: "nearest"/.test(app) || /rect\.bottom > visibleBottom/.test(app),
+  "usa desplazamiento minimo",
+);
+
+// 5. Fase 2: errores inline junto al campo.
+ok(/function fieldError\(/.test(app), "existe fieldError");
+ok(/function clearAllFieldErrors/.test(app), "existe clearAllFieldErrors");
+ok(
+  /has-field-error/.test(css) && /\.field-error \{/.test(css),
+  "estilos de error inline",
+);
+ok(
+  /saleQty/.test(app) && /fieldError\(/.test(app),
+  "la venta usa errores inline en sus campos",
+);
+
+// 6. Fase 2: toast arriba en movil (no tapado por el teclado).
+ok(
+  /\.toast \{\s*\n\s*inset: 16px 16px auto 16px/.test(css),
+  "toast arriba en movil",
+);
+
+// 7. Fase 2: dirty-guard cierra el teclado antes de preguntar por cambios.
+ok(
+  /document\.activeElement\.blur\(\)/.test(app),
+  "cierra el teclado antes del dialogo de descarte",
+);
+
 console.log(`mobile-input-ux: ${passed} PASS`);
