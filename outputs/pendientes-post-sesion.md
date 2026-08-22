@@ -128,30 +128,34 @@ Debe salir limpio. No correr `db push` sin `--dry-run` primero.
 
 ---
 
-## 4. Modo offline (build 20260818-modo-offline-v1)
+## 4. Modo offline (build 20260818-modo-offline-v2)
 
-Se implementó la base del funcionamiento offline. Alcance y límites:
+Se implementó el funcionamiento offline. Alcance y límites:
 
 ### Qué funciona sin señal
 
 - La app abre y muestra los datos de la última sincronización (espejo en
   IndexedDB + estado local en localStorage).
-- Operaciones del repartidor encoladas y sincronizadas al reconectar:
-  venta, pago/abono, alta y edición de cliente, iniciar/recargar/regresar/
-  cerrar ronda, abrir/cerrar caja, movimiento de caja, gasto, y
-  transferencia/ajuste de inventario.
+- Operaciones encoladas y sincronizadas al reconectar:
+  - **Repartidor**: venta, pago/abono, alta y edición de cliente, iniciar/
+    recargar/regresar/cerrar ronda, abrir/cerrar caja, movimiento de caja,
+    gasto, transferencia/ajuste de inventario, devolución de venta, corrección
+    y anulación, regreso de envases de cliente.
+  - **Operación**: insumos (alta/movimiento), mantenimiento, llenado de
+    garrafones y cierre de jornada (secuencia: cajas + rondas + frontera).
 - Al volver la conexión, la cola se reenvía en orden reutilizando el mismo
   `operationId` (idempotente: un reintento no duplica).
-- Indicador en el topbar: "· N pendiente(s)" mientras haya operaciones sin
-  sincronizar.
+- Indicador en el topbar: "· N pendiente(s)" + botón **Sincronizar**.
+- Resumen de la cola en el panel **Diagnóstico** (total/pendientes/errores).
 
-### Qué NO funciona sin señal (avisa "requiere conexión")
+### Qué NO funciona sin señal
 
-- Correcciones, anulaciones, devoluciones de venta.
-- Empleados, insumos, mantenimiento, llenado de garrafones, cierre de jornada.
-- Iniciar sesión (el PIN se valida contra el servidor): el repartidor debe
-  iniciar sesión estando en línea y operar sin cerrar la pestaña; al volver
-  en línea se sincroniza.
+- **Iniciar sesión** (el PIN se valida contra el servidor): el repartidor debe
+  iniciar sesión estando en línea y operar sin cerrar la pestaña; al volver en
+  línea se sincroniza. (Permitir login offline requeriría guardar hashes de PIN
+  en el cliente, lo que contradice el modelo de seguridad del proyecto — es una
+  decisión de negocio pendiente.)
+- Empleados (alta/edición de perfiles), configuración.
 
 ### Riesgos conocidos
 
