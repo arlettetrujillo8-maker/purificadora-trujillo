@@ -295,6 +295,11 @@ p {
   background: var(--warning);
   margin-right: 6px;
 }
+/* Con el teclado movil abierto, la barra inferior se oculta para dar espacio
+   al formulario (se restaura al cerrar el teclado). */
+body.keyboard-open .bottom-nav {
+  display: none !important;
+}
 .v3-queue-panel {
   margin-top: 10px;
   border-top: 1px solid rgba(0, 0, 0, 0.1);

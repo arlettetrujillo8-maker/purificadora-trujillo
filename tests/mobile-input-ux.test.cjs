@@ -80,4 +80,14 @@ ok(
 );
 ok(/touch-action: manipulation/.test(css), "controles con touch-action");
 
+// 9. La barra inferior se oculta con el teclado abierto (mas espacio al form).
+ok(
+  /classList\.add\("keyboard-open"\)/.test(app),
+  "marca keyboard-open al enfocar",
+);
+ok(
+  /body\.keyboard-open \.bottom-nav/.test(css),
+  "CSS oculta la barra inferior con el teclado",
+);
+
 console.log(`mobile-input-ux: ${passed} PASS`);

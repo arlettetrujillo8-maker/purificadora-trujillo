@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260818-ux-movil-v3";
+  const APP_SCRIPT_BUILD = "20260818-ux-movil-v4";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2281,14 +2281,24 @@
       const offset = Math.max(0, window.innerHeight - view.height);
       document.body.style.paddingBottom =
         offset > 40 ? `${offset}px` : "";
+      // Con el teclado abierto se oculta la barra inferior para que la forma
+      // tenga todo el espacio disponible (la barra "inicio/venta/..." compite
+      // con el teclado y deja la pantalla apretada).
+      document.body.classList.toggle("keyboard-open", offset > 40);
     };
     view.addEventListener("resize", () => {
       applyKeyboardInset();
       revealFocusedField();
     });
     view.addEventListener("scroll", revealFocusedField);
+    document.addEventListener("focusin", (e) => {
+      if (e.target?.matches?.("input, textarea, select"))
+        document.body.classList.add("keyboard-open");
+    });
     document.addEventListener("focusout", (e) => {
       if (e.target === focusedField) focusedField = null;
+      if (e.target?.matches?.("input, textarea, select"))
+        document.body.classList.remove("keyboard-open");
     });
     applyKeyboardInset();
   }

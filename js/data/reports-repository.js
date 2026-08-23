@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20260818-ux-movil-v3";
+import { selectAll } from "./repository-utils.js?v=20260818-ux-movil-v4";
 
 export const reportsRepository = {
   listAudit: () =>
