@@ -112,5 +112,5 @@ tarjetas por pedido con cliente, garrafones y total, botón Entregar de 44px.
 
 1. **Fase 1 (implementada):** Inicio accionable + banner offline + StatCard.
 2. **Fase 2 (implementada):** Nueva venta en 2 columnas con resumen pegajoso y notas colapsables.
-3. **Fase 3:** Rutas con pestañas y menú agrupado.
+3. **Fase 3 (implementada):** Rutas con pestañas Ronda | Pedidos y menú agrupado.
 4. **Fase 4:** Reportes con filtros/export y unificación de tablas.
