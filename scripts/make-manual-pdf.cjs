@@ -163,7 +163,7 @@ const C = (type, text) => ({ type, text });
 
 const blocks = [
   C("title", "Purificadora Trujillo - Manual de operacion"),
-  C("p", "Resumen de los flujos de uso diario de la app. Version 20261025-rutas-expandibles."),
+  C("p", "Resumen de los flujos de uso diario de la app. Version 20261025-espaciado-ventanas."),
   C("h1", "1. Entrada"),
   C("li", "Administrador: se autentica con la cuenta central (correo + contrasena de Supabase). La sesion queda guardada en el dispositivo."),
   C("li", "Usuario (repartidor/ventanilla): selecciona su nombre y teclea su PIN para iniciar turno. El PIN se pide por turno."),

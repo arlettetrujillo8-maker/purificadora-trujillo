@@ -6,24 +6,24 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-rutas-expandibles";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-rutas-expandibles";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-rutas-expandibles";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-rutas-expandibles";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-rutas-expandibles";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-rutas-expandibles";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-rutas-expandibles";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-rutas-expandibles";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-rutas-expandibles";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-rutas-expandibles";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-rutas-expandibles";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-rutas-expandibles";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-rutas-expandibles";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-rutas-expandibles";
-import { routesRepository } from "../data/routes-repository.js?v=20261025-rutas-expandibles";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-rutas-expandibles";
+} from "../data/supabase-client.js?v=20261025-espaciado-ventanas";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-espaciado-ventanas";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-espaciado-ventanas";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-espaciado-ventanas";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-espaciado-ventanas";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-espaciado-ventanas";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-espaciado-ventanas";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-espaciado-ventanas";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-espaciado-ventanas";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-espaciado-ventanas";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-espaciado-ventanas";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-espaciado-ventanas";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-espaciado-ventanas";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-espaciado-ventanas";
+import { routesRepository } from "../data/routes-repository.js?v=20261025-espaciado-ventanas";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-espaciado-ventanas";
 
-const BOOTSTRAP_BUILD = "20261025-rutas-expandibles";
+const BOOTSTRAP_BUILD = "20261025-espaciado-ventanas";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

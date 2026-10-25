@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-rutas-expandibles";
+  const APP_SCRIPT_BUILD = "20261025-espaciado-ventanas";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2001,6 +2001,7 @@
   }
 
   function init() {
+    prepareDialogBodies();
     // Base local persistida (modo offline): si no hay señal y el dispositivo
     // guardo operaciones locales, se restauran aqui antes de que la central
     // (si llega) las reemplace por la proyeccion del servidor.
@@ -2638,6 +2639,54 @@
     setSelectOptions("containerReturnLocation", centers);
     setSelectOptions("expenseCenter", centers);
     setSelectOptions("userCenter", centers);
+  }
+  function dialogActionCluster(form) {
+    const nodes = [...form.children],
+      footer = [];
+    for (let i = nodes.length - 1; i >= 0; i -= 1) {
+      const node = nodes[i],
+        isAction =
+          node.matches?.(".dialog-actions") ||
+          (node.matches?.("button") &&
+            !node.classList.contains("icon-btn"));
+      if (!isAction) break;
+      footer.unshift(node);
+    }
+    const hasPrimary = footer.some(
+      (node) =>
+        node.matches?.(".dialog-actions") ||
+        node.matches?.(".primary-btn, .danger-btn"),
+    );
+    return hasPrimary ? footer : [];
+  }
+  // Convierte cada ventana en: cabecera fija + cuerpo desplazable + accion fija.
+  // Asi el boton de guardar siempre esta visible, aunque el formulario sea alto.
+  function prepareDialogBodies() {
+    document.querySelectorAll("dialog").forEach((dialog) => {
+      const form = dialog.querySelector(":scope > form");
+      if (!form) return;
+      const children = [...form.children];
+      if (
+        children.some(
+          (child) =>
+            child.classList?.contains("dialog-body") ||
+            child.classList?.contains("payment-body"),
+        )
+      )
+        return;
+      const head = children.find((child) =>
+        child.classList?.contains("dialog-head"),
+      );
+      const footer = dialogActionCluster(form);
+      if (!footer.length) return;
+      const body = document.createElement("div");
+      body.className = "dialog-body";
+      children.forEach((child) => {
+        if (child === head || footer.includes(child)) return;
+        body.appendChild(child);
+      });
+      form.insertBefore(body, footer[0]);
+    });
   }
   function renderAll() {
     renderRouteSelects();

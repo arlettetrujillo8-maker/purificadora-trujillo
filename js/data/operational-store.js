@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-rutas-expandibles";
-import { clientsRepository } from "./clients-repository.js?v=20261025-rutas-expandibles";
-import { salesRepository } from "./sales-repository.js?v=20261025-rutas-expandibles";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-rutas-expandibles";
-import { cashRepository } from "./cash-repository.js?v=20261025-rutas-expandibles";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-rutas-expandibles";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-rutas-expandibles";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-rutas-expandibles";
-import { settingsRepository } from "./settings-repository.js?v=20261025-rutas-expandibles";
-import { reportsRepository } from "./reports-repository.js?v=20261025-rutas-expandibles";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-rutas-expandibles";
-import { returnsRepository } from "./returns-repository.js?v=20261025-rutas-expandibles";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-rutas-expandibles";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-rutas-expandibles";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-espaciado-ventanas";
+import { clientsRepository } from "./clients-repository.js?v=20261025-espaciado-ventanas";
+import { salesRepository } from "./sales-repository.js?v=20261025-espaciado-ventanas";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-espaciado-ventanas";
+import { cashRepository } from "./cash-repository.js?v=20261025-espaciado-ventanas";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-espaciado-ventanas";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-espaciado-ventanas";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-espaciado-ventanas";
+import { settingsRepository } from "./settings-repository.js?v=20261025-espaciado-ventanas";
+import { reportsRepository } from "./reports-repository.js?v=20261025-espaciado-ventanas";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-espaciado-ventanas";
+import { returnsRepository } from "./returns-repository.js?v=20261025-espaciado-ventanas";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-espaciado-ventanas";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-espaciado-ventanas";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

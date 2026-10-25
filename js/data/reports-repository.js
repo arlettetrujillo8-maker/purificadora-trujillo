@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-rutas-expandibles";
+import { selectAll } from "./repository-utils.js?v=20261025-espaciado-ventanas";
 
 export const reportsRepository = {
   listAudit: () =>

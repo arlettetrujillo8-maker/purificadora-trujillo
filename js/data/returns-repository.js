@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-rutas-expandibles";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-espaciado-ventanas";
 
 export const returnsRepository = {
   list: async () => {
