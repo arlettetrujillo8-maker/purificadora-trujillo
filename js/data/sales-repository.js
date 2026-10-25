@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-espaciado-ventanas";
-import { supabase } from "./supabase-client.js?v=20261025-espaciado-ventanas";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-legible-fluent";
+import { supabase } from "./supabase-client.js?v=20261025-legible-fluent";
 
 export const salesRepository = {
   list: () =>

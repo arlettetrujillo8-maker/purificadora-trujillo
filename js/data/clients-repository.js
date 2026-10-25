@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-espaciado-ventanas";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-legible-fluent";
 
 function payload(client) {
   return {

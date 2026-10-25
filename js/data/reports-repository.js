@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-espaciado-ventanas";
+import { selectAll } from "./repository-utils.js?v=20261025-legible-fluent";
 
 export const reportsRepository = {
   listAudit: () =>

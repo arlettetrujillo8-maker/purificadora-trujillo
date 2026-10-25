@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20261025-espaciado-ventanas";
-import { selectAll, rpc } from "./repository-utils.js?v=20261025-espaciado-ventanas";
+} from "./supabase-client.js?v=20261025-legible-fluent";
+import { selectAll, rpc } from "./repository-utils.js?v=20261025-legible-fluent";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

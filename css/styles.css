@@ -3661,3 +3661,163 @@ dialog[open] > form > button.danger-btn {
     padding: var(--space-4);
   }
 }
+
+/* ============================================================
+   Legibilidad y acabado Fluent en toda la app
+   - Contraste AA en texto, etiquetas y placeholders
+   - Texto legible sobre superficies con degradado
+   - Componentes que faltaban por alinear al lenguaje Fluent
+   ============================================================ */
+:root {
+  --muted: #4b4b4b;
+  --fluent-text-secondary: #3d3d3d;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+::placeholder {
+  color: #6b6b6b;
+  opacity: 1;
+}
+
+/* Texto sobre superficies oscuras (hero y cabecera de Rutas) */
+.hero-card,
+.hero-card h2,
+.hero-card p,
+.hero-card strong,
+.route-ops-header,
+.route-ops-header h2,
+.route-ops-header p,
+.route-ops-header strong,
+.route-ops-header small {
+  color: #fff;
+}
+.hero-card .eyebrow,
+.route-ops-header .eyebrow {
+  color: #e8f1ff;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.hero-card .muted,
+.route-ops-header .muted {
+  color: rgba(255, 255, 255, 0.9);
+}
+.hero-card .secondary-btn,
+.hero-card .text-btn {
+  color: var(--fluent-text-secondary);
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Etiquetas y texto secundario legibles */
+label {
+  color: var(--fluent-text-secondary);
+}
+small,
+.muted {
+  color: var(--muted);
+}
+thead th {
+  color: #3f3f3f;
+}
+.pill,
+.status-badge,
+.session-chip,
+.admin-mode-badge,
+.status-tag,
+.route-state {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Controles y navegación con pesos legibles */
+.primary-btn,
+.secondary-btn,
+.danger-btn,
+.text-btn {
+  font-weight: 600;
+}
+.nav-item {
+  font-weight: 600;
+}
+input,
+select,
+textarea {
+  color: var(--text);
+  font-weight: 400;
+}
+
+/* Componentes Fluent que faltaban */
+.toolbar {
+  gap: var(--space-3);
+  align-items: center;
+}
+input[type="search"] {
+  border-radius: var(--fluent-radius-control);
+  padding-left: 10px;
+}
+.filter-chips {
+  gap: var(--space-2);
+}
+.filter-chips button,
+.chip {
+  border-radius: var(--fluent-radius-control);
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fluent-text-secondary);
+  font-weight: 600;
+  min-height: 34px;
+}
+.filter-chips button:hover,
+.chip:hover {
+  background: #f7f7f7;
+}
+.filter-chips button.active,
+.chip.active {
+  background: rgba(0, 95, 184, 0.1);
+  border-color: rgba(0, 95, 184, 0.35);
+  color: var(--primary);
+}
+.table-responsive {
+  border-radius: var(--radius);
+}
+.metric-card .label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.metric-card .value {
+  color: var(--text);
+  font-weight: 700;
+}
+.dialog-buttons,
+.user-dialog-actions {
+  gap: var(--space-2);
+}
+.empty-state,
+.mobile-empty-client,
+.route-empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+.access-choice-actions button {
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.central-session-notice {
+  border-radius: var(--fluent-radius-control);
+  border-color: rgba(0, 95, 184, 0.28);
+  background: rgba(0, 95, 184, 0.06);
+  color: #00457f;
+  font-size: 13px;
+}
+.central-session-notice.is-connected {
+  border-color: rgba(15, 123, 15, 0.3);
+  background: rgba(15, 123, 15, 0.07);
+  color: #0b5c0b;
+}

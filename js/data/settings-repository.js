@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-espaciado-ventanas";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-legible-fluent";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),
