@@ -6,24 +6,25 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-costos-insumos";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-costos-insumos";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-costos-insumos";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-costos-insumos";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-costos-insumos";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-costos-insumos";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-costos-insumos";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-costos-insumos";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-costos-insumos";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-costos-insumos";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-costos-insumos";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-costos-insumos";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-costos-insumos";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-costos-insumos";
-import { routesRepository } from "../data/routes-repository.js?v=20261025-costos-insumos";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-costos-insumos";
+} from "../data/supabase-client.js?v=20261025-pedidos";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-pedidos";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-pedidos";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-pedidos";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-pedidos";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-pedidos";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-pedidos";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-pedidos";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-pedidos";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-pedidos";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-pedidos";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-pedidos";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-pedidos";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-pedidos";
+import { routesRepository } from "../data/routes-repository.js?v=20261025-pedidos";
+import { ordersRepository } from "../data/orders-repository.js?v=20261025-pedidos";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-pedidos";
 
-const BOOTSTRAP_BUILD = "20261025-costos-insumos";
+const BOOTSTRAP_BUILD = "20261025-pedidos";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
@@ -339,6 +340,34 @@ async function hydrateOperationalState(source = "manual") {
     window.dispatchEvent(
       new CustomEvent("purificadora:routes", {
         detail: window.PurificadoraRoutes,
+      }),
+    );
+    window.PurificadoraOrdersRepo = ordersRepository;
+    try {
+      const rows = await ordersRepository.list();
+      window.PurificadoraOrdersRemote = (Array.isArray(rows) ? rows : []).map(
+        (row) => ({
+          id: row.id,
+          clientId: row.client_id,
+          route: row.route,
+          date: String(row.scheduled_date || "").slice(0, 10),
+          qty: Number(row.qty || 1),
+          price: Number(row.price_cents || 0) / 100,
+          status: row.status,
+          notes: row.notes || "",
+          createdAt: row.created_at,
+          deliveredAt: row.delivered_at,
+          saleId: row.sale_id,
+          source: "server",
+        }),
+      );
+    } catch (error) {
+      window.PurificadoraOrdersRemote = [];
+      console.warn("Pedidos sin sincronizar (migracion pendiente)", error);
+    }
+    window.dispatchEvent(
+      new CustomEvent("purificadora:orders", {
+        detail: window.PurificadoraOrdersRemote,
       }),
     );
     app.applyCentralState(projection, store.profile);

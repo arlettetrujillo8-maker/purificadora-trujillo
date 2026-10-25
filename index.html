@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20261025-costos-insumos" />
+    <meta name="app-build" content="20261025-pedidos" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
@@ -15,7 +15,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261025-costos-insumos" />
+    <link rel="stylesheet" href="css/styles.css?v=20261025-pedidos" />
   </head>
   <body>
     <div class="app-shell">
@@ -37,6 +37,7 @@
           <button class="nav-item" data-view="fiado">Fiado y pagos</button>
           <button class="nav-item" data-view="envases">Envases pendientes</button>
           <button class="nav-item" data-view="rutas">Rutas</button>
+        <button class="nav-item" data-view="pedidos">Pedidos</button>
           <button class="nav-item" data-view="ventanilla">Ventanilla</button>
           <button class="nav-item" data-view="caja">Caja</button>
           <button class="nav-item" data-view="inventario">Inventario</button>
@@ -602,9 +603,22 @@
             <div id="roundsHistory"></div>
           </div>
           <div id="routeRoundActions" class="route-round-actions"></div>
+                  <div class="panel" id="routeOrdersPanel"></div>
         </section>
 
-        <section class="view" id="view-ventanilla">
+                <section class="view" id="view-pedidos">
+          <div class="toolbar">
+            <div>
+              <h3>Pedidos programados</h3>
+              <p class="muted">Programa pedidos por ruta y entrégalos desde el celular.</p>
+            </div>
+            <button id="newOrderBtn" class="primary-btn" type="button">+ Nuevo pedido</button>
+          </div>
+          <div class="metric-grid" id="ordersMetrics"></div>
+          <div class="panel table-panel"><div id="ordersList"></div></div>
+        </section>
+
+<section class="view" id="view-ventanilla">
           <div class="mobile-section-heading">
             <span class="eyebrow">VENTANILLA</span>
             <h2>Venta rápida</h2>
@@ -2112,6 +2126,26 @@
 
 
 
+    <dialog id="orderDialog">
+      <form method="dialog" id="orderForm" class="dialog-form" data-dirty-guard>
+        <div class="dialog-head">
+          <h3 id="orderDialogTitle">Nuevo pedido</h3>
+          <button type="button" class="icon-btn" data-close="orderDialog" aria-label="Cerrar">×</button>
+        </div>
+        <input id="orderId" type="hidden" />
+        <div class="form-grid">
+          <label class="full">Cliente<select id="orderClient" required></select></label>
+          <label>Ruta<select id="orderRoute" required></select></label>
+          <label>Fecha<input id="orderDate" type="date" required /></label>
+          <label>Cantidad<input id="orderQty" type="number" min="1" step="1" inputmode="numeric" required value="1" /></label>
+          <label>Precio<input id="orderPrice" type="number" min="0" step="0.01" inputmode="decimal" required /></label>
+          <label class="full">Notas<textarea id="orderNotes" rows="2"></textarea></label>
+        </div>
+        <p class="form-error" id="orderError" aria-live="polite"></p>
+        <button class="primary-btn wide" value="default">Guardar pedido</button>
+      </form>
+    </dialog>
+
     <dialog id="saleDetailDialog">
       <div class="dialog-form wide-dialog">
         <div class="dialog-head">
@@ -2678,15 +2712,16 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20261025-costos-insumos"></script>
-    <script src="js/safe-uuid.js?v=20261025-costos-insumos"></script>
-    <script src="js/presentation-labels.js?v=20261025-costos-insumos"></script>
-    <script src="js/user-display.js?v=20261025-costos-insumos"></script>
-    <script src="js/empty-reconcile.js?v=20261025-costos-insumos"></script>
-    <script src="js/sale-client-selection.js?v=20261025-costos-insumos"></script>
-    <script src="js/data/offline-store.js?v=20261025-costos-insumos"></script>
-    <script src="js/v3/costs.js?v=20261025-costos-insumos"></script>
-    <script src="js/app.js?v=20261025-costos-insumos"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20261025-costos-insumos"></script>
+    <script src="js/central-auth-ui.js?v=20261025-pedidos"></script>
+    <script src="js/safe-uuid.js?v=20261025-pedidos"></script>
+    <script src="js/presentation-labels.js?v=20261025-pedidos"></script>
+    <script src="js/user-display.js?v=20261025-pedidos"></script>
+    <script src="js/empty-reconcile.js?v=20261025-pedidos"></script>
+    <script src="js/sale-client-selection.js?v=20261025-pedidos"></script>
+    <script src="js/data/offline-store.js?v=20261025-pedidos"></script>
+    <script src="js/v3/costs.js?v=20261025-pedidos"></script>
+    <script src="js/v3/orders.js?v=20261025-pedidos"></script>
+    <script src="js/app.js?v=20261025-pedidos"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20261025-pedidos"></script>
   </body>
 </html>

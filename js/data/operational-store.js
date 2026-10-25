@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-costos-insumos";
-import { clientsRepository } from "./clients-repository.js?v=20261025-costos-insumos";
-import { salesRepository } from "./sales-repository.js?v=20261025-costos-insumos";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-costos-insumos";
-import { cashRepository } from "./cash-repository.js?v=20261025-costos-insumos";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-costos-insumos";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-costos-insumos";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-costos-insumos";
-import { settingsRepository } from "./settings-repository.js?v=20261025-costos-insumos";
-import { reportsRepository } from "./reports-repository.js?v=20261025-costos-insumos";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-costos-insumos";
-import { returnsRepository } from "./returns-repository.js?v=20261025-costos-insumos";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-costos-insumos";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-costos-insumos";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-pedidos";
+import { clientsRepository } from "./clients-repository.js?v=20261025-pedidos";
+import { salesRepository } from "./sales-repository.js?v=20261025-pedidos";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-pedidos";
+import { cashRepository } from "./cash-repository.js?v=20261025-pedidos";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-pedidos";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-pedidos";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-pedidos";
+import { settingsRepository } from "./settings-repository.js?v=20261025-pedidos";
+import { reportsRepository } from "./reports-repository.js?v=20261025-pedidos";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-pedidos";
+import { returnsRepository } from "./returns-repository.js?v=20261025-pedidos";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-pedidos";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-pedidos";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

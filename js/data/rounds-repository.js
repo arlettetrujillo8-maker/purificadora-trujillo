@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-costos-insumos";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-pedidos";
 
 export const roundsRepository = {
   list: () =>

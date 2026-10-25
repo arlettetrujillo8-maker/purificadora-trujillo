@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-costos-insumos";
-import { supabase } from "./supabase-client.js?v=20261025-costos-insumos";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-pedidos";
+import { supabase } from "./supabase-client.js?v=20261025-pedidos";
 
 export const salesRepository = {
   list: () =>

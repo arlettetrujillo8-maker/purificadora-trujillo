@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-costos-insumos";
+  const APP_SCRIPT_BUILD = "20261025-pedidos";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -115,6 +115,7 @@
         "fiado",
         "envases",
         "rutas",
+        "pedidos",
         "ventanilla",
         "caja",
         "inventario",
@@ -156,6 +157,7 @@
         "fiado",
         "envases",
         "rutas",
+        "pedidos",
         "caja",
         "inventario",
       ],
@@ -184,6 +186,7 @@
         "fiado",
         "envases",
         "ventanilla",
+        "pedidos",
         "caja",
       ],
       permissions: [
@@ -231,6 +234,7 @@
     "ultimas",
     "fiado",
     "rutas",
+    "pedidos",
     "ventanilla",
     "caja",
     "inventario",
@@ -260,6 +264,7 @@
     fiado: "view_client_debt",
     envases: "view_client_debt",
     rutas: "rounds",
+    pedidos: "create_sale",
     caja: "view_own_cash",
     gastos: "view_expenses",
     inventario: "view_inventory",
@@ -396,6 +401,76 @@
   let stateConflict = false;
   // V3 online never boots from the legacy operational snapshot. The keys are
   // intentionally left untouched as a recoverable pre-migration backup.
+  const ORDERS_KEY = "purificadora_orders_v1";
+  let ordersCache = loadOrdersCache();
+  let pendingOrderId = null;
+  const PENDING_ORDER_KEY = "purificadora_pending_order";
+  function setPendingOrder(id) {
+    pendingOrderId = id;
+    try {
+      sessionStorage.setItem(PENDING_ORDER_KEY, id);
+    } catch (error) {
+      console.warn("No se pudo recordar el pedido pendiente", error);
+    }
+  }
+  function clearPendingOrder() {
+    pendingOrderId = null;
+    try {
+      sessionStorage.removeItem(PENDING_ORDER_KEY);
+    } catch (error) {
+      console.warn("No se pudo limpiar el pedido pendiente", error);
+    }
+  }
+  function currentPendingOrder() {
+    try {
+      return pendingOrderId || sessionStorage.getItem(PENDING_ORDER_KEY) || null;
+    } catch {
+      return pendingOrderId;
+    }
+  }
+  function orderApi() {
+    return window.PurificadoraOrders || null;
+  }
+  function loadOrdersCache() {
+    try {
+      const raw = localStorage.getItem("purificadora_orders_v1"),
+        parsed = raw ? JSON.parse(raw) : [],
+        api = window.PurificadoraOrders;
+      return (Array.isArray(parsed) ? parsed : []).map((order) =>
+        api ? api.normalize(order) : order,
+      );
+    } catch (error) {
+      console.warn("No se pudieron leer los pedidos locales", error);
+      return [];
+    }
+  }
+  function saveOrdersCache() {
+    try {
+      localStorage.setItem("purificadora_orders_v1", JSON.stringify(ordersCache));
+    } catch (error) {
+      console.warn("No se pudieron guardar los pedidos", error);
+    }
+  }
+  function orderClientName(order) {
+    return clientById(order.clientId)?.name || order.clientName || "Cliente";
+  }
+  function orderStatusLabel(status) {
+    return orderApi()?.STATUSES?.[status]?.label || status || "";
+  }
+  window.addEventListener("purificadora:orders", (event) => {
+    const remote = Array.isArray(event.detail) ? event.detail : [];
+    if (!remote.length) return;
+    const map = new Map(ordersCache.map((order) => [order.id, order]));
+    remote.forEach((row) => {
+      const api = orderApi();
+      map.set(row.id, api ? api.normalize(row) : row);
+    });
+    ordersCache = [...map.values()];
+    saveOrdersCache();
+    renderOrders();
+    renderRouteOrders();
+  });
+
   let state = defaultState();
   let selectedClientId = null;
   // Cliente al que ya se le mostro el aviso de envases pendientes en la venta.
@@ -2165,6 +2240,7 @@
       fiado: "Fiado y pagos",
       envases: "Envases pendientes",
       rutas: "Rutas",
+      pedidos: "Pedidos",
       ventanilla: "Ventanilla",
       caja: "Caja",
       inventario: "Inventario",
@@ -2225,6 +2301,27 @@
         $("recoveryDialog").showModal();
     });
     $("newClientBtn").addEventListener("click", () => openClientDialog());
+    $("newOrderBtn")?.addEventListener("click", () => openOrderDialog());
+    $("orderForm")?.addEventListener("submit", saveOrder);
+    $("orderClient")?.addEventListener("change", () => {
+      const c = clientById($("orderClient").value);
+      if (!c) return;
+      $("orderPrice").value = String(expectedSalePrice(c));
+      if ([...routeCodes(), "ventanilla"].includes(c.route))
+        $("orderRoute").value = c.route;
+    });
+    $("ordersList")?.addEventListener("click", (event) => {
+      const deliver = event.target.closest("[data-deliver-order]");
+      if (deliver) return deliverOrder(deliver.dataset.deliverOrder);
+      const cancel = event.target.closest("[data-cancel-order]");
+      if (cancel) return cancelOrder(cancel.dataset.cancelOrder);
+      const edit = event.target.closest("[data-edit-order]");
+      if (edit) return openOrderDialog(ordersCache.find((o) => o.id === edit.dataset.editOrder));
+    });
+    $("routeOrdersPanel")?.addEventListener("click", (event) => {
+      const deliver = event.target.closest("[data-deliver-order]");
+      if (deliver) return deliverOrder(deliver.dataset.deliverOrder);
+    });
     $("saleNewClientBtn").addEventListener("click", () =>
       openClientDialog(null, { quick: true }),
     );
@@ -2690,6 +2787,212 @@
       form.insertBefore(body, footer[0]);
     });
   }
+  function scopedOrders() {
+    const user = activeUser();
+    if (adminMode || user?.role === "administrador") return ordersCache;
+    if (user?.role === "repartidor")
+      return ordersCache.filter((order) => order.route === user.center);
+    if (user?.role === "ventanilla")
+      return ordersCache.filter((order) => order.route === "ventanilla");
+    return ordersCache;
+  }
+  function renderOrders() {
+    const metrics = $("ordersMetrics"),
+      host = $("ordersList");
+    if (!metrics || !host) return;
+    const api = orderApi(),
+      summary = api
+        ? api.summary(ordersCache)
+        : { pending: 0, dueToday: 0, dueUnits: 0, deliveredToday: 0, estimatedTotal: 0 };
+    metrics.innerHTML = [
+      metric("Pendientes hoy", int(summary.dueToday), `${int(summary.dueUnits)} garrafones`),
+      metric("Por entregar", int(summary.pending), money(summary.estimatedTotal)),
+      metric("Entregados hoy", int(summary.deliveredToday), "Pedidos cerrados"),
+    ].join("");
+    const scoped = scopedOrders();
+    const pending = orderApi()
+      ? orderApi().sortForWork(scoped.filter((order) => order.status === "pendiente"))
+      : scoped.filter((order) => order.status === "pendiente");
+    const closed = scoped
+      .filter((order) => order.status !== "pendiente")
+      .sort((a, b) => String(b.deliveredAt || "").localeCompare(String(a.deliveredAt || "")))
+      .slice(0, 20);
+    const row = (order, isPending) =>
+      `<div class="list-row order-row">
+        <div class="list-main">
+          <strong>${esc(orderClientName(order))}</strong>
+          <small>${esc(routeLabel(order.route))} · ${esc(order.date)} · ${int(order.qty)} garrafones · ${money(order.qty * order.price)}</small>
+          ${order.notes ? `<small>${esc(order.notes)}</small>` : ""}
+        </div>
+        <span class="status-badge">${esc(orderStatusLabel(order.status))}</span>
+        <div class="order-actions">
+          ${isPending ? `<button class="primary-btn" data-deliver-order="${order.id}">Entregar</button>
+          <button class="secondary-btn" data-edit-order="${order.id}">Editar</button>
+          <button class="text-btn" data-cancel-order="${order.id}">Cancelar</button>` : ""}
+        </div>
+      </div>`;
+    host.innerHTML = pending.length || closed.length
+      ? `${pending.length ? `<div class="panel-head"><h3>Pendientes</h3></div>${pending.map((order) => row(order, true)).join("")}` : ""}
+         ${closed.length ? `<div class="panel-head"><h3>Cerrados recientes</h3></div>${closed.map((order) => row(order, false)).join("")}` : ""}`
+      : '<div class="empty">No hay pedidos programados. Crea el primero con “Nuevo pedido”.</div>';
+  }
+  function renderRouteOrders() {
+    const host = $("routeOrdersPanel");
+    if (!host) return;
+    const user = activeUser(),
+      api = orderApi(),
+      routes = routeCodes();
+    const pending = (api ? api.dueToday(ordersCache) : [])
+      .filter((order) => order.status === "pendiente")
+      .filter((order) => routes.includes(order.route))
+      .filter(
+        (order) =>
+          adminMode ||
+          user?.role !== "repartidor" ||
+          order.route === user.center,
+      );
+    if (!pending.length) {
+      host.innerHTML =
+        '<div class="panel-head"><h3>Pedidos para reparto hoy</h3></div><div class="empty">Sin pedidos pendientes para hoy.</div>';
+      return;
+    }
+    host.innerHTML = `<div class="panel-head"><h3>Pedidos para reparto hoy</h3><p class="muted">${int(pending.length)} pendientes</p></div>${pending
+      .map(
+        (order) => `<div class="list-row order-row">
+          <div class="list-main"><strong>${esc(orderClientName(order))}</strong><small>${esc(routeLabel(order.route))} · ${int(order.qty)} garrafones · ${money(order.qty * order.price)}</small></div>
+          <button class="primary-btn" data-deliver-order="${order.id}">Entregar</button>
+        </div>`,
+      )
+      .join("")}`;
+  }
+  function openOrderDialog(order = null) {
+    if (!requirePermission("create_sale")) return;
+    const form = $("orderForm");
+    if (!form) return;
+    form.reset();
+    $("orderDialogTitle").textContent = order ? "Editar pedido" : "Nuevo pedido";
+    $("orderId").value = order?.id || "";
+    const clients = [...state.clients].filter((c) => c.active !== false).sort((a, b) => a.name.localeCompare(b.name));
+    $("orderClient").innerHTML = clients.length
+      ? clients.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")
+      : '<option value="">Sin clientes registrados</option>';
+    const routeOptions = [...routeCodes(), "ventanilla"];
+    $("orderRoute").innerHTML = routeOptions
+      .map((code) => `<option value="${code}">${esc(routeLabel(code))}</option>`)
+      .join("");
+    $("orderDate").value = order?.date || (orderApi()?.todayKey() ?? new Date().toISOString().slice(0, 10));
+    if (order) {
+      $("orderClient").value = order.clientId;
+      $("orderRoute").value = order.route;
+      $("orderQty").value = String(order.qty);
+      $("orderPrice").value = String(order.price);
+      $("orderNotes").value = order.notes || "";
+    } else if (clients[0]) {
+      $("orderClient").value = clients[0].id;
+      $("orderPrice").value = String(expectedSalePrice(clients[0]));
+      if ([...routeCodes(), "ventanilla"].includes(clients[0].route))
+        $("orderRoute").value = clients[0].route;
+    }
+    $("orderError").textContent = "";
+    showManagedDialog($("orderDialog"));
+  }
+  async function saveOrder(e) {
+    e.preventDefault();
+    if (!requirePermission("create_sale")) return;
+    const id = $("orderId").value,
+      client = clientById($("orderClient").value),
+      qty = Number($("orderQty").value),
+      price = Number($("orderPrice").value);
+    if (!client) return ($("orderError").textContent = "Selecciona un cliente.");
+    if (!Number.isInteger(qty) || qty <= 0)
+      return ($("orderError").textContent = "Cantidad inválida.");
+    if (!Number.isFinite(price) || price < 0)
+      return ($("orderError").textContent = "Precio inválido.");
+    const existing = id ? ordersCache.find((order) => order.id === id) : null;
+    if (existing && existing.status !== "pendiente")
+      return ($("orderError").textContent = "Solo se editan pedidos pendientes.");
+    const draft = {
+      id: existing?.id || bareUuid(),
+      clientId: client.id,
+      clientName: client.name,
+      route: $("orderRoute").value,
+      date: $("orderDate").value,
+      qty,
+      price,
+      status: "pendiente",
+      notes: $("orderNotes").value.trim(),
+      createdAt: existing?.createdAt || nowISO(),
+      source: existing?.source || "local",
+    };
+    ordersCache = existing
+      ? ordersCache.map((order) => (order.id === draft.id ? draft : order))
+      : [draft, ...ordersCache];
+    saveOrdersCache();
+    if (!existing)
+      window.PurificadoraOrdersRepo?.create(draft).catch((error) =>
+        console.warn("Pedido guardado solo en el dispositivo", error),
+      );
+    $("orderDialog").close();
+    renderOrders();
+    renderRouteOrders();
+    toast(existing ? "Pedido actualizado" : "Pedido programado");
+  }
+  function markOrderStatus(id, status, saleId = null) {
+    const api = orderApi(),
+      current = ordersCache.find((order) => order.id === id);
+    if (!current) return;
+    if (api && !api.canTransition(current, status)) return;
+    ordersCache = ordersCache.map((order) =>
+      order.id === id
+        ? {
+            ...order,
+            status,
+            saleId: saleId || order.saleId,
+            deliveredAt: status === "entregado" ? nowISO() : order.deliveredAt,
+          }
+        : order,
+    );
+    saveOrdersCache();
+    window.PurificadoraOrdersRepo
+      ?.setStatus(id, status, saleId)
+      .catch((error) => console.warn("Pedido actualizado solo en el dispositivo", error));
+    renderOrders();
+    renderRouteOrders();
+  }
+  function cancelOrder(id) {
+    if (!requirePermission("create_sale")) return;
+    markOrderStatus(id, "cancelado");
+    toast("Pedido cancelado");
+  }
+  function markOrderDelivered(id, saleId = null) {
+    markOrderStatus(id, "entregado", saleId);
+    toast("Pedido marcado como entregado");
+  }
+  function deliverOrder(id) {
+    const order = ordersCache.find((item) => item.id === id);
+    if (!order || order.status !== "pendiente") return toast("El pedido ya no está pendiente.", "error");
+    if (!clientById(order.clientId))
+      return toast("El cliente del pedido no existe en este dispositivo.", "error");
+    const activeRound = state.rounds.find(
+      (round) =>
+        round.route === order.route &&
+        round.status !== "regresada" &&
+        round.status !== "cerrada",
+    );
+    // Con ronda activa la venta entra a la ruta; sin ronda se registra como
+    // "fuera de ruta" para no romper la integridad de stock de la ronda.
+    const channel =
+      order.route === "ventanilla"
+        ? "ventanilla"
+        : activeRound
+          ? order.route
+          : "fuera_ruta";
+    beginSaleForClient(order.clientId, { quantity: order.qty, channel });
+    setPendingOrder(order.id);
+    $("salePrice").value = String(order.price);
+    updateSaleSummary();
+    toast("Pedido cargado: registra la venta para entregarlo");
+  }
   function renderAll() {
     renderRouteSelects();
     state.rounds
@@ -2705,6 +3008,8 @@
     renderDebt();
     renderContainerDebt();
     renderRoutes();
+    renderOrders();
+    renderRouteOrders();
     renderWindow();
     renderCash();
     renderInventory();
@@ -2727,6 +3032,7 @@
         fiado: renderDebt,
         envases: renderContainerDebt,
         rutas: renderRoutes,
+        pedidos: renderOrders,
         ventanilla: renderWindow,
         caja: renderCash,
         inventario: renderInventory,
@@ -3362,6 +3668,7 @@
     id,
     { quantity = null, channel = null, paymentType = null } = {},
   ) {
+    clearPendingOrder();
     showView("ventas");
     if (id && clientById(id)) selectSaleClient(id);
     if (quantity) $("saleQty").value = Math.max(1, Number(quantity));
@@ -3510,6 +3817,7 @@
   }
   function resetSaleForm() {
     $("saleForm").reset();
+    pendingOrderId = null;
     containerPromptClientId = null;
     saleClientSelection.clear();
     $("saleClientId").value = "";
@@ -3561,6 +3869,7 @@
     $("showAdvancedSale").onclick = () => applySaleContext(null);
   }
   function cancelSale() {
+    clearPendingOrder();
     if (isSaleSubmitting) return;
     if (isSaleFormDirty()) {
       if (!$("saleCancelDialog").open) $("saleCancelDialog").showModal();
@@ -3974,9 +4283,13 @@
     // La deuda de envases del cliente la calcula y guarda el servidor
     // (apply_sale_container_effect): tras el commit el estado se reemplaza por
     // la proyeccion, asi que mutar el objeto local aqui no tenia efecto.
+    const deliveredOrderId = currentPendingOrder();
+    clearPendingOrder();
     resetSaleForm();
     renderAll();
     toast("Venta registrada correctamente");
+    if (deliveredOrderId)
+      markOrderDelivered(deliveredOrderId, state.sales[0]?.id || null);
     clearTimeout(saleReleaseTimer);
     saleReleaseTimer = setTimeout(() => setSaleSubmitting(false), 1200);
   }

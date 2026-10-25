@@ -1,4 +1,4 @@
-const BUILD = "20261025-costos-insumos";
+const BUILD = "20261025-pedidos";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",
@@ -30,6 +30,8 @@ const ASSETS = [
   `./js/v3/supabase-config.js?v=${BUILD}`,
   `./js/v3/money.js?v=${BUILD}`,
   `./js/v3/costs.js?v=${BUILD}`,
+  `./js/v3/orders.js?v=${BUILD}`,
+  `./js/data/orders-repository.js?v=${BUILD}`,
   `./js/v3/bootstrap.js?v=${BUILD}`,
   "./manifest.webmanifest",
   "./assets/logo/logo-trujillo.svg",

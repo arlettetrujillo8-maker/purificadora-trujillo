@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20261025-costos-insumos";
-import { selectAll, rpc } from "./repository-utils.js?v=20261025-costos-insumos";
+} from "./supabase-client.js?v=20261025-pedidos";
+import { selectAll, rpc } from "./repository-utils.js?v=20261025-pedidos";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";
