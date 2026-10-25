@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-venta-inline";
+import { selectAll } from "./repository-utils.js?v=20261025-costos-insumos";
 
 export const reportsRepository = {
   listAudit: () =>

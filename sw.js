@@ -1,4 +1,4 @@
-const BUILD = "20261025-venta-inline";
+const BUILD = "20261025-costos-insumos";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",
@@ -29,6 +29,7 @@ const ASSETS = [
   `./js/data/operational-store.js?v=${BUILD}`,
   `./js/v3/supabase-config.js?v=${BUILD}`,
   `./js/v3/money.js?v=${BUILD}`,
+  `./js/v3/costs.js?v=${BUILD}`,
   `./js/v3/bootstrap.js?v=${BUILD}`,
   "./manifest.webmanifest",
   "./assets/logo/logo-trujillo.svg",

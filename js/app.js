@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-venta-inline";
+  const APP_SCRIPT_BUILD = "20261025-costos-insumos";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -824,6 +824,7 @@
         costPerUnit: s.costPerUnit,
         userId: activeUser().id,
         reason: `Llenado de ${qty} garrafones`,
+        containers: qty,
         fillId,
       });
     });
@@ -1027,9 +1028,9 @@
   function routeLabel(route) {
     return (
       routeCatalog().find((item) => item.code === route)?.name ||
-      window.PurificadoraPresentationLabels?.formatRouteLabel(route) ||
-      routeLabel(route) ||
+      CHANNELS[route] ||
       SPECIAL_LABELS[route] ||
+      window.PurificadoraPresentationLabels?.formatRouteLabel(route) ||
       route ||
       ""
     );
@@ -2442,6 +2443,7 @@
       $("returnRoundDialog").close(),
     );
     $("fillContainersForm").addEventListener("submit", fillContainersV22);
+    $("fillContainersQty").addEventListener("input", updateFillContainersCost);
     $("cashMovementForm").addEventListener("submit", saveCashMovement);
     $("cashDeliveryForm").addEventListener("submit", saveCashDelivery);
     $("supplyForm").addEventListener("submit", saveSupply);
@@ -4980,6 +4982,18 @@
     $("roundLoadedQty").value = "";
     showManagedDialog($("startRoundDialog"));
   }
+  function updateFillContainersCost() {
+    const box = $("fillContainersCost");
+    if (!box) return;
+    const qty = Math.max(0, Number($("fillContainersQty").value || 0)),
+      perContainer = costEngine().costPerContainer(state.supplies);
+    if (perContainer <= 0) {
+      box.textContent =
+        "Configura el consumo y costo de tus insumos para ver el costo de producción.";
+      return;
+    }
+    box.innerHTML = `Costo de insumos: <strong>${money(perContainer * qty)}</strong> · ${money(perContainer)} por garrafón`;
+  }
   function openFillContainersDialog() {
     if (!requirePermission("rounds")) return;
     const available = Math.max(0, Number(state.inventory.empty_local || 0));
@@ -4997,6 +5011,7 @@
       available > 0
         ? `Puedes preparar hasta ${int(available)} garrafones. Lavado está incluido.`
         : "No hay garrafones vacíos disponibles en Local.";
+    updateFillContainersCost();
     showManagedDialog($("fillContainersDialog"));
   }
   async function startRound(e) {
@@ -5807,14 +5822,34 @@
       0,
     );
 
-    const byChannel = Object.keys(CHANNELS).map((k) => ({
-      channel: routeLabel(k),
-      sales: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.total, 0),
-      units: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.qty, 0),
-      unreturned: sales
-        .filter((s) => s.channel === k)
-        .reduce((a, s) => a + unreturnedContainers(s), 0),
-    }));
+    const costApi = costEngine(),
+      perContainer = costApi.costPerContainer(state.supplies),
+      unitsSold = sales.reduce((total, s) => total + Number(s.qty || 0), 0),
+      costOfSales = unitsSold * perContainer,
+      grossMargin = totalSales - costOfSales,
+      marginPercent = totalSales > 0 ? grossMargin / totalSales : 0,
+      production = costApi.report(
+        state.supplies,
+        state.supplyMovements,
+        startDate,
+      );
+    const byChannel = Object.keys(CHANNELS).map((k) => {
+      const channelSales = sales.filter((s) => s.channel === k),
+        units = channelSales.reduce((a, s) => a + Number(s.qty || 0), 0),
+        total = channelSales.reduce((a, s) => a + s.total, 0),
+        cost = units * perContainer;
+      return {
+        channel: routeLabel(k),
+        sales: total,
+        units,
+        cost,
+        margin: total - cost,
+        unreturned: channelSales.reduce(
+          (a, s) => a + unreturnedContainers(s),
+          0,
+        ),
+      };
+    });
 
     const clientsWithDebt = state.clients
       .filter((c) => clientBalance(c.id) > 0.009)
@@ -5867,6 +5902,21 @@
           <strong>${int(totalUnreturned)}</strong>
           <small>En el período seleccionado</small>
         </div>
+        <div class="metric-card">
+          <span class="label">Costo insumos (vendido)</span>
+          <strong>${money(costOfSales)}</strong>
+          <small>${money(perContainer)} por garrafón</small>
+        </div>
+        <div class="metric-card">
+          <span class="label">Margen bruto</span>
+          <strong>${money(grossMargin)}</strong>
+          <small>${int(Math.round(marginPercent * 100))}% sobre ventas</small>
+        </div>
+        <div class="metric-card">
+          <span class="label">Producción</span>
+          <strong>${int(production.producedUnits)} garrafones</strong>
+          <small>Costo insumos ${money(production.productionCost)}</small>
+        </div>
       </div>
 
       <div class="reports-section">
@@ -5874,10 +5924,15 @@
         <div class="table-responsive">
           <table class="reports-table">
             <thead>
-              <tr><th>Canal</th><th>Garrafones</th><th>No regresados</th><th>Ventas</th></tr>
+              <tr><th>Canal</th><th>Garrafones</th><th>No regresados</th><th>Ventas</th><th>Costo</th><th>Margen</th><th>%</th></tr>
             </thead>
             <tbody>
-              ${byChannel.map((c) => `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td class="${c.unreturned > 0 ? "amount-danger" : ""}">${int(c.unreturned)}</td><td>${money(c.sales)}</td></tr>`).join("")}
+              ${byChannel
+                .map(
+                  (c) =>
+                    `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td class="${c.unreturned > 0 ? "amount-danger" : ""}">${int(c.unreturned)}</td><td>${money(c.sales)}</td><td>${money(c.cost)}</td><td class="${c.margin < 0 ? "amount-danger" : ""}">${money(c.margin)}</td><td>${c.sales > 0 ? int(Math.round((c.margin / c.sales) * 100)) : 0}%</td></tr>`,
+                )
+                .join("")}
             </tbody>
           </table>
         </div>
@@ -6420,6 +6475,40 @@
     toast("Inventario ajustado");
   }
 
+  function costEngine() {
+    if (window.PurificadoraCosts) return window.PurificadoraCosts;
+    const costPerContainer = () =>
+      state.supplies
+        .filter((s) => s.active !== false && Number(s.consumptionPerUnit) > 0)
+        .reduce(
+          (total, s) =>
+            total + Number(s.consumptionPerUnit) * Number(s.costPerUnit || 0),
+          0,
+        );
+    return {
+      costPerContainer,
+      breakdown: () => [],
+      marginPerContainer: (price) => {
+        const p = Number(price) || 0,
+          c = costPerContainer();
+        return {
+          price: p,
+          cost: c,
+          margin: p - c,
+          marginPercent: p > 0 ? (p - c) / p : 0,
+        };
+      },
+      report: () => ({
+        costPerContainer: costPerContainer(),
+        breakdown: [],
+        productionCost: 0,
+        producedUnits: 0,
+      }),
+    };
+  }
+  function costQty(n) {
+    return Number(n || 0).toLocaleString("es-MX", { maximumFractionDigits: 2 });
+  }
   function renderSupplies() {
     if (!$("suppliesTableBody")) return;
     const supplies = state.supplies.filter((s) => s.active !== false),
@@ -6447,6 +6536,39 @@
           )
           .join("")
       : '<tr><td colspan="7"><div class="empty">No hay insumos registrados.</div></td></tr>';
+    const engine = costEngine(),
+      perContainer = engine.costPerContainer(state.supplies),
+      margin = engine.marginPerContainer(
+        state.settings.defaultPrice,
+        state.supplies,
+      ),
+      costBreakdown = engine.breakdown(state.supplies);
+    $("suppliesMetrics").insertAdjacentHTML(
+      "beforeend",
+      [
+        metric(
+          "Costo por garrafón",
+          money(perContainer),
+          "Consumo × costo de insumos",
+        ),
+        metric(
+          "Margen por garrafón",
+          money(margin.margin),
+          `${int(Math.round(margin.marginPercent * 100))}% sobre ${money(margin.price)}`,
+        ),
+      ].join(""),
+    );
+    const costPanel = $("supplyCostPanel");
+    if (costPanel)
+      costPanel.innerHTML = costBreakdown.length
+        ? `<div class="panel-head"><h3>Costo por garrafón</h3><p class="muted">Consumo configurado × costo unitario</p></div>
+           <div class="table-responsive"><table><thead><tr><th>Insumo</th><th>Consumo/garrafón</th><th>Costo unitario</th><th>Costo/garrafón</th><th>% del costo</th></tr></thead><tbody>${costBreakdown
+             .map(
+               (item) =>
+                 `<tr><td><strong>${esc(item.name)}</strong></td><td>${costQty(item.consumptionPerUnit)} ${esc(item.unit)}</td><td>${money(item.costPerUnit)}</td><td>${money(item.costPerContainer)}</td><td>${int(Math.round(item.share * 100))}%</td></tr>`,
+             )
+             .join("")}</tbody></table></div>`
+        : `<div class="panel-head"><h3>Costo por garrafón</h3></div><div class="empty">Configura "consumo por garrafón" y "costo unitario" en tus insumos para calcular el costo de producción.</div>`;
     const movements = state.supplyMovements.slice(0, 80);
     $("supplyMovementsHistory").innerHTML = movements.length
       ? movements
