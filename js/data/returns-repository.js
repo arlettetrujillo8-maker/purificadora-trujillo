@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-inicio-accionable";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-venta-dos-columnas";
 
 export const returnsRepository = {
   list: async () => {

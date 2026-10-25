@@ -4068,3 +4068,91 @@ input[type="search"] {
     min-height: 44px;
   }
 }
+
+/* ---- Fase 2: venta con resumen pegajoso ---- */
+.sale-aside {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
+#view-ventas .sale-checkout {
+  margin: 0;
+}
+@media (min-width: 1100px) {
+  /* El sticky necesita un scrollport sin recorte: en escritorio el body
+     deja de recortar (en movil se mantiene para evitar scroll lateral). */
+  body {
+    overflow: visible;
+  }
+  #view-ventas .form-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.62fr);
+    align-items: start;
+  }
+  #view-ventas .sale-aside {
+    align-content: start;
+  }
+  #view-ventas .sale-checkout {
+    position: sticky;
+    /* debajo de la barra superior fija */
+    top: 96px;
+    z-index: 5;
+  }
+  #view-ventas .sales-list-panel {
+    max-height: 560px;
+    overflow-y: auto;
+  }
+}
+.sale-summary {
+  display: grid;
+  gap: 10px;
+}
+.sale-summary-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sale-summary-total span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sale-summary-total strong {
+  font-size: 30px;
+  line-height: 1;
+  color: var(--text);
+}
+.sale-summary-lines {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.sale-summary-lines > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sale-summary-lines span {
+  color: var(--muted);
+}
+.sale-summary-client {
+  font-size: 13px;
+}
+.sale-notes-details {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  background: var(--surface2);
+}
+.sale-notes-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.sale-notes-details textarea {
+  width: 100%;
+  margin-top: 8px;
+}

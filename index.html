@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20261025-inicio-accionable" />
+    <meta name="app-build" content="20261025-venta-dos-columnas" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
@@ -15,7 +15,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261025-inicio-accionable" />
+    <link rel="stylesheet" href="css/styles.css?v=20261025-venta-dos-columnas" />
   </head>
   <body>
     <div class="app-shell">
@@ -528,23 +528,25 @@
                     </label>
                   </div>
                 </details>
-                <label class="full sale-field-notes"
-                  >Notas
+                <details class="full sale-notes-details">
+                  <summary>Notas (opcional)</summary>
                   <textarea
                     id="saleNotes"
                     rows="2"
                     placeholder="Opcional"
                   ></textarea>
-                </label>
-              </div>
-              <div class="sale-checkout">
-              <div class="sale-summary" id="saleSummary"></div>
+                </details>
               </div>
             </form>
 
-            <div class="panel sales-list-panel">
-              <div class="panel-head"><h3>Últimas ventas</h3></div>
-              <div id="latestSales"></div>
+            <div class="sale-aside">
+              <div class="sale-checkout">
+                <div class="sale-summary" id="saleSummary"></div>
+              </div>
+              <div class="panel sales-list-panel">
+                <div class="panel-head"><h3>Últimas ventas</h3></div>
+                <div id="latestSales"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -2765,17 +2767,17 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20261025-inicio-accionable"></script>
-    <script src="js/safe-uuid.js?v=20261025-inicio-accionable"></script>
-    <script src="js/presentation-labels.js?v=20261025-inicio-accionable"></script>
-    <script src="js/user-display.js?v=20261025-inicio-accionable"></script>
-    <script src="js/empty-reconcile.js?v=20261025-inicio-accionable"></script>
-    <script src="js/sale-client-selection.js?v=20261025-inicio-accionable"></script>
-    <script src="js/data/offline-store.js?v=20261025-inicio-accionable"></script>
-    <script src="js/v3/costs.js?v=20261025-inicio-accionable"></script>
-    <script src="js/v3/orders.js?v=20261025-inicio-accionable"></script>
-    <script src="js/app.js?v=20261025-inicio-accionable"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20261025-inicio-accionable"></script>
+    <script src="js/central-auth-ui.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/safe-uuid.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/presentation-labels.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/user-display.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/empty-reconcile.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/sale-client-selection.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/data/offline-store.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/v3/costs.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/v3/orders.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/app.js?v=20261025-venta-dos-columnas"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20261025-venta-dos-columnas"></script>
     <script>
       // Si el arranque falla (sin conexión o caché incompleta), muestra un
       // aviso con reintento en lugar de dejar la pantalla en blanco.

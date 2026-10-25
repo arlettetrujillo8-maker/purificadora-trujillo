@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-inicio-accionable";
+import { selectAll } from "./repository-utils.js?v=20261025-venta-dos-columnas";
 
 export const reportsRepository = {
   listAudit: () =>

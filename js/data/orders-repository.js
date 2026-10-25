@@ -1,4 +1,4 @@
-import { selectAll, rpc, entityId } from "./repository-utils.js?v=20261025-inicio-accionable";
+import { selectAll, rpc, entityId } from "./repository-utils.js?v=20261025-venta-dos-columnas";
 
 // Pedidos programados. Si la migracion 20261025_orders_programados no esta
 // aplicada, las llamadas fallan y la app trabaja en modo local (localStorage).

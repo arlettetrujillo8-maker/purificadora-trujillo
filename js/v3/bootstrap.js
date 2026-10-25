@@ -6,25 +6,25 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-inicio-accionable";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-inicio-accionable";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-inicio-accionable";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-inicio-accionable";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-inicio-accionable";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-inicio-accionable";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-inicio-accionable";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-inicio-accionable";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-inicio-accionable";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-inicio-accionable";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-inicio-accionable";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-inicio-accionable";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-inicio-accionable";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-inicio-accionable";
-import { routesRepository } from "../data/routes-repository.js?v=20261025-inicio-accionable";
-import { ordersRepository } from "../data/orders-repository.js?v=20261025-inicio-accionable";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-inicio-accionable";
+} from "../data/supabase-client.js?v=20261025-venta-dos-columnas";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-venta-dos-columnas";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-venta-dos-columnas";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-venta-dos-columnas";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-venta-dos-columnas";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-venta-dos-columnas";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-venta-dos-columnas";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-venta-dos-columnas";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-venta-dos-columnas";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-venta-dos-columnas";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-venta-dos-columnas";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-venta-dos-columnas";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-venta-dos-columnas";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-venta-dos-columnas";
+import { routesRepository } from "../data/routes-repository.js?v=20261025-venta-dos-columnas";
+import { ordersRepository } from "../data/orders-repository.js?v=20261025-venta-dos-columnas";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-venta-dos-columnas";
 
-const BOOTSTRAP_BUILD = "20261025-inicio-accionable";
+const BOOTSTRAP_BUILD = "20261025-venta-dos-columnas";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
