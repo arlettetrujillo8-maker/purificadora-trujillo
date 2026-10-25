@@ -2701,43 +2701,72 @@ details.full summary {
 /* ---- Ronda: barra de progreso con extremos redondeados ---- */
 .round-progress span { border-radius: 99px; }
 
-/* ---- Barra flotante de venta (estilo carrito de Uber Eats / DiDi Food) ---- */
+/* Captura movil: una sola barra de total y accion sobre el area visible. */
+.payment-notes summary { cursor: pointer; padding: 12px 0; min-height: 44px; }
+.payment-footer { padding-top: 12px; }
 @media (max-width: 850px) {
-  #view-ventas.active #saleForm {
-    padding-bottom: 12px;
-  }
-  #view-ventas.active #saleForm .sale-summary {
+  dialog[open] {
     position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: calc(146px + env(safe-area-inset-bottom));
-    z-index: 34;
-    margin: 0;
-    border-radius: 16px 16px 0 0;
-    box-shadow: var(--shadow-lift);
+    top: calc(var(--visible-top, 0px) + 12px);
+    bottom: auto;
+    margin: 0 auto;
+    max-height: calc(var(--visible-height, 100dvh) - 24px);
+    overscroll-behavior: contain;
+    scroll-padding-block: 16px;
   }
-  #view-ventas.active #saleForm .sale-actions {
+  #paymentDialog { overflow: hidden; }
+  #paymentForm {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(var(--visible-height, 100dvh) - 24px);
+    padding: 16px;
+  }
+  #paymentForm .dialog-head { flex: 0 0 auto; margin-bottom: 8px; }
+  .payment-body { overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+  .payment-footer {
+    position: relative;
+    flex: 0 0 auto;
+    padding-top: 10px;
+    background: var(--surface, white);
+    border-top: 1px solid var(--border);
+  }
+  #paymentAmount { font-size: 24px; font-weight: 700; min-height: 48px; }
+  .payment-amount-actions { margin-block: 6px 10px; }
+  .payment-notes summary { font-size: 14px; }
+  #view-ventas.active #saleForm { padding-bottom: 12px; }
+  #view-ventas.active .sale-checkout {
     position: fixed;
-    left: 12px;
-    right: 12px;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
     bottom: calc(76px + env(safe-area-inset-bottom));
     z-index: 34;
-    background: var(--surface);
-    padding: 10px 12px;
-    border-radius: 0 0 16px 16px;
+    background: var(--surface, white);
+    border-radius: 16px;
     box-shadow: var(--shadow-lift);
   }
-  #view-ventas.active #saleForm .sale-actions button { min-width: 0; }
-  /* Espacio para que el contenido no quede oculto tras la barra flotante */
-  #view-ventas.active #saleForm::after {
-    content: "";
-    display: block;
-    height: 128px;
+  #view-ventas.active #saleForm .sale-summary {
+    position: static;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 16px 16px 0 0;
+    max-height: 80px;
+    overflow-y: auto;
   }
-}
-@media (max-width: 560px) {
-  #view-ventas.active #saleForm .sale-actions { flex-direction: row; }
-  #view-ventas.active #saleForm .sale-actions button { width: auto; }
+  #view-ventas.active #saleForm .sale-actions {
+    position: static;
+    flex-direction: row;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: none;
+  }
+  #view-ventas.active #saleForm .sale-actions button { min-width: 0; width: auto; min-height: 44px; }
+  body.keyboard-open #view-ventas.active .sale-checkout {
+    bottom: calc(var(--keyboard-inset, 0px) + max(6px, env(safe-area-inset-bottom)));
+  }
+  #view-ventas.active #saleForm::after { content: ""; display: block; height: 160px; }
+  .qty-stepper button { min-height: 48px; touch-action: manipulation; }
+  .payment-body input, .payment-body select, .payment-body textarea { scroll-margin-block: 12px; }
 }
 
 /* ---- Tarjetas y paneles: elevación sutil al interactuar ---- */

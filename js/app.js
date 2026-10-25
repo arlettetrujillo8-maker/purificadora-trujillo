@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20260818-ux-movil-v4";
+  const APP_SCRIPT_BUILD = "20260906-mobile-capture-v5";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2227,38 +2227,44 @@
   // debajo sin que cambie nada medible. visualViewport si reporta el area real
   // en ambos, y avisa cuando el teclado termina de animar.
   let focusedField = null;
-  function fieldIsHiddenByKeyboard(field) {
+  function focusedFieldBounds(field) {
     const view = window.visualViewport;
-    if (!view) return false;
+    let top = (view?.offsetTop || 0) + 12;
+    let bottom = (view ? view.offsetTop + view.height : innerHeight) - 12;
+    const dialog = field.closest("dialog");
+    const footer = dialog?.querySelector(".payment-footer") ||
+      (!dialog && document.querySelector("#view-ventas.active .sale-checkout"));
+    if (footer && getComputedStyle(footer).position !== "static")
+      bottom = Math.min(bottom, footer.getBoundingClientRect().top - 12);
+    if (dialog) {
+      const head = dialog.querySelector(".dialog-head");
+      if (head && dialog.id === "paymentDialog")
+        top = Math.max(top, head.getBoundingClientRect().bottom + 8);
+    }
+    return { top, bottom };
+  }
+  function fieldIsHiddenByKeyboard(field) {
+    const bounds = focusedFieldBounds(field);
     const box = field.getBoundingClientRect();
-    return box.bottom > view.height - 12 || box.top < 0;
+    return box.bottom > bounds.bottom || box.top < bounds.top;
   }
   function revealFocusedField() {
-    if (!focusedField?.isConnected) return;
-    if (!fieldIsHiddenByKeyboard(focusedField)) return;
-    const view = window.visualViewport;
+    if (!focusedField?.isConnected || !fieldIsHiddenByKeyboard(focusedField)) return;
     const rect = focusedField.getBoundingClientRect();
-    if (!view) {
-      focusedField.scrollIntoView({ block: "nearest", behavior: "auto" });
-      return;
+    const bounds = focusedFieldBounds(focusedField);
+    const delta = rect.top < bounds.top
+      ? rect.top - bounds.top
+      : rect.bottom - bounds.bottom;
+    // Un dialogo desplaza su propio contenido, no la pagina del fondo.
+    let scroller = focusedField.parentElement;
+    while (scroller && scroller !== document.body) {
+      if (/(auto|scroll)/.test(getComputedStyle(scroller).overflowY) &&
+          scroller.scrollHeight > scroller.clientHeight) break;
+      scroller = scroller.parentElement;
     }
-    // Desplazamiento MINIMO: subir el campo apenas para que quede visible
-    // sobre el teclado, sin centrarlo. Centrar esconde el resto del formulario
-    // y se siente como si el teclado tapara toda la pantalla.
-    const visibleTop = view.offsetTop;
-    const visibleBottom = view.offsetTop + view.height;
-    const margin = 16;
-    if (rect.bottom > visibleBottom - margin) {
-      window.scrollBy({
-        top: rect.bottom - (visibleBottom - margin),
-        behavior: "auto",
-      });
-    } else if (rect.top < visibleTop + margin) {
-      window.scrollBy({
-        top: rect.top - (visibleTop + margin),
-        behavior: "auto",
-      });
-    }
+    if (scroller && scroller !== document.body)
+      scroller.scrollBy({ top: delta, behavior: "auto" });
+    else window.scrollBy({ top: delta, behavior: "auto" });
   }
   function scrollFieldIntoViewOnFocus(e) {
     const field = e.target;
@@ -2273,32 +2279,33 @@
   }
   function bindKeyboardAwareScroll() {
     const view = window.visualViewport;
-    if (!view) return;
-    // iOS no encoge el layout con el teclado; se agrega un colchon al body
-    // equivalente al alto del teclado para que el contenido pueda subir.
-    // Umbral de 40px: ignora los parpadeos durante la animacion de apertura.
+    const isEditing = () => document.activeElement?.matches?.(
+      "input:not([readonly]):not([type=hidden]), textarea, select",
+    );
     const applyKeyboardInset = () => {
-      const offset = Math.max(0, window.innerHeight - view.height);
-      document.body.style.paddingBottom =
-        offset > 40 ? `${offset}px` : "";
-      // Con el teclado abierto se oculta la barra inferior para que la forma
-      // tenga todo el espacio disponible (la barra "inicio/venta/..." compite
-      // con el teclado y deja la pantalla apretada).
-      document.body.classList.toggle("keyboard-open", offset > 40);
+      // offsetTop importa cuando Safari desplaza el viewport al enfocar.
+      // Con resizes-content la altura de layout ya se reduce: no sumar dos veces.
+      const offset = view ? Math.max(0, window.innerHeight - view.height - view.offsetTop) : 0;
+      const root = document.documentElement.style;
+      root.setProperty("--visible-height", `${view?.height || innerHeight}px`);
+      root.setProperty("--visible-top", `${view?.offsetTop || 0}px`);
+      root.setProperty("--keyboard-inset", `${offset}px`);
+      document.body.style.paddingBottom = offset > 40 ? `${offset}px` : "";
+      document.body.classList.toggle("keyboard-open", Boolean(isEditing()) || offset > 40);
+      requestAnimationFrame(revealFocusedField);
     };
-    view.addEventListener("resize", () => {
-      applyKeyboardInset();
-      revealFocusedField();
-    });
-    view.addEventListener("scroll", revealFocusedField);
+    view?.addEventListener("resize", applyKeyboardInset);
+    view?.addEventListener("scroll", applyKeyboardInset);
+    window.addEventListener("resize", applyKeyboardInset);
     document.addEventListener("focusin", (e) => {
-      if (e.target?.matches?.("input, textarea, select"))
+      if (e.target?.matches?.("input, textarea, select")) {
         document.body.classList.add("keyboard-open");
+        applyKeyboardInset();
+      }
     });
     document.addEventListener("focusout", (e) => {
       if (e.target === focusedField) focusedField = null;
-      if (e.target?.matches?.("input, textarea, select"))
-        document.body.classList.remove("keyboard-open");
+      requestAnimationFrame(applyKeyboardInset);
     });
     applyKeyboardInset();
   }

@@ -1,0 +1,210 @@
+[
+  {
+    "width": 320,
+    "height": 568,
+    "overlay": false,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 410,
+      "barTop": 422,
+      "barBottom": 562,
+      "visibleBottom": 568,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 201,
+      "fieldBottom": 257,
+      "actionTop": 442,
+      "actionBottom": 486,
+      "visibleTop": 0,
+      "visibleBottom": 568,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  },
+  {
+    "width": 360,
+    "height": 800,
+    "overlay": false,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 482,
+      "barTop": 654,
+      "barBottom": 794,
+      "visibleBottom": 800,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 180,
+      "fieldBottom": 236,
+      "actionTop": 421,
+      "actionBottom": 465,
+      "visibleTop": 0,
+      "visibleBottom": 800,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "overlay": false,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 482,
+      "barTop": 698,
+      "barBottom": 838,
+      "visibleBottom": 844,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 180,
+      "fieldBottom": 236,
+      "actionTop": 421,
+      "actionBottom": 465,
+      "visibleTop": 0,
+      "visibleBottom": 844,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  },
+  {
+    "width": 360,
+    "height": 400,
+    "overlay": false,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 224,
+      "barTop": 254,
+      "barBottom": 394,
+      "visibleBottom": 400,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 180,
+      "fieldBottom": 236,
+      "actionTop": 328,
+      "actionBottom": 372,
+      "visibleTop": 0,
+      "visibleBottom": 400,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "height": 400,
+    "overlay": false,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 224,
+      "barTop": 254,
+      "barBottom": 394,
+      "visibleBottom": 400,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 180,
+      "fieldBottom": 236,
+      "actionTop": 328,
+      "actionBottom": 372,
+      "visibleTop": 0,
+      "visibleBottom": 400,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  },
+  {
+    "width": 430,
+    "height": 350,
+    "overlay": false,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 192,
+      "barTop": 204,
+      "barBottom": 344,
+      "visibleBottom": 350,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 180,
+      "fieldBottom": 236,
+      "actionTop": 278,
+      "actionBottom": 322,
+      "visibleTop": 0,
+      "visibleBottom": 350,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "overlay": true,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 277,
+      "barTop": 289,
+      "barBottom": 429,
+      "visibleBottom": 435,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 215,
+      "fieldBottom": 271,
+      "actionTop": 363,
+      "actionBottom": 407,
+      "visibleTop": 35,
+      "visibleBottom": 435,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "overlay": false,
+    "sale": {
+      "quantity": "3",
+      "total": "$42.00",
+      "fieldBottom": 474,
+      "barTop": 868,
+      "barBottom": 1038,
+      "visibleBottom": 900,
+      "overflow": false
+    },
+    "payment": {
+      "fieldTop": 394,
+      "fieldBottom": 439,
+      "actionTop": 610,
+      "actionBottom": 654,
+      "visibleTop": 0,
+      "visibleBottom": 900,
+      "valid": true,
+      "overflow": false
+    },
+    "notesVisible": true,
+    "errors": []
+  }
+]

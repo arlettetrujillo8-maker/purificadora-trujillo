@@ -6,23 +6,23 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20260818-ux-movil-v4";
-import { OperationalStore } from "../data/operational-store.js?v=20260818-ux-movil-v4";
-import { profilesRepository } from "../data/profiles-repository.js?v=20260818-ux-movil-v4";
-import { clientsRepository } from "../data/clients-repository.js?v=20260818-ux-movil-v4";
-import { salesRepository } from "../data/sales-repository.js?v=20260818-ux-movil-v4";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20260818-ux-movil-v4";
-import { cashRepository } from "../data/cash-repository.js?v=20260818-ux-movil-v4";
-import { roundsRepository } from "../data/rounds-repository.js?v=20260818-ux-movil-v4";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20260818-ux-movil-v4";
-import { returnsRepository } from "../data/returns-repository.js?v=20260818-ux-movil-v4";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20260818-ux-movil-v4";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20260818-ux-movil-v4";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20260818-ux-movil-v4";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20260818-ux-movil-v4";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20260818-ux-movil-v4";
+} from "../data/supabase-client.js?v=20260906-mobile-capture-v5";
+import { OperationalStore } from "../data/operational-store.js?v=20260906-mobile-capture-v5";
+import { profilesRepository } from "../data/profiles-repository.js?v=20260906-mobile-capture-v5";
+import { clientsRepository } from "../data/clients-repository.js?v=20260906-mobile-capture-v5";
+import { salesRepository } from "../data/sales-repository.js?v=20260906-mobile-capture-v5";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20260906-mobile-capture-v5";
+import { cashRepository } from "../data/cash-repository.js?v=20260906-mobile-capture-v5";
+import { roundsRepository } from "../data/rounds-repository.js?v=20260906-mobile-capture-v5";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20260906-mobile-capture-v5";
+import { returnsRepository } from "../data/returns-repository.js?v=20260906-mobile-capture-v5";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20260906-mobile-capture-v5";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20260906-mobile-capture-v5";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20260906-mobile-capture-v5";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20260906-mobile-capture-v5";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20260906-mobile-capture-v5";
 
-const BOOTSTRAP_BUILD = "20260818-ux-movil-v4";
+const BOOTSTRAP_BUILD = "20260906-mobile-capture-v5";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

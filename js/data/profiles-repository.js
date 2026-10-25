@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20260818-ux-movil-v4";
-import { selectAll, rpc } from "./repository-utils.js?v=20260818-ux-movil-v4";
+} from "./supabase-client.js?v=20260906-mobile-capture-v5";
+import { selectAll, rpc } from "./repository-utils.js?v=20260906-mobile-capture-v5";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

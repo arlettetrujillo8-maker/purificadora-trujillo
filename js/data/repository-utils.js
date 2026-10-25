@@ -1,7 +1,7 @@
 import {
   supabase,
   getDeviceId,
-} from "./supabase-client.js?v=20260818-ux-movil-v4";
+} from "./supabase-client.js?v=20260906-mobile-capture-v5";
 
 const CENTRAL_AUTH_REQUIRED_EVENT = "purificadora:central-auth-required";
 const CENTRAL_SESSION_ERROR = "central_session_expired";

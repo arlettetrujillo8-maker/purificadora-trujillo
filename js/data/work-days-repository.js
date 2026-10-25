@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260818-ux-movil-v4";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260906-mobile-capture-v5";
 
 // Frontera de jornada. Cada renglon es un cierre; la jornada en curso es todo
 // lo ocurrido despues del ultimo closed_at. No se guarda work_day_id en las
