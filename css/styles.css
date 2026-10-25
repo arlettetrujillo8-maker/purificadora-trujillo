@@ -3203,3 +3203,329 @@ details.full summary {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Fluent 2 (Windows 11) — capa visual
+   Tokens y componentes con el lenguaje de Windows 11: Mica,
+   esquinas de 4/8 px, tipografia Segoe UI Variable, acento azul
+   y movimiento corto. No cambia layout ni logica.
+   ============================================================ */
+:root {
+  --bg: #f3f3f3;
+  --surface: #ffffff;
+  --surface2: #f7f8fa;
+  --text: #1b1b1b;
+  --muted: #5f5f5f;
+  --primary: #005fb8;
+  --primary-dark: #004c93;
+  --border: #e3e3e3;
+  --success: #0f7b0f;
+  --warning: #9d5d00;
+  --danger: #c42b1c;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 8px 20px rgba(0, 0, 0, 0.06);
+  --radius: 8px;
+  --fluent-accent-hover: #1a6fc4;
+  --fluent-stroke-bottom: rgba(0, 0, 0, 0.14);
+  --fluent-fill-subtle: rgba(0, 0, 0, 0.032);
+  --fluent-acrylic: rgba(252, 252, 252, 0.86);
+  --fluent-motion: cubic-bezier(0.2, 0, 0, 1);
+  --fluent-radius-control: 4px;
+}
+
+body {
+  font-family:
+    "Segoe UI Variable Text",
+    "Segoe UI Variable",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background:
+    radial-gradient(1100px 520px at 0% 0%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(900px 480px at 100% 0%, #eef4fb 0%, rgba(238, 244, 251, 0) 58%),
+    var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.panel-head h3,
+.topbar h1 {
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/* ---- Controles ---- */
+button,
+input,
+select,
+textarea {
+  border-radius: var(--fluent-radius-control);
+  transition:
+    background-color 120ms var(--fluent-motion),
+    border-color 120ms var(--fluent-motion),
+    box-shadow 120ms var(--fluent-motion),
+    transform 120ms var(--fluent-motion);
+}
+
+input,
+select,
+textarea {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-bottom-color: var(--fluent-stroke-bottom);
+  padding: 8px 10px;
+  min-height: 36px;
+  color: var(--text);
+}
+input:hover,
+select:hover,
+textarea:hover {
+  background: #fbfbfb;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--border);
+  border-bottom-color: var(--primary);
+  box-shadow: 0 1px 0 0 var(--primary);
+}
+label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.primary-btn {
+  background: var(--primary);
+  border: 1px solid transparent;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.primary-btn:hover {
+  background: var(--fluent-accent-hover);
+}
+.primary-btn:active {
+  background: var(--primary-dark);
+  transform: scale(0.99);
+}
+.secondary-btn {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-bottom-color: var(--fluent-stroke-bottom);
+  color: var(--text);
+  font-weight: 600;
+}
+.secondary-btn:hover {
+  background: #f7f7f7;
+}
+.danger-btn {
+  background: var(--danger);
+  border: 1px solid transparent;
+  color: #fff;
+  font-weight: 600;
+}
+.danger-btn:hover {
+  background: #a92218;
+}
+.text-btn {
+  color: var(--primary);
+  font-weight: 600;
+}
+.text-btn:hover {
+  background: var(--fluent-fill-subtle);
+}
+.icon-btn {
+  border-radius: var(--fluent-radius-control);
+  color: var(--muted);
+}
+.icon-btn:hover {
+  background: var(--fluent-fill-subtle);
+  color: var(--text);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+  border-radius: var(--fluent-radius-control);
+}
+
+/* ---- Superficies ---- */
+.panel,
+.form-card,
+.table-panel,
+.sales-list-panel,
+.route-clients-panel,
+.maintenance-panel,
+.auth-card,
+.access-choice-card,
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 2px 6px rgba(0, 0, 0, 0.03);
+}
+.hero-card {
+  background: linear-gradient(135deg, #0a3d75 0%, #005fb8 62%, #0f6fc4 100%);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.metric-card {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+  transition:
+    transform 140ms var(--fluent-motion),
+    box-shadow 140ms var(--fluent-motion);
+}
+.metric-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+.panel-head h3 {
+  font-size: 1rem;
+}
+.eyebrow {
+  color: var(--primary);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Navegacion: Mica y acento ---- */
+.topbar {
+  background: var(--fluent-acrylic);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(30px) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) saturate(1.4);
+}
+.sidebar {
+  background: var(--fluent-acrylic);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(30px) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) saturate(1.4);
+}
+.nav-item {
+  border-radius: var(--fluent-radius-control);
+  color: var(--text);
+  font-weight: 600;
+  transition:
+    background-color 120ms var(--fluent-motion),
+    color 120ms var(--fluent-motion);
+}
+.nav-item:hover {
+  background: var(--fluent-fill-subtle);
+}
+.nav-item.active {
+  background: rgba(0, 95, 184, 0.1);
+  color: var(--primary);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.bottom-nav {
+  background: var(--fluent-acrylic);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(30px) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) saturate(1.4);
+}
+.bottom-nav button.active {
+  color: var(--primary);
+}
+
+/* ---- Dialogos y avisos ---- */
+dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.dialog-head h3 {
+  font-weight: 600;
+}
+.info-box,
+.danger-box,
+.warning-box {
+  border-radius: var(--fluent-radius-control);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+.toast {
+  border-radius: var(--fluent-radius-control);
+  background: var(--fluent-acrylic);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(30px) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) saturate(1.4);
+  font-weight: 600;
+}
+.toast.error {
+  border-left-color: var(--danger);
+}
+.pill,
+.status-badge,
+.session-chip,
+.admin-mode-badge {
+  border-radius: var(--fluent-radius-control);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.admin-mode-badge {
+  color: var(--primary);
+  border-color: rgba(0, 95, 184, 0.28);
+  background: rgba(0, 95, 184, 0.08);
+}
+
+/* ---- Tablas ---- */
+thead th {
+  background: #fafafa;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+tbody td {
+  border-bottom: 1px solid #ededed;
+}
+tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* ---- Detalles Fluent ---- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.34);
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

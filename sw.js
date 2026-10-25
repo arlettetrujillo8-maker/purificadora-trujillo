@@ -1,4 +1,4 @@
-const BUILD = "20261025-f2-clientes";
+const BUILD = "20261025-fluent-win11";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",

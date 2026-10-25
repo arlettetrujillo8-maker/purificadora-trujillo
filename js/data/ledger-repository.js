@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-f2-clientes";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-fluent-win11";
 
 export const ledgerRepository = {
   listPayments: () =>
