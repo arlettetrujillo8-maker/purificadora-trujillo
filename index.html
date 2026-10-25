@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20261025-rutas-pestanas" />
+    <meta name="app-build" content="20261025-reportes-filtros" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
@@ -15,7 +15,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261025-rutas-pestanas" />
+    <link rel="stylesheet" href="css/styles.css?v=20261025-reportes-filtros" />
   </head>
   <body>
     <div class="app-shell">
@@ -1046,6 +1046,32 @@
         </section>
 
         <section class="view" id="view-reportes">
+          <div class="reports-filters">
+            <div class="reports-filters-title">
+              <h2>Reportes</h2>
+              <p class="muted">Ventas, cobros, deudas y márgenes del periodo.</p>
+            </div>
+            <div class="reports-filters-controls">
+              <label
+                >Período
+                <select id="reportPeriod">
+                  <option value="dia">Hoy</option>
+                  <option value="semana">Últimos 7 días</option>
+                  <option value="mes">Este mes</option>
+                </select>
+              </label>
+              <label
+                >Ruta
+                <select id="reportRoute"></select>
+              </label>
+              <button id="reportsExportBtn" class="secondary-btn" type="button">
+                Exportar CSV
+              </button>
+              <button id="reportsPrintBtn" class="secondary-btn" type="button">
+                Imprimir
+              </button>
+            </div>
+          </div>
           <div id="reportsContent"></div>
         </section>
 
@@ -2816,17 +2842,17 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/safe-uuid.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/presentation-labels.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/user-display.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/empty-reconcile.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/sale-client-selection.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/data/offline-store.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/v3/costs.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/v3/orders.js?v=20261025-rutas-pestanas"></script>
-    <script src="js/app.js?v=20261025-rutas-pestanas"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/central-auth-ui.js?v=20261025-reportes-filtros"></script>
+    <script src="js/safe-uuid.js?v=20261025-reportes-filtros"></script>
+    <script src="js/presentation-labels.js?v=20261025-reportes-filtros"></script>
+    <script src="js/user-display.js?v=20261025-reportes-filtros"></script>
+    <script src="js/empty-reconcile.js?v=20261025-reportes-filtros"></script>
+    <script src="js/sale-client-selection.js?v=20261025-reportes-filtros"></script>
+    <script src="js/data/offline-store.js?v=20261025-reportes-filtros"></script>
+    <script src="js/v3/costs.js?v=20261025-reportes-filtros"></script>
+    <script src="js/v3/orders.js?v=20261025-reportes-filtros"></script>
+    <script src="js/app.js?v=20261025-reportes-filtros"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20261025-reportes-filtros"></script>
     <script>
       // Si el arranque falla (sin conexión o caché incompleta), muestra un
       // aviso con reintento en lugar de dejar la pantalla en blanco.

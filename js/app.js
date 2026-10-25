@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-rutas-pestanas";
+  const APP_SCRIPT_BUILD = "20261025-reportes-filtros";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2317,7 +2317,11 @@
     });
     $("newClientBtn").addEventListener("click", () => openClientDialog());
     $("newOrderBtn")?.addEventListener("click", () => openOrderDialog());
-    $("routeTabRound")?.addEventListener("click", () => setRouteTab("round"));
+    $("reportPeriod")?.addEventListener("change", renderReports);
+    $("reportRoute")?.addEventListener("change", renderReports);
+    $("reportsExportBtn")?.addEventListener("click", exportReportsCsv);
+    $("reportsPrintBtn")?.addEventListener("click", () => window.print());
+        $("routeTabRound")?.addEventListener("click", () => setRouteTab("round"));
     $("routeTabOrders")?.addEventListener("click", () => setRouteTab("orders"));
     $("newRouteOrderBtn")?.addEventListener("click", () => openOrderDialog());
     $("orderForm")?.addEventListener("submit", saveOrder);
@@ -6318,10 +6322,88 @@
         )}</div>${s.closedAt ? `<div class="info-box">Contado: <strong>${money(s.countedAmount)}</strong><br>Diferencia: <strong>${money(s.difference)}</strong><br>Motivo: ${esc(s.differenceReason || "Sin diferencia")}</div>` : ""}`;
     showManagedDialog($("cashDetailDialog"));
   }
+  function dataTable(headers, rows, className = "reports-table") {
+    return `<div class="table-responsive"><table class="data-table ${className}"><thead><tr>${headers
+      .map((header) => `<th>${header}</th>`)
+      .join("")}</tr></thead><tbody>${rows
+      .map((cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+      .join("")}</tbody></table></div>`;
+  }
+  function csvCell(value) {
+    const text = String(value ?? "").replace(/\s+/g, " ").trim();
+    return /[",;\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+  function exportReportsCsv() {
+    const content = $("reportsContent");
+    if (!content) return;
+    const periodLabel =
+      $("reportPeriod")?.selectedOptions?.[0]?.textContent?.trim() || "Periodo";
+    const routeText =
+      $("reportRoute")?.selectedOptions?.[0]?.textContent?.trim() || "Todas";
+    const lines = [
+      csvCell(`Reportes · ${periodLabel} · Ruta: ${routeText}`),
+      "",
+      "Indicador,Valor,Detalle",
+    ];
+    content.querySelectorAll(".reports-metrics .metric-card").forEach((card) => {
+      lines.push(
+        [
+          card.querySelector(".label")?.textContent,
+          card.querySelector("strong")?.textContent,
+          card.querySelector("small")?.textContent,
+        ]
+          .map(csvCell)
+          .join(","),
+      );
+    });
+    content.querySelectorAll(".reports-section").forEach((section) => {
+      const title = section.querySelector("h3")?.textContent?.trim() || "Tabla";
+      lines.push("");
+      lines.push(csvCell(title));
+      const table = section.querySelector("table");
+      if (!table) return;
+      [...table.querySelectorAll("tr")].forEach((row) => {
+        lines.push(
+          [...row.children].map((cell) => csvCell(cell.textContent)).join(","),
+        );
+      });
+    });
+    const blob = new Blob([`\ufeff${lines.join("\n")}`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `reportes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+    toast("Reporte exportado en CSV");
+  }
   function renderReports() {
     // El <select> se genera dentro de esta misma funcion, asi que en el primer
     // render todavia no existe: se cae al periodo por defecto.
     const period = $("reportPeriod")?.value || "dia";
+    const routeSelect = $("reportRoute");
+    if (routeSelect) {
+      const options = [
+        "all",
+        ...routeCodes(),
+        "ventanilla",
+        "fuera_ruta",
+        "fuera_horario",
+      ];
+      const current = routeSelect.value || "all";
+      routeSelect.innerHTML = options
+        .map(
+          (code) =>
+            `<option value="${code}">${code === "all" ? "Todas" : esc(routeLabel(code))}</option>`,
+        )
+        .join("");
+      routeSelect.value = options.includes(current) ? current : "all";
+    }
+    const routeFilter = $("reportRoute")?.value || "all";
     const now = new Date();
     let startDate, endDate = now;
 
@@ -6340,7 +6422,8 @@
       .filter((s) => {
         const d = new Date(s.date);
         return d >= startDate && d <= endDate;
-      });
+      })
+      .filter((s) => routeFilter === "all" || s.channel === routeFilter);
     const expenses = state.expenses.filter((e) => {
       const d = new Date(e.date);
       return d >= startDate && d <= endDate;
@@ -6377,7 +6460,7 @@
         state.supplyMovements,
         startDate,
       );
-    const byChannel = Object.keys(CHANNELS).map((k) => {
+    const allChannels = Object.keys(CHANNELS).map((k) => {
       const channelSales = sales.filter((s) => s.channel === k),
         units = channelSales.reduce((a, s) => a + Number(s.qty || 0), 0),
         total = channelSales.reduce((a, s) => a + s.total, 0),
@@ -6394,6 +6477,10 @@
         ),
       };
     });
+    const byChannel =
+      routeFilter === "all"
+        ? allChannels
+        : allChannels.filter((c) => c.channel === routeLabel(routeFilter));
 
     const clientsWithDebt = state.clients
       .filter((c) => clientBalance(c.id) > 0.009)
@@ -6406,20 +6493,6 @@
       .slice(0, 10);
 
     const html = `
-      <div class="reports-header">
-        <h2>Reportes</h2>
-        <div class="report-filters">
-          <label>
-            Período:
-            <select id="reportPeriod">
-              <option value="dia" ${period === "dia" ? "selected" : ""}>Hoy</option>
-              <option value="semana" ${period === "semana" ? "selected" : ""}>Últimos 7 días</option>
-              <option value="mes" ${period === "mes" ? "selected" : ""}>Este mes</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
       <div class="reports-metrics">
         <div class="metric-card">
           <span class="label">Ventas totales</span>
@@ -6465,58 +6538,41 @@
 
       <div class="reports-section">
         <h3>Por canal</h3>
-        <div class="table-responsive">
-          <table class="reports-table">
-            <thead>
-              <tr><th>Canal</th><th>Garrafones</th><th>No regresados</th><th>Ventas</th><th>Costo</th><th>Margen</th><th>%</th></tr>
-            </thead>
-            <tbody>
-              ${byChannel
-                .map(
-                  (c) =>
-                    `<tr><td>${c.channel}</td><td>${int(c.units)}</td><td class="${c.unreturned > 0 ? "amount-danger" : ""}">${int(c.unreturned)}</td><td>${money(c.sales)}</td><td>${money(c.cost)}</td><td class="${c.margin < 0 ? "amount-danger" : ""}">${money(c.margin)}</td><td>${c.sales > 0 ? int(Math.round((c.margin / c.sales) * 100)) : 0}%</td></tr>`,
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </div>
+        ${dataTable(
+          ["Canal", "Garrafones", "No regresados", "Ventas", "Costo", "Margen", "%"],
+          byChannel.map((c) => [
+            c.channel,
+            int(c.units),
+            c.unreturned > 0 ? `<span class="amount-danger">${int(c.unreturned)}</span>` : int(c.unreturned),
+            money(c.sales),
+            money(c.cost),
+            c.margin < 0 ? `<span class="amount-danger">${money(c.margin)}</span>` : money(c.margin),
+            `${c.sales > 0 ? int(Math.round((c.margin / c.sales) * 100)) : 0}%`,
+          ]),
+        )}
       </div>
 
       <div class="reports-section">
         <h3>Top 10 - Clientes con deuda</h3>
-        <div class="table-responsive">
-          <table class="reports-table">
-            <thead>
-              <tr><th>Cliente</th><th>Deuda</th></tr>
-            </thead>
-            <tbody>
-              ${clientsWithDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${money(clientBalance(c.id))}</td></tr>`).join("")}
-            </tbody>
-          </table>
-        </div>
+        ${dataTable(
+          ["Cliente", "Deuda"],
+          clientsWithDebt.map((c) => [esc(c.name), money(clientBalance(c.id))]),
+        )}
       </div>
 
       <div class="reports-section">
         <h3>Top 10 - Garrafones pendientes por cliente</h3>
-        <div class="table-responsive">
-          <table class="reports-table">
-            <thead>
-              <tr><th>Cliente</th><th>Garrafones</th></tr>
-            </thead>
-            <tbody>
-              ${clientsWithContainerDebt.map((c) => `<tr><td>${esc(c.name)}</td><td>${int(c.containerDebt || 0)}</td></tr>`).join("")}
-            </tbody>
-          </table>
-        </div>
+        ${dataTable(
+          ["Cliente", "Garrafones"],
+          clientsWithContainerDebt.map((c) => [esc(c.name), int(c.containerDebt || 0)]),
+        )}
       </div>
     `;
 
     const container = $("reportsContent");
     if (!container) return;
     container.innerHTML = html;
-    // renderReports vive dentro del IIFE, asi que no se puede llamar desde un
-    // onchange inline: se reengancha el listener despues de pintar el select.
-    $("reportPeriod")?.addEventListener("change", renderReports);
+
   }
   async function openCash(e) {
     e.preventDefault();

@@ -6,25 +6,25 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-rutas-pestanas";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-rutas-pestanas";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-rutas-pestanas";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-rutas-pestanas";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-rutas-pestanas";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-rutas-pestanas";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-rutas-pestanas";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-rutas-pestanas";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-rutas-pestanas";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-rutas-pestanas";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-rutas-pestanas";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-rutas-pestanas";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-rutas-pestanas";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-rutas-pestanas";
-import { routesRepository } from "../data/routes-repository.js?v=20261025-rutas-pestanas";
-import { ordersRepository } from "../data/orders-repository.js?v=20261025-rutas-pestanas";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-rutas-pestanas";
+} from "../data/supabase-client.js?v=20261025-reportes-filtros";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-reportes-filtros";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-reportes-filtros";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-reportes-filtros";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-reportes-filtros";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-reportes-filtros";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-reportes-filtros";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-reportes-filtros";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-reportes-filtros";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-reportes-filtros";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-reportes-filtros";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-reportes-filtros";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-reportes-filtros";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-reportes-filtros";
+import { routesRepository } from "../data/routes-repository.js?v=20261025-reportes-filtros";
+import { ordersRepository } from "../data/orders-repository.js?v=20261025-reportes-filtros";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-reportes-filtros";
 
-const BOOTSTRAP_BUILD = "20261025-rutas-pestanas";
+const BOOTSTRAP_BUILD = "20261025-reportes-filtros";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

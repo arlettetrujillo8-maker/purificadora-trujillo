@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-rutas-pestanas";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-reportes-filtros";
 
 export const ledgerRepository = {
   listPayments: () =>

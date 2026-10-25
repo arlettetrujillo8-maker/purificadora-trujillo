@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-rutas-pestanas";
+import { selectAll } from "./repository-utils.js?v=20261025-reportes-filtros";
 
 export const reportsRepository = {
   listAudit: () =>

@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-rutas-pestanas";
-import { clientsRepository } from "./clients-repository.js?v=20261025-rutas-pestanas";
-import { salesRepository } from "./sales-repository.js?v=20261025-rutas-pestanas";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-rutas-pestanas";
-import { cashRepository } from "./cash-repository.js?v=20261025-rutas-pestanas";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-rutas-pestanas";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-rutas-pestanas";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-rutas-pestanas";
-import { settingsRepository } from "./settings-repository.js?v=20261025-rutas-pestanas";
-import { reportsRepository } from "./reports-repository.js?v=20261025-rutas-pestanas";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-rutas-pestanas";
-import { returnsRepository } from "./returns-repository.js?v=20261025-rutas-pestanas";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-rutas-pestanas";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-rutas-pestanas";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-reportes-filtros";
+import { clientsRepository } from "./clients-repository.js?v=20261025-reportes-filtros";
+import { salesRepository } from "./sales-repository.js?v=20261025-reportes-filtros";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-reportes-filtros";
+import { cashRepository } from "./cash-repository.js?v=20261025-reportes-filtros";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-reportes-filtros";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-reportes-filtros";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-reportes-filtros";
+import { settingsRepository } from "./settings-repository.js?v=20261025-reportes-filtros";
+import { reportsRepository } from "./reports-repository.js?v=20261025-reportes-filtros";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-reportes-filtros";
+import { returnsRepository } from "./returns-repository.js?v=20261025-reportes-filtros";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-reportes-filtros";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-reportes-filtros";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

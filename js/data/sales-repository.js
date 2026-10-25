@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-rutas-pestanas";
-import { supabase } from "./supabase-client.js?v=20261025-rutas-pestanas";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-reportes-filtros";
+import { supabase } from "./supabase-client.js?v=20261025-reportes-filtros";
 
 export const salesRepository = {
   list: () =>
