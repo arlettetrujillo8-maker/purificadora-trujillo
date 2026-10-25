@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20261025-pedidos" />
+    <meta name="app-build" content="20261025-venta-efectivo" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
@@ -15,7 +15,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261025-pedidos" />
+    <link rel="stylesheet" href="css/styles.css?v=20261025-venta-efectivo" />
   </head>
   <body>
     <div class="app-shell">
@@ -438,6 +438,31 @@
                     value="0"
                   />
                 </label>
+
+                <div class="sale-cash-box" id="saleCashBox">
+                  <label
+                    >Efectivo recibido
+                    <input
+                      id="saleCashReceived"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputmode="decimal"
+                      placeholder="Opcional"
+                    />
+                  </label>
+                  <div class="sale-change" id="saleChangeBox" role="status">
+                    <span>Cambio</span><strong id="saleChange">$0.00</strong>
+                  </div>
+                </div>
+                <div class="sale-actions sale-actions-inline">
+                  <button class="secondary-btn" id="cancelSaleBtn" type="button">
+                    Cancelar
+                  </button>
+                  <button class="primary-btn" id="saleSubmitBtn" type="submit">
+                    Registrar venta
+                  </button>
+                </div>
                 <details class="full container-exception" id="saleContainerException">
                   <summary>
                     <span>Envases del cliente</span>
@@ -478,14 +503,6 @@
               </div>
               <div class="sale-checkout">
               <div class="sale-summary" id="saleSummary"></div>
-              <div class="sale-actions">
-                <button class="secondary-btn" id="cancelSaleBtn" type="button">
-                  Cancelar
-                </button>
-                <button class="primary-btn" id="saleSubmitBtn" type="submit">
-                  Registrar venta
-                </button>
-              </div>
               </div>
             </form>
 
@@ -2712,16 +2729,16 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20261025-pedidos"></script>
-    <script src="js/safe-uuid.js?v=20261025-pedidos"></script>
-    <script src="js/presentation-labels.js?v=20261025-pedidos"></script>
-    <script src="js/user-display.js?v=20261025-pedidos"></script>
-    <script src="js/empty-reconcile.js?v=20261025-pedidos"></script>
-    <script src="js/sale-client-selection.js?v=20261025-pedidos"></script>
-    <script src="js/data/offline-store.js?v=20261025-pedidos"></script>
-    <script src="js/v3/costs.js?v=20261025-pedidos"></script>
-    <script src="js/v3/orders.js?v=20261025-pedidos"></script>
-    <script src="js/app.js?v=20261025-pedidos"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20261025-pedidos"></script>
+    <script src="js/central-auth-ui.js?v=20261025-venta-efectivo"></script>
+    <script src="js/safe-uuid.js?v=20261025-venta-efectivo"></script>
+    <script src="js/presentation-labels.js?v=20261025-venta-efectivo"></script>
+    <script src="js/user-display.js?v=20261025-venta-efectivo"></script>
+    <script src="js/empty-reconcile.js?v=20261025-venta-efectivo"></script>
+    <script src="js/sale-client-selection.js?v=20261025-venta-efectivo"></script>
+    <script src="js/data/offline-store.js?v=20261025-venta-efectivo"></script>
+    <script src="js/v3/costs.js?v=20261025-venta-efectivo"></script>
+    <script src="js/v3/orders.js?v=20261025-venta-efectivo"></script>
+    <script src="js/app.js?v=20261025-venta-efectivo"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20261025-venta-efectivo"></script>
   </body>
 </html>

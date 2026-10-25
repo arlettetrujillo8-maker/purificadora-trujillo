@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-pedidos";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-venta-efectivo";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

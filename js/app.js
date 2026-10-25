@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-pedidos";
+  const APP_SCRIPT_BUILD = "20261025-venta-efectivo";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2587,8 +2587,8 @@
     ["clientName", "clientPhone", "clientAddress"].forEach((id) =>
       $(id).addEventListener("input", () => updateClientDuplicateWarning()),
     );
-    ["saleQty", "salePrice", "salePaid", "salePaymentType"].forEach((id) =>
-      $(id).addEventListener("input", updateSaleSummary),
+    ["saleQty", "salePrice", "salePaid", "salePaymentType", "saleCashReceived"].forEach(
+      (id) => $(id).addEventListener("input", updateSaleSummary),
     );
     ["saleContainerMode", "saleEmptyReturnQty", "saleDamagedReturnQty"].forEach(
       (id) => $(id).addEventListener("input", updateSaleSummary),
@@ -3756,6 +3756,7 @@
       channel: $("saleChannel").value,
       paymentType: type,
       paid: type === "mixto" ? String($("salePaid").value || "").trim() : "",
+      cashReceived: $("saleCashReceived")?.value ?? "",
       containerMode: $("saleContainerMode").value,
       emptyReturnQty: Number($("saleEmptyReturnQty").value || 0),
       damagedReturnQty: Number($("saleDamagedReturnQty").value || 0),
@@ -3796,6 +3797,7 @@
     $("saleChannel").value = draft.channel;
     setSalePaymentType(draft.paymentType);
     $("salePaid").value = draft.paid;
+    $("saleCashReceived").value = draft.cashReceived || "";
     $("saleContainerMode").value = draft.containerMode || "normal";
     $("saleEmptyReturnQty").value = draft.emptyReturnQty || 0;
     $("saleDamagedReturnQty").value = draft.damagedReturnQty || 0;
@@ -4043,6 +4045,32 @@
           ? 0
           : total;
     const credit = Math.max(0, total - paid);
+    const cashDue = type === "mixto" ? paid : type === "efectivo" ? total : 0;
+    const cashBox = $("saleCashBox");
+    if (cashBox)
+      cashBox.classList.toggle(
+        "hidden",
+        !(type === "efectivo" || type === "mixto"),
+      );
+    const cashReceived = Math.max(
+      0,
+      Number($("saleCashReceived")?.value || 0),
+    );
+    const cashChange = cashReceived - cashDue;
+    const changeBox = $("saleChangeBox");
+    const changeAmount = $("saleChange");
+    if (changeAmount) {
+      const short = cashReceived > 0 && cashChange < -0.009;
+      changeAmount.textContent =
+        cashReceived > 0 ? money(Math.abs(cashChange)) : money(0);
+      changeBox?.classList.toggle("is-short", short);
+      changeBox?.classList.toggle(
+        "is-zero",
+        cashReceived <= 0 || Math.abs(cashChange) < 0.009,
+      );
+      const caption = changeBox?.querySelector("span");
+      if (caption) caption.textContent = short ? "Falta" : "Cambio";
+    }
     updateSaleContainerFields();
     const containerEffect = saleContainerEffect(qty);
     $("saleSummary").innerHTML = `<strong>${qty} garrafón(es) · ${money(total)}</strong>${exceptional ? ` · <span class="amount-danger">Precio esperado ${money(expected)}</span>` : ""}<br>${c ? `Cliente: ${esc(c.name)} · Saldo ${money(clientBalance(c.id))}${lastClientSale(c.id) ? ` · <button type="button" class="text-btn" id="repeatLastSale">Repetir ${lastClientSale(c.id).qty}</button>` : ""}` : "Cliente: Público general"}`;

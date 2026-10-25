@@ -6,25 +6,25 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-pedidos";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-pedidos";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-pedidos";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-pedidos";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-pedidos";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-pedidos";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-pedidos";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-pedidos";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-pedidos";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-pedidos";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-pedidos";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-pedidos";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-pedidos";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-pedidos";
-import { routesRepository } from "../data/routes-repository.js?v=20261025-pedidos";
-import { ordersRepository } from "../data/orders-repository.js?v=20261025-pedidos";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-pedidos";
+} from "../data/supabase-client.js?v=20261025-venta-efectivo";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-venta-efectivo";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-venta-efectivo";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-venta-efectivo";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-venta-efectivo";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-venta-efectivo";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-venta-efectivo";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-venta-efectivo";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-venta-efectivo";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-venta-efectivo";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-venta-efectivo";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-venta-efectivo";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-venta-efectivo";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-venta-efectivo";
+import { routesRepository } from "../data/routes-repository.js?v=20261025-venta-efectivo";
+import { ordersRepository } from "../data/orders-repository.js?v=20261025-venta-efectivo";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-venta-efectivo";
 
-const BOOTSTRAP_BUILD = "20261025-pedidos";
+const BOOTSTRAP_BUILD = "20261025-venta-efectivo";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

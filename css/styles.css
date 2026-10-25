@@ -3847,3 +3847,67 @@ input[type="search"] {
 .sidebar .admin-mode-badge {
   color: #7a4a00;
 }
+
+/* ---- Venta: efectivo recibido y cambio ---- */
+.sale-cash-box,
+.sale-actions-inline {
+  grid-column: 1 / -1;
+}
+.sale-cash-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: end;
+  margin-top: var(--space-2);
+}
+.sale-change {
+  min-height: 44px;
+  min-width: 132px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 6px 12px;
+  text-align: right;
+  border: 1px solid var(--border);
+  border-radius: var(--fluent-radius-control);
+  background: var(--surface2);
+}
+.sale-change span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sale-change strong {
+  font-size: 18px;
+  color: var(--text);
+}
+.sale-change.is-zero strong {
+  color: var(--muted);
+}
+.sale-change.is-short {
+  border-color: rgba(196, 43, 28, 0.35);
+  background: rgba(196, 43, 28, 0.07);
+}
+.sale-change.is-short strong {
+  color: var(--danger);
+}
+.sale-actions-inline {
+  margin-top: var(--space-2);
+}
+.sale-actions-inline .primary-btn {
+  flex: 1 1 auto;
+}
+.sale-actions-inline .secondary-btn {
+  flex: 0 0 auto;
+}
+@media (max-width: 850px) {
+  .sale-cash-box {
+    grid-template-columns: 1fr;
+  }
+  .sale-change {
+    text-align: left;
+    min-width: 0;
+  }
+}
