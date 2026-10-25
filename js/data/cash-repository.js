@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-movil-ventanas";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-f2-clientes";
 
 const expensePaymentMethod = (value) => {
   const normalized = String(value || "otro").trim().toLowerCase();

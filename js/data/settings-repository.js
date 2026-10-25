@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-movil-ventanas";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-f2-clientes";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

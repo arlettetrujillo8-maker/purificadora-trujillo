@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-movil-ventanas";
+  const APP_SCRIPT_BUILD = "20261025-f2-clientes";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -390,7 +390,7 @@
   let pendingDialogClose = null;
   let pendingUserDeleteId = null;
   let pendingClientMergeIds = [];
-  let quickClientFromSale = false;
+  let clientDialogMode = "full";
   let lastCommitError = null;
   let offlineMode = false;
   const saleFormOriginalHost = $("saleForm").parentElement;
@@ -1314,16 +1314,13 @@
         normalizeClientText(candidate.name) === normalizedName,
     );
   }
-  function updateClientDuplicateWarning(kind = "full") {
-    const quick = kind === "quick",
-      warning = $(
-        quick ? "quickClientDuplicateWarning" : "clientDuplicateWarning",
-      ),
+  function updateClientDuplicateWarning() {
+    const warning = $("clientDuplicateWarning"),
       data = {
-        id: quick ? "" : $("clientId").value,
-        name: $(quick ? "quickClientName" : "clientName").value,
-        phone: $(quick ? "quickClientPhone" : "clientPhone").value,
-        address: $(quick ? "quickClientAddress" : "clientAddress").value,
+        id: $("clientId").value,
+        name: $("clientName").value,
+        phone: $("clientPhone").value,
+        address: $("clientAddress").value,
       },
       matches = possibleClientDuplicates(data),
       blocking = blockingClientDuplicate(data);
@@ -2183,7 +2180,9 @@
         $("recoveryDialog").showModal();
     });
     $("newClientBtn").addEventListener("click", () => openClientDialog());
-    $("saleNewClientBtn").addEventListener("click", openQuickClientDialog);
+    $("saleNewClientBtn").addEventListener("click", () =>
+      openClientDialog(null, { quick: true }),
+    );
     $("newUserBtn").addEventListener("click", () => openUserDialog());
     $("cancelDeleteUserBtn").addEventListener("click", closeDeleteUserDialog);
     $("closeDeleteUserBtn").addEventListener("click", closeDeleteUserDialog);
@@ -2380,7 +2379,6 @@
     $("expenseForm").addEventListener("submit", saveExpense);
     $("cashOpenForm").addEventListener("submit", openCash);
     $("cashCloseForm").addEventListener("submit", closeCash);
-    $("quickClientForm").addEventListener("submit", saveQuickClient);
     $("saleCorrectionForm").addEventListener("submit", saveSaleCorrectionV2);
     $("saleReturnForm").addEventListener("submit", saveSaleReturn);
     $("returnSaleQty").addEventListener("input", updateSaleReturnAmounts);
@@ -2444,15 +2442,7 @@
     );
     $("clientSearch").addEventListener("input", renderClients);
     ["clientName", "clientPhone", "clientAddress"].forEach((id) =>
-      $(id).addEventListener("input", () =>
-        updateClientDuplicateWarning("full"),
-      ),
-    );
-    ["quickClientName", "quickClientPhone", "quickClientAddress"].forEach(
-      (id) =>
-        $(id).addEventListener("input", () =>
-          updateClientDuplicateWarning("quick"),
-        ),
+      $(id).addEventListener("input", () => updateClientDuplicateWarning()),
     );
     ["saleQty", "salePrice", "salePaid", "salePaymentType"].forEach((id) =>
       $(id).addEventListener("input", updateSaleSummary),
@@ -2954,23 +2944,37 @@
     });
   }
 
-  function openClientDialog(client = null) {
+  function openClientDialog(client = null, options = {}) {
+    const quick = !client && options.quick === true;
+    clientDialogMode = quick ? "quick" : "full";
     if (!requirePermission(client ? "edit_client" : "create_client")) return;
     $("clientForm").reset();
     $("clientDialogTitle").textContent = client
       ? "Editar cliente"
-      : "Nuevo cliente";
+      : quick
+        ? "Registrar cliente nuevo"
+        : "Nuevo cliente";
     $("clientId").value = client?.id || "";
     $("clientName").value = client?.name || "";
     $("clientPhone").value = client?.phone || "";
     $("clientAddress").value = client?.address || "";
-    $("clientRoute").value = client?.route || "ninguna";
+    $("clientRoute").value =
+      client?.route ||
+      (quick && ["ruta1", "ruta2", "ventanilla"].includes($("saleChannel").value)
+        ? $("saleChannel").value
+        : "ninguna");
     $("clientType").value = client?.type || "Hogar";
     $("clientPrice").value = client?.price ?? "";
     $("clientFrequent").value = String(client?.frequent ?? true);
     $("clientActive").value = String(client?.active !== false);
     $("clientNotes").value = client?.notes || "";
-    updateClientDuplicateWarning("full");
+    ["clientType", "clientFrequent", "clientActive", "clientNotes"].forEach(
+      (id) => $(id)?.closest("label")?.classList.toggle("hidden", quick),
+    );
+    $("clientSubmitBtn").textContent = quick
+      ? "Guardar y seleccionar"
+      : "Guardar cliente";
+    updateClientDuplicateWarning();
     showManagedDialog($("clientDialog"));
   }
   async function saveClient(e) {
@@ -2993,6 +2997,12 @@
       updatedAt: nowISO(),
       version: previousClient?.version || 1,
     };
+    if (clientDialogMode === "quick") {
+      obj.type = "Hogar";
+      obj.frequent = true;
+      obj.active = true;
+      if (!obj.notes) obj.notes = "Alta rápida desde venta";
+    }
     if (!obj.name) return toast("El nombre es obligatorio", "error");
     if (obj.price != null && obj.price < 0)
       return toast("El precio no puede ser negativo", "error");
@@ -3031,72 +3041,15 @@
     }
     if (!(await commitState(previousState))) return;
     $("clientDialog").close();
-    renderAll();
-    toast("Cliente guardado");
-  }
-  function openQuickClientDialog() {
-    if (!requirePermission("create_client")) return;
-    $("quickClientForm").reset();
-    $("quickClientRoute").value = ["ruta1", "ruta2", "ventanilla"].includes(
-      $("saleChannel").value,
-    )
-      ? $("saleChannel").value
-      : "ninguna";
-    $("quickClientPrice").value = "";
-    quickClientFromSale = true;
-    updateClientDuplicateWarning("quick");
-    showManagedDialog($("quickClientDialog"));
-  }
-  async function saveQuickClient(e) {
-    e.preventDefault();
-    if (!requirePermission("create_client")) return;
-    const name = $("quickClientName").value.trim(),
-      phone = $("quickClientPhone").value.trim(),
-      address = $("quickClientAddress").value.trim(),
-      rawPrice = $("quickClientPrice").value.trim();
-    if (!name) return toast("El nombre es obligatorio", "error");
-    if (rawPrice !== "" && Number(rawPrice) < 0)
-      return toast("El precio no puede ser negativo", "error");
-    const duplicate = blockingClientDuplicate({ name, phone });
-    if (duplicate)
-      return toast(
-        `Ya existe “${duplicate.name}”. Selecciónalo en lugar de crear otro.`,
-        "error",
-      );
-    const previousState = structuredClone(state),
-      client = {
-        id: bareUuid(),
-        name,
-        phone,
-        address,
-        route: $("quickClientRoute").value,
-        type: "Hogar",
-        price: rawPrice === "" ? null : Number(rawPrice),
-        frequent: true,
-        active: true,
-        notes: "Alta rápida desde venta",
-        createdAt: nowISO(),
-        updatedAt: nowISO(),
-      };
-    state.clients.push(client);
-    addActivity(`Cliente creado: ${client.name}`);
-    audit(
-      "client_created_quick",
-      "client",
-      client.id,
-      `Cliente rápido creado: ${client.name}`,
-      null,
-      client,
-    );
-    if (!(await commitState(previousState))) return;
-    $("quickClientDialog").close();
-    const savedClient = state.clients.find(
-      (item) =>
-        item.name === name && item.phone === phone && item.address === address,
-    );
-    if (savedClient) selectSaleClient(savedClient.id);
-    renderClients();
-    toast("Cliente guardado y seleccionado");
+    if (clientDialogMode === "quick") {
+      selectSaleClient(obj.id);
+      renderClients();
+      toast("Cliente guardado y seleccionado");
+    } else {
+      renderAll();
+      toast("Cliente guardado");
+    }
+    clientDialogMode = "full";
   }
   function openMergeClientsDialog(clientId) {
     if (!adminMode) return toast("Solo el Administrador puede unir clientes.", "error");

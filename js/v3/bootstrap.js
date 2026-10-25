@@ -6,23 +6,23 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-movil-ventanas";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-movil-ventanas";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-movil-ventanas";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-movil-ventanas";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-movil-ventanas";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-movil-ventanas";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-movil-ventanas";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-movil-ventanas";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-movil-ventanas";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-movil-ventanas";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-movil-ventanas";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-movil-ventanas";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-movil-ventanas";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-movil-ventanas";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-movil-ventanas";
+} from "../data/supabase-client.js?v=20261025-f2-clientes";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-f2-clientes";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-f2-clientes";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-f2-clientes";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-f2-clientes";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-f2-clientes";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-f2-clientes";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-f2-clientes";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-f2-clientes";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-f2-clientes";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-f2-clientes";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-f2-clientes";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-f2-clientes";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-f2-clientes";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-f2-clientes";
 
-const BOOTSTRAP_BUILD = "20261025-movil-ventanas";
+const BOOTSTRAP_BUILD = "20261025-f2-clientes";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
