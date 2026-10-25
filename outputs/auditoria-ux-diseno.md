@@ -110,7 +110,7 @@ tarjetas por pedido con cliente, garrafones y total, botón Entregar de 44px.
 
 ## 5. Fase sugerida
 
-1. **Fase 1 (1 build):** Inicio accionable + banner offline + StatCard.
+1. **Fase 1 (implementada):** Inicio accionable + banner offline + StatCard.
 2. **Fase 2:** Nueva venta 2 columnas y envases colapsables.
 3. **Fase 3:** Rutas con pestañas y menú agrupado.
 4. **Fase 4:** Reportes con filtros/export y unificación de tablas.
