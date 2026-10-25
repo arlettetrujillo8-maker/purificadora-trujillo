@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-fluent-win11";
+import { selectAll } from "./repository-utils.js?v=20261025-rutas-expandibles";
 
 export const reportsRepository = {
   listAudit: () =>

@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-fluent-win11";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-rutas-expandibles";
 
 export const suppliesRepository = {
   list: () => selectAll("supplies", "*", (query) => query.order("name")),

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-fluent-win11";
+  const APP_SCRIPT_BUILD = "20261025-rutas-expandibles";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -25,6 +25,42 @@
     lavado: "Lavado · vacíos",
     danados: "Dañados",
     };
+  const DEFAULT_ROUTES = Object.freeze([
+    Object.freeze({ code: "ruta1", name: "Ruta 1", sort_order: 10 }),
+    Object.freeze({ code: "ruta2", name: "Ruta 2", sort_order: 20 }),
+  ]);
+  const SPECIAL_LABELS = Object.freeze({
+    local: "Local",
+    ventanilla: "Ventanilla",
+    ninguna: "Ninguna",
+    fuera_ruta: "Fuera de ruta",
+    fuera_horario: "Fuera de horario",
+    lavado: "Lavado",
+    danados: "Dañados",
+    wash: "Lavado",
+    damaged: "Dañados",
+  });
+  window.addEventListener("purificadora:routes", () => {
+    try {
+      renderRouteSelects();
+    } catch (error) {
+      console.warn("No se pudieron refrescar las rutas", error);
+    }
+  });
+  function routeCatalog() {
+    const list = Array.isArray(window.PurificadoraRoutes)
+      ? window.PurificadoraRoutes.filter((route) => route && route.code)
+      : [];
+    return (list.length ? list : DEFAULT_ROUTES)
+      .slice()
+      .sort((a, b) => Number(a.sort_order ?? 100) - Number(b.sort_order ?? 100));
+  }
+  function routeCodes() {
+    return routeCatalog().map((route) => route.code);
+  }
+  function isRouteCode(code) {
+    return routeCodes().includes(code);
+  }
   const EMPLOYEE_SESSION_KEY = "purificadora_trujillo_employee_session";
   // Recuerda el operador activo para reanudar el turno sin conexion (solo si
   // hay sesion central valida en cache; el PIN se valido al iniciar en linea).
@@ -928,11 +964,11 @@
       damagedReturnQty: 0,
     };
     const originalEmptyCenter =
-        original.channel === "ruta1" || original.channel === "ruta2"
+        isRouteCode(original.channel)
           ? `empty_${original.channel}`
           : "empty_local",
       newEmptyCenter =
-        channel === "ruta1" || channel === "ruta2"
+        isRouteCode(channel)
           ? `empty_${channel}`
           : "empty_local";
     if (Number(original.emptyReturnQty || 0))
@@ -970,19 +1006,30 @@
     );
   }
   function inventoryLocationLabel(location) {
+    const fullRoute = /^route_(\d+)$/.exec(location);
+    if (fullRoute) return `Ruta ${fullRoute[1]} · llenos`;
+    const emptyRoute = /^empty_route_(\d+)$/.exec(location);
+    if (emptyRoute) return `Ruta ${emptyRoute[1]} · vacíos`;
+    const routeCode = /^ruta(\d+)$/.exec(location);
+    if (routeCode) return `Ruta ${routeCode[1]} · llenos`;
+    const emptyCode = /^empty_ruta(\d+)$/.exec(location);
+    if (emptyCode) return `Ruta ${emptyCode[1]} · vacíos`;
     return (
       window.PurificadoraPresentationLabels?.formatInventoryLocationLabel(
         location,
       ) ||
       INVENTORY_LOCATION_LABELS[location] ||
+      SPECIAL_LABELS[location] ||
       location ||
       ""
     );
   }
   function routeLabel(route) {
     return (
+      routeCatalog().find((item) => item.code === route)?.name ||
       window.PurificadoraPresentationLabels?.formatRouteLabel(route) ||
-      CHANNELS[route] ||
+      routeLabel(route) ||
+      SPECIAL_LABELS[route] ||
       route ||
       ""
     );
@@ -1213,11 +1260,7 @@
     state.activity = state.activity.slice(0, 100);
   }
   function centerForChannel(channel) {
-    return channel === "ruta1"
-      ? "ruta1"
-      : channel === "ruta2"
-        ? "ruta2"
-        : "local";
+    return isRouteCode(channel) ? channel : "local";
   }
   function clientById(id) {
     return state.clients.find((c) => c.id === id);
@@ -2552,7 +2595,52 @@
     }
   }
 
+  function optionMarkup(options, selected) {
+    return options
+      .map(
+        (option) =>
+          `<option value="${esc(option.value)}"${option.value === selected ? " selected" : ""}>${esc(option.label)}</option>`,
+      )
+      .join("");
+  }
+  function setSelectOptions(id, options) {
+    const element = $(id);
+    if (!element) return;
+    const previous = element.value;
+    element.innerHTML = optionMarkup(options, previous);
+    if (options.some((option) => option.value === previous))
+      element.value = previous;
+  }
+  function routeSelectOptions() {
+    return routeCatalog().map((route) => ({
+      value: route.code,
+      label: route.name,
+    }));
+  }
+  function renderRouteSelects() {
+    const routes = routeSelectOptions(),
+      centers = [{ value: "local", label: "Local" }, ...routes],
+      channels = [
+        { value: "ventanilla", label: "Ventanilla" },
+        ...routes,
+        { value: "fuera_ruta", label: "Fuera de ruta" },
+        { value: "fuera_horario", label: "Fuera de horario" },
+      ],
+      clientRoutes = [
+        { value: "ninguna", label: "Ninguna" },
+        ...routes,
+        { value: "ventanilla", label: "Ventanilla" },
+      ];
+    setSelectOptions("saleChannel", channels);
+    setSelectOptions("correctionChannel", channels);
+    setSelectOptions("clientRoute", clientRoutes);
+    setSelectOptions("roundRoute", routes);
+    setSelectOptions("containerReturnLocation", centers);
+    setSelectOptions("expenseCenter", centers);
+    setSelectOptions("userCenter", centers);
+  }
   function renderAll() {
+    renderRouteSelects();
     state.rounds
       .filter((r) => r.status !== "cerrada")
       .forEach((r) => {
@@ -2663,7 +2751,7 @@
     const user = activeUser();
     const cashOpen = Boolean(getOpenCashSession(user?.id));
     const route =
-      user?.role === "repartidor" && ["ruta1", "ruta2"].includes(user.center)
+      user?.role === "repartidor" && routeCodes().includes(user.center)
         ? user.center
         : null;
     const roundOpen = route
@@ -2733,7 +2821,7 @@
       dashboardCards.push(`<article class="operational-card operational-card--caja${open ? " is-live" : ""}"><div class="operational-card-head"><div class="operational-card-title"><span class="card-icon" aria-hidden="true">💵</span><div><span class="eyebrow">CAJA</span><h3>${open ? "Caja abierta" : "Caja cerrada"}</h3></div></div><strong>${open ? money(expected) : ""}</strong></div><div class="quick-actions"><button class="secondary-btn" data-go="caja">Ver</button><button class="primary-btn" id="dashboardCashAction">${open ? "Cerrar" : "Abrir caja"}</button></div></article>`);
     }
     if (can("rounds")) {
-      const routeScope = ownRound ? [u.center] : ["ruta1", "ruta2"];
+      const routeScope = ownRound ? [u.center] : routeCodes();
       routeScope.forEach((route) => {
         const round = activeRound(route),
           routeMetrics = round ? roundMetrics(round) : null,
@@ -2869,7 +2957,7 @@
     $("channelBreakdown").innerHTML = totals
       .map(
         (x) =>
-          `<div class="bar-row"><span>${CHANNELS[x.k]}</span><div class="bar-track"><div class="bar-fill" style="width:${(x.val / max) * 100}%"></div></div><strong>${money(x.val)}</strong></div>`,
+          `<div class="bar-row"><span>${routeLabel(x.k)}</span><div class="bar-track"><div class="bar-fill" style="width:${(x.val / max) * 100}%"></div></div><strong>${money(x.val)}</strong></div>`,
       )
       .join("");
     const debtors = state.clients
@@ -2928,13 +3016,13 @@
           )
           .join("")
       : '<div class="empty">Aún no hay actividad.</div>';
-    $("dashboardRounds").innerHTML = ["ruta1", "ruta2"]
+    $("dashboardRounds").innerHTML = routeCodes()
       .map((route) => {
         const r = activeRound(route);
         if (!r)
-          return `<div class="list-row"><span>${CHANNELS[route]}</span><strong>Sin ronda activa</strong></div>`;
+          return `<div class="list-row"><span>${routeLabel(route)}</span><strong>Sin ronda activa</strong></div>`;
         const metrics = roundMetrics(r);
-        return `<div class="list-row"><div class="list-main"><strong>${CHANNELS[route]} · Ronda ${r.number}</strong><small>Carga ${int(metrics.initialLoad)} · Recargas ${int(metrics.reloads)} · Vendidos ${int(metrics.netSold)}</small>${metrics.inconsistencyQty ? `<small class="amount-danger">Ronda con inconsistencia: se vendieron ${int(metrics.inconsistencyQty)} más de los cargados</small>` : ""}</div><strong class="${metrics.inconsistencyQty ? "amount-danger" : ""}">${metrics.inconsistencyQty ? "Requiere ajuste" : `${int(metrics.availableFull)} restantes`}</strong></div>`;
+        return `<div class="list-row"><div class="list-main"><strong>${routeLabel(route)} · Ronda ${r.number}</strong><small>Carga ${int(metrics.initialLoad)} · Recargas ${int(metrics.reloads)} · Vendidos ${int(metrics.netSold)}</small>${metrics.inconsistencyQty ? `<small class="amount-danger">Ronda con inconsistencia: se vendieron ${int(metrics.inconsistencyQty)} más de los cargados</small>` : ""}</div><strong class="${metrics.inconsistencyQty ? "amount-danger" : ""}">${metrics.inconsistencyQty ? "Requiere ajuste" : `${int(metrics.availableFull)} restantes`}</strong></div>`;
       })
       .join("");
     $("dashboardLatestSales").innerHTML = latestSalesMarkup(5, false);
@@ -2960,7 +3048,7 @@
     $("clientAddress").value = client?.address || "";
     $("clientRoute").value =
       client?.route ||
-      (quick && ["ruta1", "ruta2", "ventanilla"].includes($("saleChannel").value)
+      (quick && [...routeCodes(), "ventanilla"].includes($("saleChannel").value)
         ? $("saleChannel").value
         : "ninguna");
     $("clientType").value = client?.type || "Hogar";
@@ -3064,7 +3152,7 @@
             (sale) => sale.clientId === client.id,
           ).length,
           balance = clientBalance(client.id);
-        return `<label class="merge-client-option"><input type="radio" name="mergePrimaryClient" value="${client.id}" required><span><strong>${esc(client.name)}</strong><small>${esc(CHANNELS[client.route] || client.route || "Sin ruta")} · ${client.price == null ? "Precio general" : `Precio ${money(client.price)}`} · ${salesCount} venta(s) · Saldo ${money(balance)}</small></span></label>`;
+        return `<label class="merge-client-option"><input type="radio" name="mergePrimaryClient" value="${client.id}" required><span><strong>${esc(client.name)}</strong><small>${esc(routeLabel(client.route) || client.route || "Sin ruta")} · ${client.price == null ? "Precio general" : `Precio ${money(client.price)}`} · ${salesCount} venta(s) · Saldo ${money(balance)}</small></span></label>`;
       })
       .join("");
     showManagedDialog($("mergeClientsDialog"));
@@ -3121,7 +3209,7 @@
             const last = lastClientSale(c.id);
             const bal = clientBalance(c.id),
               canMerge = adminMode && duplicateClientGroup(c).length > 1;
-            return `<tr><td><strong>${esc(c.name)}</strong><br><small class="muted">${esc(c.phone || "Sin teléfono")}</small></td><td>${esc(CHANNELS[c.route] || c.route || "Ninguna")}</td><td>${money(expectedSalePrice(c))}${c.price != null ? "<br><small>Especial</small>" : ""}</td><td class="${bal > 0 ? "amount-danger" : ""}">${money(bal)}</td><td>Activo</td><td>${last ? `${fmtDate(last.date)} · ${last.qty} garrafón(es)` : "-"}</td><td><button class="text-btn client-detail" data-id="${c.id}">Ver</button> <button class="text-btn client-edit" data-id="${c.id}">Editar</button>${canMerge ? ` <button class="text-btn merge-clients" data-id="${c.id}">Unir duplicados</button>` : ""}</td></tr>`;
+            return `<tr><td><strong>${esc(c.name)}</strong><br><small class="muted">${esc(c.phone || "Sin teléfono")}</small></td><td>${esc(routeLabel(c.route) || c.route || "Ninguna")}</td><td>${money(expectedSalePrice(c))}${c.price != null ? "<br><small>Especial</small>" : ""}</td><td class="${bal > 0 ? "amount-danger" : ""}">${money(bal)}</td><td>Activo</td><td>${last ? `${fmtDate(last.date)} · ${last.qty} garrafón(es)` : "-"}</td><td><button class="text-btn client-detail" data-id="${c.id}">Ver</button> <button class="text-btn client-edit" data-id="${c.id}">Editar</button>${canMerge ? ` <button class="text-btn merge-clients" data-id="${c.id}">Unir duplicados</button>` : ""}</td></tr>`;
           })
           .join("")
       : '<tr><td colspan="7"><div class="empty">No hay clientes registrados.</div></td></tr>';
@@ -3131,7 +3219,7 @@
           .map((c) => {
             const balance = clientBalance(c.id),
               canMerge = adminMode && duplicateClientGroup(c).length > 1;
-            return `<article class="mobile-client-card"><div class="mobile-client-main"><div><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><small>${esc(c.address || c.phone || "Sin datos adicionales")}</small></div><span class="client-balance ${balance > 0 ? "has-debt" : ""}">${balance > 0 ? `Debe ${money(balance)}` : "Sin deuda"}</span></div><div class="client-meta"><span>${esc(CHANNELS[c.route] || "Sin ruta")}</span><span>${c.price != null ? `Precio especial ${money(expectedSalePrice(c))}` : `Precio ${money(expectedSalePrice(c))}`}</span></div><div class="mobile-card-actions"><button class="secondary-btn client-sale" data-id="${c.id}">Vender</button>${balance > 0 && can("register_payment") ? `<button class="secondary-btn pay-client" data-id="${c.id}">Cobrar</button>` : ""}<button class="text-btn client-detail" data-id="${c.id}">Historial</button>${can("edit_client") ? `<button class="text-btn client-edit" data-id="${c.id}">Editar</button>` : ""}${canMerge ? `<button class="text-btn merge-clients" data-id="${c.id}">Unir duplicados</button>` : ""}</div></article>`;
+            return `<article class="mobile-client-card"><div class="mobile-client-main"><div><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><small>${esc(c.address || c.phone || "Sin datos adicionales")}</small></div><span class="client-balance ${balance > 0 ? "has-debt" : ""}">${balance > 0 ? `Debe ${money(balance)}` : "Sin deuda"}</span></div><div class="client-meta"><span>${esc(routeLabel(c.route) || "Sin ruta")}</span><span>${c.price != null ? `Precio especial ${money(expectedSalePrice(c))}` : `Precio ${money(expectedSalePrice(c))}`}</span></div><div class="mobile-card-actions"><button class="secondary-btn client-sale" data-id="${c.id}">Vender</button>${balance > 0 && can("register_payment") ? `<button class="secondary-btn pay-client" data-id="${c.id}">Cobrar</button>` : ""}<button class="text-btn client-detail" data-id="${c.id}">Historial</button>${can("edit_client") ? `<button class="text-btn client-edit" data-id="${c.id}">Editar</button>` : ""}${canMerge ? `<button class="text-btn merge-clients" data-id="${c.id}">Unir duplicados</button>` : ""}</div></article>`;
           })
           .join("")}`
       : `<div class="empty mobile-empty-client">No encontramos “${esc($("clientSearch").value.trim())}”.<button class="primary-btn wide" id="createClientFromSearch" type="button">+ Crear cliente</button></div>`;
@@ -3191,7 +3279,7 @@
       ? matches
           .map(
             (c) =>
-              `<button type="button" class="client-result" data-client-id="${c.id}" role="option"><span><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><small>${esc(CHANNELS[c.route] || c.route)} · ${money(expectedSalePrice(c))} · ${esc(c.address || "Sin dirección")}</small></span><span class="${clientBalance(c.id) > 0 ? "debt" : ""}">Saldo ${money(clientBalance(c.id))}</span></button>`,
+              `<button type="button" class="client-result" data-client-id="${c.id}" role="option"><span><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><small>${esc(routeLabel(c.route) || c.route)} · ${money(expectedSalePrice(c))} · ${esc(c.address || "Sin dirección")}</small></span><span class="${clientBalance(c.id) > 0 ? "debt" : ""}">Saldo ${money(clientBalance(c.id))}</span></button>`,
           )
           .join("")
       : '<div class="empty">Sin coincidencias. Usa “Registrar cliente nuevo”.</div>';
@@ -3208,13 +3296,13 @@
     $("saleClientId").value = saleClientSelection.clientId;
     $("saleClientSearch").value = c.name;
     $("salePrice").value = expectedSalePrice(c);
-    if (["ruta1", "ruta2", "ventanilla"].includes(c.route))
+    if ([...routeCodes(), "ventanilla"].includes(c.route))
       $("saleChannel").value = c.route;
     $("saleClientResults").classList.add("hidden");
     $("saleClientSearch").setAttribute("aria-expanded", "false");
     const last = lastClientSale(id);
     $("selectedSaleClient").innerHTML =
-      `<strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong> · ${esc(CHANNELS[c.route] || c.route)} · Saldo ${money(clientBalance(id))}${last ? ` · Última compra ${last.qty}` : ""}<button type="button" id="clearSaleClient">Quitar</button>`;
+      `<strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong> · ${esc(routeLabel(c.route) || c.route)} · Saldo ${money(clientBalance(id))}${last ? ` · Última compra ${last.qty}` : ""}<button type="button" id="clearSaleClient">Quitar</button>`;
     $("selectedSaleClient").classList.remove("hidden");
     $("clearSaleClient").onclick = clearSaleClient;
     updateSaleSummary();
@@ -3238,7 +3326,7 @@
     $("saleQty").focus();
   }
   function beginSaleForRoute(route) {
-    if (!["ruta1", "ruta2"].includes(route)) return showView("ventas");
+    if (!routeCodes().includes(route)) return showView("ventas");
     showView("ventas");
     $("saleChannel").value = route;
     applySaleContext({
@@ -3463,7 +3551,7 @@
         `Hola ${c.name}, tienes un saldo pendiente de ${money(bal)} con Purificadora Trujillo.`,
       );
     $("clientDetailContent").innerHTML =
-      `<div class="detail-hero"><div><h2>${c.frequent ? "★ " : ""}${esc(c.name)}</h2><p>${esc(c.phone || "Sin teléfono")} · ${esc(c.address || "Sin dirección")}</p><p>${esc(CHANNELS[c.route] || "Sin ruta habitual")} · Precio ${money(c.price)} · ${c.frequent ? "Frecuente" : "Regular"}</p>${c.notes ? `<p class="muted">${esc(c.notes)}</p>` : ""}${last ? `<p>Última compra: <strong>${last.qty} garrafón(es) · ${fmtDate(last.date)}</strong></p>` : ""}</div><div><div class="muted">Saldo actual</div><div class="route-number ${bal > 0 ? "amount-danger" : "amount-success"}">${money(bal)}</div></div></div><div class="detail-actions"><button class="primary-btn" id="detailSaleBtn">Nueva venta</button>${last ? `<button class="primary-btn" id="detailRepeatBtn">Repetir ${last.qty}</button>` : ""}<button class="secondary-btn" id="detailPayBtn">Registrar pago</button><button class="secondary-btn" id="detailEditBtn">Editar</button>${waNumber.length >= 10 ? `<a class="secondary-btn" href="https://wa.me/${waNumber}?text=${waText}" target="_blank" rel="noopener">WhatsApp</a>` : ""}</div><div class="metric-grid" style="margin-top:16px">${metric("Garrafones mes", int(monthSales.reduce((a, s) => a + s.qty, 0)))}${metric("Compras mes", int(monthSales.length))}${metric("Fiado mes", money(monthSales.reduce((a, s) => a + s.credit, 0)))}${metric("Pagos mes", money(monthLedger.filter((l) => l.type === "payment").reduce((a, l) => a + l.payment, 0)))}</div><div class="ledger"><h3>Historial permanente</h3><div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Operación</th><th>Garrafones</th><th>Cargo</th><th>Pago</th><th>Saldo</th></tr></thead><tbody>${renderLedgerRows(id)}</tbody></table></div></div>`;
+      `<div class="detail-hero"><div><h2>${c.frequent ? "★ " : ""}${esc(c.name)}</h2><p>${esc(c.phone || "Sin teléfono")} · ${esc(c.address || "Sin dirección")}</p><p>${esc(routeLabel(c.route) || "Sin ruta habitual")} · Precio ${money(c.price)} · ${c.frequent ? "Frecuente" : "Regular"}</p>${c.notes ? `<p class="muted">${esc(c.notes)}</p>` : ""}${last ? `<p>Última compra: <strong>${last.qty} garrafón(es) · ${fmtDate(last.date)}</strong></p>` : ""}</div><div><div class="muted">Saldo actual</div><div class="route-number ${bal > 0 ? "amount-danger" : "amount-success"}">${money(bal)}</div></div></div><div class="detail-actions"><button class="primary-btn" id="detailSaleBtn">Nueva venta</button>${last ? `<button class="primary-btn" id="detailRepeatBtn">Repetir ${last.qty}</button>` : ""}<button class="secondary-btn" id="detailPayBtn">Registrar pago</button><button class="secondary-btn" id="detailEditBtn">Editar</button>${waNumber.length >= 10 ? `<a class="secondary-btn" href="https://wa.me/${waNumber}?text=${waText}" target="_blank" rel="noopener">WhatsApp</a>` : ""}</div><div class="metric-grid" style="margin-top:16px">${metric("Garrafones mes", int(monthSales.reduce((a, s) => a + s.qty, 0)))}${metric("Compras mes", int(monthSales.length))}${metric("Fiado mes", money(monthSales.reduce((a, s) => a + s.credit, 0)))}${metric("Pagos mes", money(monthLedger.filter((l) => l.type === "payment").reduce((a, l) => a + l.payment, 0)))}</div><div class="ledger"><h3>Historial permanente</h3><div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Operación</th><th>Garrafones</th><th>Cargo</th><th>Pago</th><th>Saldo</th></tr></thead><tbody>${renderLedgerRows(id)}</tbody></table></div></div>`;
     const goSale = (qty = null) => {
       $("clientDetailDialog").close();
       beginSaleForClient(id, { quantity: qty });
@@ -3697,11 +3785,11 @@
     const round = activeRound(channel);
     if (round?.status === "regresada")
       return fail(
-        `La ronda de ${CHANNELS[channel]} ya fue regresada. Ciérrala antes de registrar más ventas.`,
+        `La ronda de ${routeLabel(channel)} ya fue regresada. Ciérrala antes de registrar más ventas.`,
       );
-    if ((channel === "ruta1" || channel === "ruta2") && !round)
+    if ((isRouteCode(channel)) && !round)
       return fail(
-        `Inicia una ronda en ${CHANNELS[channel]} antes de registrar la venta.`,
+        `Inicia una ronda en ${routeLabel(channel)} antes de registrar la venta.`,
       );
     if (round) {
       const metrics = roundMetrics(round);
@@ -3773,10 +3861,10 @@
                   : "sale_paid",
             label:
               credit === total
-                ? `Venta fiada · ${CHANNELS[channel]}`
+                ? `Venta fiada · ${routeLabel(channel)}`
                 : credit > 0
-                  ? `Pago mixto · ${CHANNELS[channel]}`
-                  : `Venta pagada · ${CHANNELS[channel]}`,
+                  ? `Pago mixto · ${routeLabel(channel)}`
+                  : `Venta pagada · ${routeLabel(channel)}`,
             qty,
             unitPrice: price,
             charge: total,
@@ -3795,7 +3883,7 @@
       saleId: sale.id,
     });
     const emptyCenter =
-      channel === "ruta1" || channel === "ruta2"
+      isRouteCode(channel)
         ? `empty_${channel}`
         : "empty_local";
     if (sale.emptyReturnQty)
@@ -3893,7 +3981,7 @@
             ? `<div class="sale-date-divider">${esc(relativeDayLabel(s.date))}</div>`
             : "";
         lastDayKey = dayKey;
-        return `${divider}<div class="sale-card"><div class="list-main"><strong>${esc(s.folio || s.id)} · ${esc(s.clientName)} · ${int(s.qty)} garrafón(es)</strong><small>${fmtDateTime(s.date)} · ${CHANNELS[s.channel]} · ${esc(s.paymentType)} · ${esc(state.users.find((u) => u.id === s.userId)?.name || "")}</small><span class="status-tag ${s.status === "void" ? "void" : s.status === "superseded" ? "corrected" : ""}">${saleStatusLabel(s)}</span></div><div class="sale-card-actions"><strong>${money(Number(s.total || 0) - Number(s.returnedTotal || 0))}</strong>${actions ? `<button class="text-btn view-sale" data-id="${s.id}">Ver</button>${isEffectiveSale(s) && can("create_sale") ? `<button class="secondary-btn repeat-sale" data-id="${s.id}">Repetir</button>` : ""}${canReturnSale(s) ? `<button class="secondary-btn return-sale" data-id="${s.id}">Devolver</button>` : ""}${canCorrectSale(s) && !Number(s.returnedQty || 0) ? `<button class="secondary-btn correct-sale" data-id="${s.id}">Corregir</button>` : ""}` : ""}</div></div>`;
+        return `${divider}<div class="sale-card"><div class="list-main"><strong>${esc(s.folio || s.id)} · ${esc(s.clientName)} · ${int(s.qty)} garrafón(es)</strong><small>${fmtDateTime(s.date)} · ${routeLabel(s.channel)} · ${esc(s.paymentType)} · ${esc(state.users.find((u) => u.id === s.userId)?.name || "")}</small><span class="status-tag ${s.status === "void" ? "void" : s.status === "superseded" ? "corrected" : ""}">${saleStatusLabel(s)}</span></div><div class="sale-card-actions"><strong>${money(Number(s.total || 0) - Number(s.returnedTotal || 0))}</strong>${actions ? `<button class="text-btn view-sale" data-id="${s.id}">Ver</button>${isEffectiveSale(s) && can("create_sale") ? `<button class="secondary-btn repeat-sale" data-id="${s.id}">Repetir</button>` : ""}${canReturnSale(s) ? `<button class="secondary-btn return-sale" data-id="${s.id}">Devolver</button>` : ""}${canCorrectSale(s) && !Number(s.returnedQty || 0) ? `<button class="secondary-btn correct-sale" data-id="${s.id}">Corregir</button>` : ""}` : ""}</div></div>`;
       })
       .join("");
   }
@@ -3934,7 +4022,7 @@
       (c) => c.originalSaleId === s.id || c.newSaleId === s.id,
     );
     $("saleDetailContent").innerHTML =
-      `<div class="detail-hero"><div><span class="status-tag ${s.status === "void" ? "void" : s.status === "superseded" ? "corrected" : ""}">${saleStatusLabel(s)}</span><h2>${esc(s.folio || s.id)}</h2><p>${fmtDateTime(s.date)} · ${esc(s.clientName)} · ${CHANNELS[s.channel]}</p></div><div><div class="muted">Total</div><div class="route-number">${money(s.total)}</div></div></div><div class="cash-summary-grid">${[
+      `<div class="detail-hero"><div><span class="status-tag ${s.status === "void" ? "void" : s.status === "superseded" ? "corrected" : ""}">${saleStatusLabel(s)}</span><h2>${esc(s.folio || s.id)}</h2><p>${fmtDateTime(s.date)} · ${esc(s.clientName)} · ${routeLabel(s.channel)}</p></div><div><div class="muted">Total</div><div class="route-number">${money(s.total)}</div></div></div><div class="cash-summary-grid">${[
         "Cantidad|" + int(s.qty),
         "Precio|" + money(s.unitPrice ?? s.price),
         "Pago|" + s.paymentType,
@@ -4024,7 +4112,7 @@
     $("saleCorrectionForm").reset();
     $("correctionSaleId").value = sale.id;
     $("correctionOriginalSummary").innerHTML =
-      `<strong>${esc(sale.folio || sale.id)}</strong> · ${fmtDateTime(sale.date)}<br>${esc(sale.clientName)} · ${int(sale.qty)} × ${money(sale.unitPrice ?? sale.price)} = ${money(sale.total)}<br>${esc(sale.paymentType)} · ${CHANNELS[sale.channel]}`;
+      `<strong>${esc(sale.folio || sale.id)}</strong> · ${fmtDateTime(sale.date)}<br>${esc(sale.clientName)} · ${int(sale.qty)} × ${money(sale.unitPrice ?? sale.price)} = ${money(sale.total)}<br>${esc(sale.paymentType)} · ${routeLabel(sale.channel)}`;
     $("correctionClient").innerHTML =
       `<option value="">Público general</option>` +
       state.clients
@@ -4539,7 +4627,7 @@
       ? arr
           .map(
             (c) =>
-              `<tr><td><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><br><small class="muted">${esc(c.phone || "")}</small></td><td class="amount-danger">${int(c.containerDebt)}</td><td>${esc(CHANNELS[c.route] || c.route || "-")}</td><td><button class="primary-btn return-containers" data-id="${c.id}">Registrar entrega</button></td></tr>`,
+              `<tr><td><strong>${c.frequent ? "★ " : ""}${esc(c.name)}</strong><br><small class="muted">${esc(c.phone || "")}</small></td><td class="amount-danger">${int(c.containerDebt)}</td><td>${esc(routeLabel(c.route) || c.route || "-")}</td><td><button class="primary-btn return-containers" data-id="${c.id}">Registrar entrega</button></td></tr>`,
           )
           .join("")
       : '<tr><td colspan="4"><div class="empty">Nadie debe envases por ahora.</div></td></tr>';
@@ -4560,7 +4648,7 @@
     $("containerReturnQty").value = debt;
     $("containerReturnQty").max = String(debt);
     $("containerReturnLocation").value =
-      c.route === "ruta1" || c.route === "ruta2" ? c.route : "local";
+      isRouteCode(c.route) ? c.route : "local";
     $("containerReturnClientSummary").innerHTML =
       `<strong>${esc(c.name)}</strong><br>Debe: <span class="amount-danger">${int(debt)} garrafón(es)</span>`;
     showManagedDialog($("containerReturnDialog"));
@@ -4600,7 +4688,7 @@
       { containerDebt: c.containerDebt, received: qty },
     );
     addActivity(
-      `${c.name}: entregó ${qty} garrafón(es) vacío(s) · ${CHANNELS[location] || "Local"}`,
+      `${c.name}: entregó ${qty} garrafón(es) vacío(s) · ${routeLabel(location) || "Local"}`,
     );
     if (!(await commitState(previousState))) return;
     $("containerReturnDialog").close();
@@ -4699,7 +4787,7 @@
   function renderRoutes() {
     const u = activeUser(),
       ownRoute = !adminMode && u?.role === "repartidor";
-    const routeScope = ownRoute ? [u.center] : ["ruta1", "ruta2"];
+    const routeScope = ownRoute ? [u.center] : routeCodes();
     const cashOpen = Boolean(getOpenCashSession(u?.id));
     $("routeStatusHeader").innerHTML = routeScope
       .map((route) => {
@@ -4732,7 +4820,7 @@
           ? `<div class="route-load-line"><div class="route-load-bar"><span style="width:${progressPct}%"></span></div><small>Cargados <strong>${int(metrics.totalLoaded)}</strong>${metrics.reloads ? ` (${int(metrics.initialLoad)} + ${int(metrics.reloads)} de recarga)` : ""} · Vendidos <strong>${int(metrics.netSold)}</strong> · Quedan <strong class="${metrics.inconsistencyQty ? "amount-danger" : ""}">${int(Math.max(0, metrics.availableFull))}</strong></small></div>`
           : "";
         return `<section class="route-ops-header">
-          <div class="route-ops-title"><div><span class="eyebrow">${esc(CHANNELS[route])}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${esc(step.stateLabel)}</span></div>
+          <div class="route-ops-title"><div><span class="eyebrow">${esc(routeLabel(route))}</span><h2>${round ? `Ronda ${int(round.number)}` : "Sin ronda activa"}</h2></div><span class="route-state ${round ? "is-active" : ""}">${esc(step.stateLabel)}</span></div>
           ${routeTrackerHtml}
           ${loadLine}
           <div class="route-ops-metrics">
@@ -4763,7 +4851,7 @@
           .slice(0, 24)
           .map((client) => {
             const balance = clientBalance(client.id);
-            return `<article class="route-client-card"><div class="route-client-info"><div><strong>${client.frequent ? "★ " : ""}${esc(client.name)}</strong><small>${esc(client.address || client.phone || "Sin datos adicionales")}</small></div><span class="${balance > 0 ? "amount-danger" : "amount-success"}">${balance > 0 ? money(balance) : "Al corriente"}</span></div><div class="client-meta"><span>${esc(CHANNELS[client.route])}</span><span>${client.price != null ? `Especial ${money(expectedSalePrice(client))}` : money(expectedSalePrice(client))}</span></div><div class="route-client-actions"><button class="secondary-btn route-client-sale" data-id="${client.id}">Vender</button><button class="secondary-btn route-client-pay" data-id="${client.id}" ${balance > 0 && can("register_payment") ? "" : "disabled"}>Cobrar</button></div></article>`;
+            return `<article class="route-client-card"><div class="route-client-info"><div><strong>${client.frequent ? "★ " : ""}${esc(client.name)}</strong><small>${esc(client.address || client.phone || "Sin datos adicionales")}</small></div><span class="${balance > 0 ? "amount-danger" : "amount-success"}">${balance > 0 ? money(balance) : "Al corriente"}</span></div><div class="client-meta"><span>${esc(routeLabel(client.route))}</span><span>${client.price != null ? `Especial ${money(expectedSalePrice(client))}` : money(expectedSalePrice(client))}</span></div><div class="route-client-actions"><button class="secondary-btn route-client-sale" data-id="${client.id}">Vender</button><button class="secondary-btn route-client-pay" data-id="${client.id}" ${balance > 0 && can("register_payment") ? "" : "disabled"}>Cobrar</button></div></article>`;
           })
           .join("")
       : '<div class="empty">No hay clientes asignados a esta ruta.</div>';
@@ -4774,7 +4862,7 @@
     // "Regresar" repetidos. Todo eso vive ahora en la tarjeta unica de arriba.
     const arr = todaySales().filter(
       (s) =>
-        (s.channel === "ruta1" || s.channel === "ruta2") &&
+        (isRouteCode(s.channel)) &&
         (!ownRoute || (s.channel === u.center && s.userId === u.id)),
     );
     $("routesActivity").innerHTML = arr.length
@@ -4783,7 +4871,7 @@
           .reverse()
           .map(
             (s) =>
-              `<div class="list-row"><div class="list-main"><strong>${esc(s.folio || s.id)} · ${esc(s.clientName)} · ${s.qty}</strong><small>${CHANNELS[s.channel]} · ${fmtDateTime(s.date)}${s.roundId ? ` · Ronda ${state.rounds.find((r) => r.id === s.roundId)?.number || "-"}` : ""}</small></div><strong>${money(s.total)}</strong></div>`,
+              `<div class="list-row"><div class="list-main"><strong>${esc(s.folio || s.id)} · ${esc(s.clientName)} · ${s.qty}</strong><small>${routeLabel(s.channel)} · ${fmtDateTime(s.date)}${s.roundId ? ` · Ronda ${state.rounds.find((r) => r.id === s.roundId)?.number || "-"}` : ""}</small></div><strong>${money(s.total)}</strong></div>`,
           )
           .join("")
       : '<div class="empty">Sin movimientos de ruta hoy.</div>';
@@ -4795,7 +4883,7 @@
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
       .slice(0, 30);
     $("roundsHistory").innerHTML = history.length
-      ? `<div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Ruta</th><th>Ronda</th><th>Carga inicial</th><th>Recargas</th><th>Total</th><th>Vendidos netos</th><th>Esperados</th><th>Llenos regreso</th><th>Estado</th><th>Empleado</th></tr></thead><tbody>${history.map((r) => { const metrics = roundMetrics(r); return `<tr><td>${fmtDate(r.startedAt)}</td><td>${CHANNELS[r.route]}</td><td>${r.number}</td><td>${int(metrics.initialLoad)}</td><td>${int(metrics.reloads)}</td><td>${int(metrics.totalLoaded)}</td><td>${int(metrics.netSold)}</td><td>${int(metrics.availableFull)}</td><td>${int(r.returnedFullQty || 0)}</td><td>${metrics.inconsistencyQty ? `<span class="amount-danger">Inconsistente: ${int(metrics.inconsistencyQty)} de más. Ajuste administrativo requerido.</span>` : "Correcta"}</td><td>${esc(state.users.find((u) => u.id === r.userId)?.name || "-")}</td></tr>`; }).join("")}</tbody></table></div>`
+      ? `<div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Ruta</th><th>Ronda</th><th>Carga inicial</th><th>Recargas</th><th>Total</th><th>Vendidos netos</th><th>Esperados</th><th>Llenos regreso</th><th>Estado</th><th>Empleado</th></tr></thead><tbody>${history.map((r) => { const metrics = roundMetrics(r); return `<tr><td>${fmtDate(r.startedAt)}</td><td>${routeLabel(r.route)}</td><td>${r.number}</td><td>${int(metrics.initialLoad)}</td><td>${int(metrics.reloads)}</td><td>${int(metrics.totalLoaded)}</td><td>${int(metrics.netSold)}</td><td>${int(metrics.availableFull)}</td><td>${int(r.returnedFullQty || 0)}</td><td>${metrics.inconsistencyQty ? `<span class="amount-danger">Inconsistente: ${int(metrics.inconsistencyQty)} de más. Ajuste administrativo requerido.</span>` : "Correcta"}</td><td>${esc(state.users.find((u) => u.id === r.userId)?.name || "-")}</td></tr>`; }).join("")}</tbody></table></div>`
       : '<div class="empty">Aún no hay rondas registradas.</div>';
     $("routeRoundActions").innerHTML = routeScope
       .map((route) => activeRound(route))
@@ -4835,9 +4923,9 @@
     $("startRoundForm").reset();
     const u = activeUser();
     $("roundRoute").value =
-      u?.role === "repartidor" && ["ruta1", "ruta2"].includes(u.center)
+      u?.role === "repartidor" && routeCodes().includes(u.center)
         ? u.center
-        : ["ruta1", "ruta2"].includes(requestedRoute)
+        : routeCodes().includes(requestedRoute)
           ? requestedRoute
           : "ruta1";
     $("roundRoute").disabled = u?.role === "repartidor" && !adminMode;
@@ -4872,7 +4960,7 @@
     if (u.role === "repartidor" && !adminMode && route !== u.center)
       return toast("Solo puedes iniciar tu ruta asignada.", "error");
     if (activeRound(route))
-      return toast(`${CHANNELS[route]} ya tiene una ronda activa.`, "error");
+      return toast(`${routeLabel(route)} ya tiene una ronda activa.`, "error");
     if (!Number.isInteger(qty) || qty <= 0)
       return toast("Captura una carga válida.", "error");
     if (!validateInventoryMovement("local", -qty).valid)
@@ -4908,7 +4996,7 @@
       "local",
       -qty,
       "round_load",
-      `Carga ${CHANNELS[route]} · Ronda ${number}`,
+      `Carga ${routeLabel(route)} · Ronda ${number}`,
       route,
       { roundId: round.id },
     );
@@ -4922,13 +5010,13 @@
     );
     state.rounds.push(round);
     addActivity(
-      `${CHANNELS[route]} · Ronda ${number} iniciada con ${qty} llenos`,
+      `${routeLabel(route)} · Ronda ${number} iniciada con ${qty} llenos`,
     );
     audit(
       "round_started",
       "round",
       round.id,
-      `Ronda ${number} ${CHANNELS[route]}`,
+      `Ronda ${number} ${routeLabel(route)}`,
       null,
       round,
     );
@@ -4945,7 +5033,7 @@
     $("reloadRoundForm").reset();
     $("reloadRoundId").value = id;
     $("reloadRoundSummary").innerHTML =
-      `Ronda ${int(round.number)} · ${CHANNELS[round.route]}<br>` +
+      `Ronda ${int(round.number)} · ${routeLabel(round.route)}<br>` +
       `Carga inicial: <strong>${int(metrics.initialLoad)}</strong> · ` +
       `Recargas: <strong>${int(metrics.reloads)}</strong> · ` +
       `Vendidos netos: <strong>${int(metrics.netSold)}</strong> · ` +
@@ -4978,7 +5066,7 @@
       "local",
       -quantity,
       "round_reload",
-      `Recarga ${CHANNELS[round.route]} · Ronda ${round.number}`,
+      `Recarga ${routeLabel(round.route)} · Ronda ${round.number}`,
       round.route,
       { roundId: round.id },
     );
@@ -4996,12 +5084,12 @@
       "round_reloaded",
       "round",
       round.id,
-      `Recarga de ${quantity} garrafones · ${CHANNELS[round.route]}`,
+      `Recarga de ${quantity} garrafones · ${routeLabel(round.route)}`,
       before,
       structuredClone(round),
     );
     addActivity(
-      `${CHANNELS[round.route]} · Ronda ${round.number} recargada con ${quantity} llenos`,
+      `${routeLabel(round.route)} · Ronda ${round.number} recargada con ${quantity} llenos`,
     );
     if (!(await commitState(previousState))) return;
     $("reloadRoundDialog").close();
@@ -5021,7 +5109,7 @@
     $("roundLoadCorrectionForm").reset();
     $("roundLoadCorrectionId").value = id;
     $("roundLoadCorrectionSummary").innerHTML =
-      `Ronda ${int(round.number)} · ${CHANNELS[round.route]}<br>` +
+      `Ronda ${int(round.number)} · ${routeLabel(round.route)}<br>` +
       `Carga inicial: <strong>${int(metrics.initialLoad)}</strong> · ` +
       `Recargas: <strong>${int(metrics.reloads)}</strong> · ` +
       `Vendidos netos: <strong>${int(metrics.netSold)}</strong> · ` +
@@ -5105,7 +5193,7 @@
       structuredClone(round),
     );
     addActivity(
-      `${CHANNELS[round.route]} · Ronda ${round.number}: carga corregida (${delta > 0 ? "+" : ""}${int(delta)})`,
+      `${routeLabel(round.route)} · Ronda ${round.number}: carga corregida (${delta > 0 ? "+" : ""}${int(delta)})`,
     );
     if (!(await commitState(previousState))) return;
     $("roundLoadCorrectionDialog").close();
@@ -5156,7 +5244,7 @@
         ? "Resolver ronda activa"
         : "Registrar regreso";
     $("roundReturnSummary").innerHTML =
-      `<strong>${esc(CHANNELS[round.route])} · Ronda ${int(round.number)}</strong><br>` +
+      `<strong>${esc(routeLabel(round.route))} · Ronda ${int(round.number)}</strong><br>` +
       `ID: <code>${esc(round.id)}</code><br>` +
       `Apertura: <strong>${fmtDateTime(round.startedAt)}</strong><br>` +
       `Carga inicial: <strong>${int(metrics.initialLoad)}</strong> · ` +
@@ -5268,7 +5356,7 @@
       round.endedAt = nowISO();
       round.closedBy = activeUser()?.id || null;
       round.closeNotes = round.notes || "";
-      addActivity(`${CHANNELS[round.route]} · Ronda ${round.number} cerrada`);
+      addActivity(`${routeLabel(round.route)} · Ronda ${round.number} cerrada`);
       audit("round_closed", "round", round.id, `Ronda ${round.number} cerrada`, before, round);
       if (!(await commitState(previousState))) {
         submit.disabled = false;
@@ -5339,15 +5427,15 @@
     }
     if (full) {
       recordInventoryMovement(round.route, -full, "round_return_full", `Regreso Ronda ${round.number}`, "local", { roundId: round.id });
-      recordInventoryMovement("local", full, "round_return_full", `Desde ${CHANNELS[round.route]} · Ronda ${round.number}`, round.route, { roundId: round.id });
+      recordInventoryMovement("local", full, "round_return_full", `Desde ${routeLabel(round.route)} · Ronda ${round.number}`, round.route, { roundId: round.id });
     }
     if (damaged) {
       recordInventoryMovement(round.route, -damaged, "round_damaged", `Dañados Ronda ${round.number}`, "danados", { roundId: round.id });
-      recordInventoryMovement("danados", damaged, "round_damaged", `Desde ${CHANNELS[round.route]}`, round.route, { roundId: round.id });
+      recordInventoryMovement("danados", damaged, "round_damaged", `Desde ${routeLabel(round.route)}`, round.route, { roundId: round.id });
     }
     if (empty) {
       recordInventoryMovement(emptyRoute, -empty, "round_return_empty", `Regreso Ronda ${round.number}`, "empty_local", { roundId: round.id });
-      recordInventoryMovement("empty_local", empty, "round_return_empty", `Desde ${CHANNELS[round.route]} · Ronda ${round.number}`, emptyRoute, { roundId: round.id });
+      recordInventoryMovement("empty_local", empty, "round_return_empty", `Desde ${routeLabel(round.route)} · Ronda ${round.number}`, emptyRoute, { roundId: round.id });
     }
     round.returnedAt = nowISO();
     round.soldQty = metrics.netSold;
@@ -5359,7 +5447,7 @@
     round.notes = $("roundReturnNotes").value.trim();
     round.recoveryReason = recoveryReason;
     round.status = "regresada";
-    addActivity(`${CHANNELS[round.route]} · Regreso de ronda ${round.number} registrado`);
+    addActivity(`${routeLabel(round.route)} · Regreso de ronda ${round.number} registrado`);
     audit("round_returned", "round", round.id, `Regreso Ronda ${round.number}`, before, round);
     traceRoundReturn("rpc-start", { round_id: round.id, action: "return" });
     if (!(await commitState(previousState))) {
@@ -5557,7 +5645,7 @@
       expenses = todayExpenses().filter(
         (e) => !ownOnly || e.userId === user?.id,
       ),
-      centers = ownOnly ? [user?.center] : ["local", "ruta1", "ruta2"];
+      centers = ownOnly ? [user?.center] : ["local", ...routeCodes()];
     const cards = centers.filter(Boolean).map((center) => {
       const ss = sessions.filter((s) => s.center === center),
         expected = ss.reduce(
@@ -5672,7 +5760,7 @@
     );
 
     const byChannel = Object.keys(CHANNELS).map((k) => ({
-      channel: CHANNELS[k],
+      channel: routeLabel(k),
       sales: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.total, 0),
       units: sales.filter((s) => s.channel === k).reduce((a, s) => a + s.qty, 0),
       unreturned: sales
@@ -6057,7 +6145,7 @@
       },
     );
     const expenseCenter = $("expenseCenter"),
-      expenseOptions = ["local", "ruta1", "ruta2"]
+      expenseOptions = ["local", ...routeCodes()]
         .map((center) => `<option value="${center}">${centerLabel(center)}</option>`)
         .join("");
     if (expenseCenter && expenseCenter.innerHTML !== expenseOptions) {
@@ -6734,7 +6822,7 @@
   function updateUserRoleFields() {
     const isRoute = $("userRole").value === "repartidor";
     $("userRouteField").classList.toggle("hidden", !isRoute);
-    if (!isRoute) $("userCenter").value = "ruta1";
+    if (!isRoute) $("userCenter").value = routeCodes()[0] || "ruta1";
   }
   function generateUserPin() {
     const values = new Uint16Array(1);
@@ -6777,9 +6865,9 @@
     $("userName").value = user?.name || "";
     $("userUsername").value = user?.username || "";
     $("userRole").value = user?.role || "ventanilla";
-    $("userCenter").value = ["ruta1", "ruta2"].includes(user?.center)
+    $("userCenter").value = routeCodes().includes(user?.center)
       ? user.center
-      : "ruta1";
+      : routeCodes()[0] || "ruta1";
     $("userPin").value = "";
     $("userPin").type = "password";
     $("generateUserPinBtn").textContent = "Generar";
@@ -7088,7 +7176,7 @@
     ].forEach((k) => {
       if (!Array.isArray(data[k])) throw new Error(`${k} debe ser una lista`);
     });
-    const coreLocations = ["local", "ruta1", "ruta2", "lavado", "danados"];
+    const coreLocations = ["local", ...routeCodes(), "lavado", "danados"];
     if (
       !data.inventory ||
       coreLocations.some(

@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20261025-fluent-win11";
-import { selectAll, rpc } from "./repository-utils.js?v=20261025-fluent-win11";
+} from "./supabase-client.js?v=20261025-rutas-expandibles";
+import { selectAll, rpc } from "./repository-utils.js?v=20261025-rutas-expandibles";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

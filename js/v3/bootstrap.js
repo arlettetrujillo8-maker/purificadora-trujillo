@@ -6,23 +6,24 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-fluent-win11";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-fluent-win11";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-fluent-win11";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-fluent-win11";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-fluent-win11";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-fluent-win11";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-fluent-win11";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-fluent-win11";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-fluent-win11";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-fluent-win11";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-fluent-win11";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-fluent-win11";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-fluent-win11";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-fluent-win11";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-fluent-win11";
+} from "../data/supabase-client.js?v=20261025-rutas-expandibles";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-rutas-expandibles";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-rutas-expandibles";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-rutas-expandibles";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-rutas-expandibles";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-rutas-expandibles";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-rutas-expandibles";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-rutas-expandibles";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-rutas-expandibles";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-rutas-expandibles";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-rutas-expandibles";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-rutas-expandibles";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-rutas-expandibles";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-rutas-expandibles";
+import { routesRepository } from "../data/routes-repository.js?v=20261025-rutas-expandibles";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-rutas-expandibles";
 
-const BOOTSTRAP_BUILD = "20261025-fluent-win11";
+const BOOTSTRAP_BUILD = "20261025-rutas-expandibles";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";
@@ -326,6 +327,20 @@ async function hydrateOperationalState(source = "manual") {
   refreshInFlight = true;
   try {
     const projection = await store.load(app.getState());
+    try {
+      const routes = await routesRepository.list();
+      window.PurificadoraRoutes = Array.isArray(routes) ? routes : [];
+    } catch (error) {
+      window.PurificadoraRoutes = Array.isArray(window.PurificadoraRoutes)
+        ? window.PurificadoraRoutes
+        : [];
+      console.warn("No se pudieron cargar las rutas centrales", error);
+    }
+    window.dispatchEvent(
+      new CustomEvent("purificadora:routes", {
+        detail: window.PurificadoraRoutes,
+      }),
+    );
     app.applyCentralState(projection, store.profile);
     diagnosticState.profileId = store.profile?.id || null;
     diagnosticState.role = store.profile?.role || null;

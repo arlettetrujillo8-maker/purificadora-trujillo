@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-fluent-win11";
-import { clientsRepository } from "./clients-repository.js?v=20261025-fluent-win11";
-import { salesRepository } from "./sales-repository.js?v=20261025-fluent-win11";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-fluent-win11";
-import { cashRepository } from "./cash-repository.js?v=20261025-fluent-win11";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-fluent-win11";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-fluent-win11";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-fluent-win11";
-import { settingsRepository } from "./settings-repository.js?v=20261025-fluent-win11";
-import { reportsRepository } from "./reports-repository.js?v=20261025-fluent-win11";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-fluent-win11";
-import { returnsRepository } from "./returns-repository.js?v=20261025-fluent-win11";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-fluent-win11";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-fluent-win11";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-rutas-expandibles";
+import { clientsRepository } from "./clients-repository.js?v=20261025-rutas-expandibles";
+import { salesRepository } from "./sales-repository.js?v=20261025-rutas-expandibles";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-rutas-expandibles";
+import { cashRepository } from "./cash-repository.js?v=20261025-rutas-expandibles";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-rutas-expandibles";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-rutas-expandibles";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-rutas-expandibles";
+import { settingsRepository } from "./settings-repository.js?v=20261025-rutas-expandibles";
+import { reportsRepository } from "./reports-repository.js?v=20261025-rutas-expandibles";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-rutas-expandibles";
+import { returnsRepository } from "./returns-repository.js?v=20261025-rutas-expandibles";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-rutas-expandibles";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-rutas-expandibles";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>
