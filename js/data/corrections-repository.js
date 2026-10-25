@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20260906-mobile-capture-v5";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-backend-test";
 
 const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
 

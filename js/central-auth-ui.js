@@ -1,7 +1,7 @@
 (function exposeCentralAuthUi(globalScope) {
   "use strict";
 
-  const BUILD = "20260906-mobile-capture-v5";
+  const BUILD = "20261025-backend-test";
   const TRIGGER_SELECTOR =
     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
   const bindings = new WeakMap();

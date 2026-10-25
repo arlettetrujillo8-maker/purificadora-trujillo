@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20260906-mobile-capture-v5";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-backend-test";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),
