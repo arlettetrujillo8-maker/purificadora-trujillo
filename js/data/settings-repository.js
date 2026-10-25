@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-menu-legible";
+import { selectAll, rpc, commandArgs } from "./repository-utils.js?v=20261025-venta-inline";
 
 export const settingsRepository = {
   list: () => selectAll("settings"),

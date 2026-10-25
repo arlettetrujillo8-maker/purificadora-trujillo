@@ -2761,38 +2761,44 @@ details.full summary {
   dialog[open]:not(#paymentDialog) > .dialog-form > .dialog-actions {
     padding-block: 8px;
   }
-  #view-ventas.active #saleForm { padding-bottom: 12px; }
+  /* Venta: resumen y acciones dentro del formulario (sin barra flotante que
+     tape campos). El bloque queda al final del formulario y ocupa su espacio. */
+  #view-ventas.active #saleForm { padding-bottom: 8px; }
   #view-ventas.active .sale-checkout {
-    position: fixed;
-    left: max(12px, env(safe-area-inset-left));
-    right: max(12px, env(safe-area-inset-right));
-    bottom: calc(76px + env(safe-area-inset-bottom));
-    z-index: 34;
-    background: var(--surface, white);
-    border-radius: 16px;
-    box-shadow: var(--shadow-lift);
+    position: static;
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: none;
+    overflow: hidden;
   }
   #view-ventas.active #saleForm .sale-summary {
     position: static;
     margin: 0;
     padding: 8px 12px;
-    border-radius: 16px 16px 0 0;
-    max-height: 80px;
-    overflow-y: auto;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: var(--surface2);
+    color: var(--text);
+    max-height: none;
+    overflow: visible;
+    font-size: 13px;
+    line-height: 1.5;
   }
+  #view-ventas.active #saleForm .sale-summary strong { font-size: 15px; }
   #view-ventas.active #saleForm .sale-actions {
     position: static;
     flex-direction: row;
     margin: 0;
     padding: 8px 12px;
-    border-radius: 0 0 16px 16px;
+    border-radius: 0;
     box-shadow: none;
   }
   #view-ventas.active #saleForm .sale-actions button { min-width: 0; width: auto; min-height: 44px; }
-  body.keyboard-open #view-ventas.active .sale-checkout {
-    bottom: calc(var(--keyboard-inset, 0px) + max(6px, env(safe-area-inset-bottom)));
-  }
-  #view-ventas.active #saleForm::after { content: ""; display: block; height: 160px; }
+  #view-ventas.active #saleForm::after { content: none; height: 0; }
   .qty-stepper button { min-height: 48px; touch-action: manipulation; }
   .payment-body input, .payment-body select, .payment-body textarea { scroll-margin-block: 12px; }
 }
@@ -3580,21 +3586,17 @@ tbody tr:hover {
   .dialog-actions button {
     min-height: 44px;
   }
-  /* Barra flotante de venta: menos altura, mismo alcance */
+  /* Resumen de venta compacto dentro del formulario */
   #view-ventas.active #saleForm .sale-summary {
-    padding: 6px 12px;
-    max-height: 64px;
+    padding: 8px 12px;
     gap: var(--space-1);
   }
   #view-ventas.active #saleForm .sale-actions {
-    padding: 6px 12px;
+    padding: 8px 12px;
     gap: var(--space-2);
   }
   #view-ventas.active #saleForm .sale-actions button {
-    min-height: 40px;
-  }
-  #view-ventas.active .sale-checkout {
-    border-radius: var(--space-3);
+    min-height: 44px;
   }
   /* Empleados: mismo margen inferior que el resto de ventanas */
   #userDialog #userForm {

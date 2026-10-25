@@ -6,24 +6,24 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-menu-legible";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-menu-legible";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-menu-legible";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-menu-legible";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-menu-legible";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-menu-legible";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-menu-legible";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-menu-legible";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-menu-legible";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-menu-legible";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-menu-legible";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-menu-legible";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-menu-legible";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-menu-legible";
-import { routesRepository } from "../data/routes-repository.js?v=20261025-menu-legible";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-menu-legible";
+} from "../data/supabase-client.js?v=20261025-venta-inline";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-venta-inline";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-venta-inline";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-venta-inline";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-venta-inline";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-venta-inline";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-venta-inline";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-venta-inline";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-venta-inline";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-venta-inline";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-venta-inline";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-venta-inline";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-venta-inline";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-venta-inline";
+import { routesRepository } from "../data/routes-repository.js?v=20261025-venta-inline";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-venta-inline";
 
-const BOOTSTRAP_BUILD = "20261025-menu-legible";
+const BOOTSTRAP_BUILD = "20261025-venta-inline";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

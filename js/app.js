@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-menu-legible";
+  const APP_SCRIPT_BUILD = "20261025-venta-inline";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -3734,8 +3734,7 @@
     const credit = Math.max(0, total - paid);
     updateSaleContainerFields();
     const containerEffect = saleContainerEffect(qty);
-    $("saleSummary").innerHTML =
-      `<strong>${qty} garrafón(es) · ${money(total)}</strong><br>Pagado: ${money(paid)} · Fiado: ${money(credit)}<br>Envases: ${int(containerEffect.emptyReturnQty)} vacío(s) · ${int(containerEffect.damagedReturnQty)} dañado(s)${exceptional ? `<br><span class="amount-danger">Precio esperado ${money(expected)}</span>` : ""}${c ? `<br>Cliente: ${esc(c.name)} · Saldo actual ${money(clientBalance(c.id))}${lastClientSale(c.id) ? `<br><button type="button" class="text-btn" id="repeatLastSale">Repetir ${lastClientSale(c.id).qty}</button>` : ""}` : `<br>Cliente: Público general`}`;
+    $("saleSummary").innerHTML = `<strong>${qty} garrafón(es) · ${money(total)}</strong>${exceptional ? ` · <span class="amount-danger">Precio esperado ${money(expected)}</span>` : ""}<br>${c ? `Cliente: ${esc(c.name)} · Saldo ${money(clientBalance(c.id))}${lastClientSale(c.id) ? ` · <button type="button" class="text-btn" id="repeatLastSale">Repetir ${lastClientSale(c.id).qty}</button>` : ""}` : "Cliente: Público general"}`;
     const repeat = $("repeatLastSale");
     if (repeat)
       repeat.onclick = () => {
