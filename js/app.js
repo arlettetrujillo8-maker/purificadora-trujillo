@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-venta-dos-columnas";
+  const APP_SCRIPT_BUILD = "20261025-rutas-pestanas";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2161,6 +2161,7 @@
           beginSaleForRoute(b.dataset.channel);
         else {
           showView(b.dataset.go);
+          if (b.dataset.routeTab) setRouteTab(b.dataset.routeTab);
           if (b.dataset.expenseCenter) {
             $("expenseCenter").value = b.dataset.expenseCenter;
             $("expenseConcept").dataset.contextCenter = b.dataset.expenseCenter;
@@ -2316,6 +2317,9 @@
     });
     $("newClientBtn").addEventListener("click", () => openClientDialog());
     $("newOrderBtn")?.addEventListener("click", () => openOrderDialog());
+    $("routeTabRound")?.addEventListener("click", () => setRouteTab("round"));
+    $("routeTabOrders")?.addEventListener("click", () => setRouteTab("orders"));
+    $("newRouteOrderBtn")?.addEventListener("click", () => openOrderDialog());
     $("orderForm")?.addEventListener("submit", saveOrder);
     $("orderClient")?.addEventListener("change", () => {
       const c = clientById($("orderClient").value);
@@ -2854,6 +2858,7 @@
       : '<div class="empty">No hay pedidos programados. Crea el primero con “Nuevo pedido”.</div>';
   }
   function renderRouteOrders() {
+    updateRouteOrdersBadge();
     const host = $("routeOrdersPanel");
     if (!host) return;
     const user = activeUser(),
@@ -2881,6 +2886,15 @@
         </div>`,
       )
       .join("")}`;
+  }
+  function updateRouteOrdersBadge() {
+    const badge = $("routeTabOrdersCount");
+    if (!badge) return;
+    const due = (orderApi()?.dueToday(scopedOrders()) || []).filter(
+      (order) => order.status === "pendiente",
+    ).length;
+    badge.textContent = String(due);
+    badge.classList.toggle("hidden", due === 0);
   }
   function openOrderDialog(order = null) {
     if (!requirePermission("create_sale")) return;
@@ -3025,6 +3039,7 @@
     renderDebt();
     renderContainerDebt();
     renderRoutes();
+    setRouteTab(routeTab);
     renderOrders();
     renderRouteOrders();
     renderWindow();
@@ -3148,8 +3163,16 @@
   function metric(label, value, hint = "") {
     return `<div class="metric-card"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`;
   }
-  function statCard({ label, value, hint, view, channel = "", tone = "" }) {
-    return `<button type="button" class="stat-card ${tone}" data-go="${esc(view)}"${channel ? ` data-channel="${esc(channel)}"` : ""}>
+  function statCard({
+    label,
+    value,
+    hint,
+    view,
+    channel = "",
+    routeTab = "",
+    tone = "",
+  }) {
+    return `<button type="button" class="stat-card ${tone}" data-go="${esc(view)}"${channel ? ` data-channel="${esc(channel)}"` : ""}${routeTab ? ` data-route-tab="${esc(routeTab)}"` : ""}>
       <span class="label">${esc(label)}</span>
       <strong>${value}</strong>
       <small>${esc(hint)}</small>
@@ -3258,7 +3281,8 @@
           hint: dueOrders.length
             ? `${int(dueUnits)} garrafones · ${money(dueTotal)}`
             : "Sin pedidos para hoy",
-          view: "pedidos",
+          view: "rutas",
+          routeTab: "orders",
           tone: overdueOrders.length ? "is-danger" : "",
         }),
       ].join("");
@@ -3267,7 +3291,7 @@
       quickHost.innerHTML = [
         '<button class="primary-btn" data-go="ventas">+ Nueva venta</button>',
         `<button class="secondary-btn" data-go="fiado">Cobrar fiado${pending > 0.009 ? ` · ${money(pending)}` : ""}</button>`,
-        `<button class="secondary-btn" data-go="pedidos"${dueOrders.length ? "" : " disabled"}>Entregar pedido${dueOrders.length ? ` · ${int(dueOrders.length)}` : ""}</button>`,
+        `<button class="secondary-btn" data-go="rutas" data-route-tab="orders"${dueOrders.length ? "" : " disabled"}>Entregar pedido${dueOrders.length ? ` · ${int(dueOrders.length)}` : ""}</button>`,
       ].join("");
     const todayHost = $("dashboardToday");
     if (todayHost) {
@@ -3298,7 +3322,7 @@
         );
       if (overdueOrders.length)
         alerts.push(
-          `<div class="list-row"><div class="list-main"><strong>${int(overdueOrders.length)} pedido(s) atrasados</strong><small>Revisa la fecha de entrega</small></div><button class="secondary-btn" data-go="pedidos">Ver</button></div>`,
+          `<div class="list-row"><div class="list-main"><strong>${int(overdueOrders.length)} pedido(s) atrasados</strong><small>Revisa la fecha de entrega</small></div><button class="secondary-btn" data-go="rutas" data-route-tab="orders">Ver</button></div>`,
         );
       if (!navigator.onLine)
         alerts.push(
@@ -5336,6 +5360,23 @@
       ),
       secondary,
     };
+  }
+  let routeTab = "round";
+  function setRouteTab(tab) {
+    const target = tab === "orders" ? "orders" : "round";
+    routeTab = target;
+    const roundView = $("routeRoundView"),
+      ordersView = $("routeOrdersView"),
+      roundTab = $("routeTabRound"),
+      ordersTab = $("routeTabOrders");
+    if (!roundView || !ordersView) return;
+    roundView.classList.toggle("hidden", target !== "round");
+    ordersView.classList.toggle("hidden", target !== "orders");
+    roundTab?.classList.toggle("active", target === "round");
+    ordersTab?.classList.toggle("active", target === "orders");
+    roundTab?.setAttribute("aria-selected", String(target === "round"));
+    ordersTab?.setAttribute("aria-selected", String(target === "orders"));
+    if (target === "orders") renderRouteOrders();
   }
   function renderRoutes() {
     const u = activeUser(),

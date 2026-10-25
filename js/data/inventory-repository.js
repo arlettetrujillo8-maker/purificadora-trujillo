@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-venta-dos-columnas";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-rutas-pestanas";
 
 export const inventoryRepository = {
   listLocations: () => selectAll("inventory_locations"),

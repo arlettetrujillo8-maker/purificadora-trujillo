@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-venta-dos-columnas";
-import { clientsRepository } from "./clients-repository.js?v=20261025-venta-dos-columnas";
-import { salesRepository } from "./sales-repository.js?v=20261025-venta-dos-columnas";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-venta-dos-columnas";
-import { cashRepository } from "./cash-repository.js?v=20261025-venta-dos-columnas";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-venta-dos-columnas";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-venta-dos-columnas";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-venta-dos-columnas";
-import { settingsRepository } from "./settings-repository.js?v=20261025-venta-dos-columnas";
-import { reportsRepository } from "./reports-repository.js?v=20261025-venta-dos-columnas";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-venta-dos-columnas";
-import { returnsRepository } from "./returns-repository.js?v=20261025-venta-dos-columnas";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-venta-dos-columnas";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-venta-dos-columnas";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-rutas-pestanas";
+import { clientsRepository } from "./clients-repository.js?v=20261025-rutas-pestanas";
+import { salesRepository } from "./sales-repository.js?v=20261025-rutas-pestanas";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-rutas-pestanas";
+import { cashRepository } from "./cash-repository.js?v=20261025-rutas-pestanas";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-rutas-pestanas";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-rutas-pestanas";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-rutas-pestanas";
+import { settingsRepository } from "./settings-repository.js?v=20261025-rutas-pestanas";
+import { reportsRepository } from "./reports-repository.js?v=20261025-rutas-pestanas";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-rutas-pestanas";
+import { returnsRepository } from "./returns-repository.js?v=20261025-rutas-pestanas";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-rutas-pestanas";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-rutas-pestanas";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

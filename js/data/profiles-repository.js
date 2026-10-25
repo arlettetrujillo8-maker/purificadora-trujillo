@@ -2,8 +2,8 @@ import {
   supabase,
   getDeviceId,
   getDeviceName,
-} from "./supabase-client.js?v=20261025-venta-dos-columnas";
-import { selectAll, rpc } from "./repository-utils.js?v=20261025-venta-dos-columnas";
+} from "./supabase-client.js?v=20261025-rutas-pestanas";
+import { selectAll, rpc } from "./repository-utils.js?v=20261025-rutas-pestanas";
 
 const PUBLIC_PROFILE_FIELDS =
   "id,name,username,role,center,route,permissions,active,pin_configured,created_at,updated_at";

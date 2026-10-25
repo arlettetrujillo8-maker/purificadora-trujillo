@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20261025-venta-dos-columnas" />
+    <meta name="app-build" content="20261025-rutas-pestanas" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
@@ -15,7 +15,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261025-venta-dos-columnas" />
+    <link rel="stylesheet" href="css/styles.css?v=20261025-rutas-pestanas" />
   </head>
   <body>
     <div class="app-shell">
@@ -30,30 +30,32 @@
           <small id="mobileUserIdentity" class="mobile-user-identity"></small>
         </div>
         <nav id="mainNav">
+          <span class="nav-group-label">Operación</span>
           <button class="nav-item active" data-view="dashboard">Inicio</button>
-          <button class="nav-item" data-view="clientes">Clientes</button>
           <button class="nav-item" data-view="ventas">Nueva venta</button>
+          <button class="nav-item" data-view="rutas">Rutas</button>
+          <button class="nav-item" data-view="ventanilla">Ventanilla</button>
           <button class="nav-item" data-view="ultimas">Últimas ventas</button>
+
+          <span class="nav-group-label">Dinero</span>
+          <button class="nav-item" data-view="caja">Caja</button>
           <button class="nav-item" data-view="fiado">Fiado y pagos</button>
           <button class="nav-item" data-view="envases">Envases pendientes</button>
-          <button class="nav-item" data-view="rutas">Rutas</button>
-        <button class="nav-item" data-view="pedidos">Pedidos</button>
-          <button class="nav-item" data-view="ventanilla">Ventanilla</button>
-          <button class="nav-item" data-view="caja">Caja</button>
+          <button class="nav-item" data-view="gastos">Gastos</button>
+          <button class="nav-item" data-view="reportes">Reportes</button>
+
+          <span class="nav-group-label">Catálogo</span>
+          <button class="nav-item" data-view="clientes">Clientes</button>
           <button class="nav-item" data-view="inventario">Inventario</button>
           <button class="nav-item" data-view="insumos">Insumos</button>
-          <button class="nav-item" data-view="mantenimiento">
-            Mantenimiento
-          </button>
-          <button class="nav-item" data-view="gastos">Gastos</button>
+          <button class="nav-item" data-view="mantenimiento">Mantenimiento</button>
+
+          <span class="nav-group-label">Sistema</span>
           <button class="nav-item admin-entry hidden" id="openAdminBtn" type="button">
             Administración
           </button>
           <button class="nav-item" data-view="usuarios">Empleados</button>
-          <button class="nav-item" data-view="reportes">Reportes</button>
-          <button class="nav-item" data-view="configuracion">
-            Configuración
-          </button>
+          <button class="nav-item" data-view="configuracion">Configuración</button>
           <button class="nav-item" data-view="auditoria">Auditoría</button>
           <button class="nav-item" data-view="diagnostico">Diagnóstico</button>
           <button
@@ -171,7 +173,7 @@
             <div class="panel">
               <div class="panel-head">
                 <h3>Para hoy</h3>
-                <button class="text-btn" data-go="pedidos">Ver pedidos</button>
+                <button class="text-btn" data-go="rutas" data-route-tab="orders">Ver pedidos</button>
               </div>
               <div id="dashboardToday"></div>
             </div>
@@ -620,6 +622,31 @@
         </section>
 
         <section class="view" id="view-rutas">
+          <div class="segmented-tabs" role="tablist" aria-label="Rutas">
+            <button
+              class="segmented-tab active"
+              id="routeTabRound"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-route-tab="round"
+            >
+              Ronda
+            </button>
+            <button
+              class="segmented-tab"
+              id="routeTabOrders"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-route-tab="orders"
+            >
+              Pedidos
+              <span class="tab-count hidden" id="routeTabOrdersCount">0</span>
+            </button>
+          </div>
+          <div id="routeRoundView" role="tabpanel" aria-labelledby="routeTabRound">
+
           <div id="routeStatusHeader" class="route-status-stack"></div>
           <div class="toolbar route-toolbar">
             <div>
@@ -658,7 +685,29 @@
             <div id="roundsHistory"></div>
           </div>
           <div id="routeRoundActions" class="route-round-actions"></div>
-                  <div class="panel" id="routeOrdersPanel"></div>
+          </div>
+          <div
+            id="routeOrdersView"
+            class="hidden"
+            role="tabpanel"
+            aria-labelledby="routeTabOrders"
+          >
+            <div class="toolbar route-toolbar">
+              <div>
+                <h3>Pedidos de la ruta</h3>
+                <p class="muted">Pendientes de hoy; entrega en un toque.</p>
+              </div>
+              <div class="toolbar-actions">
+                <button id="newRouteOrderBtn" class="primary-btn" type="button">
+                  + Nuevo pedido
+                </button>
+                <button class="secondary-btn" data-go="pedidos" type="button">
+                  Abrir vista completa
+                </button>
+              </div>
+            </div>
+            <div class="panel" id="routeOrdersPanel"></div>
+          </div>
         </section>
 
                 <section class="view" id="view-pedidos">
@@ -2767,17 +2816,17 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/safe-uuid.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/presentation-labels.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/user-display.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/empty-reconcile.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/sale-client-selection.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/data/offline-store.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/v3/costs.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/v3/orders.js?v=20261025-venta-dos-columnas"></script>
-    <script src="js/app.js?v=20261025-venta-dos-columnas"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20261025-venta-dos-columnas"></script>
+    <script src="js/central-auth-ui.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/safe-uuid.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/presentation-labels.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/user-display.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/empty-reconcile.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/sale-client-selection.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/data/offline-store.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/v3/costs.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/v3/orders.js?v=20261025-rutas-pestanas"></script>
+    <script src="js/app.js?v=20261025-rutas-pestanas"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20261025-rutas-pestanas"></script>
     <script>
       // Si el arranque falla (sin conexión o caché incompleta), muestra un
       // aviso con reintento en lugar de dejar la pantalla en blanco.
