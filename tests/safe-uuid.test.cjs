@@ -25,7 +25,7 @@ assert.match(
 );
 assert.throws(() => safeRandomUUID({}), /generador criptogr/);
 
-assert.match(html, /safe-uuid\.js\?v=20261025-legible-fluent/);
+assert.match(html, /safe-uuid\.js\?v=20261025-menu-legible/);
 assert.match(sw, /js\/safe-uuid\.js/);
 assert.match(client, /PurificadoraCrypto\?\.safeRandomUUID/);
 assert.match(repositoryUtils, /PurificadoraCrypto\.safeRandomUUID\(\)/);

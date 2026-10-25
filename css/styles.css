@@ -3821,3 +3821,27 @@ input[type="search"] {
   background: rgba(15, 123, 15, 0.07);
   color: #0b5c0b;
 }
+
+/* Sidebar claro: los textos heredaban colores del diseño oscuro anterior
+   (#fff, #a8b7d0, #dbe7fb) y quedaban invisibles sobre la superficie Mica. */
+.sidebar {
+  color: var(--text);
+}
+.sidebar .brand,
+.sidebar .brand strong {
+  color: var(--text);
+}
+.sidebar .brand small,
+.sidebar small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.sidebar .mobile-user-identity {
+  color: var(--muted) !important;
+  font-weight: 600;
+}
+.sidebar .session-chip,
+.sidebar .admin-mode-badge {
+  color: #7a4a00;
+}

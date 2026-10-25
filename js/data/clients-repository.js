@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-legible-fluent";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-menu-legible";
 
 function payload(client) {
   return {

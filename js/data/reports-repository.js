@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-legible-fluent";
+import { selectAll } from "./repository-utils.js?v=20261025-menu-legible";
 
 export const reportsRepository = {
   listAudit: () =>
