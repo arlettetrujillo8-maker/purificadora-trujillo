@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-backend-test";
-import { clientsRepository } from "./clients-repository.js?v=20261025-backend-test";
-import { salesRepository } from "./sales-repository.js?v=20261025-backend-test";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-backend-test";
-import { cashRepository } from "./cash-repository.js?v=20261025-backend-test";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-backend-test";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-backend-test";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-backend-test";
-import { settingsRepository } from "./settings-repository.js?v=20261025-backend-test";
-import { reportsRepository } from "./reports-repository.js?v=20261025-backend-test";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-backend-test";
-import { returnsRepository } from "./returns-repository.js?v=20261025-backend-test";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-backend-test";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-backend-test";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-movil-ventanas";
+import { clientsRepository } from "./clients-repository.js?v=20261025-movil-ventanas";
+import { salesRepository } from "./sales-repository.js?v=20261025-movil-ventanas";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-movil-ventanas";
+import { cashRepository } from "./cash-repository.js?v=20261025-movil-ventanas";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-movil-ventanas";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-movil-ventanas";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-movil-ventanas";
+import { settingsRepository } from "./settings-repository.js?v=20261025-movil-ventanas";
+import { reportsRepository } from "./reports-repository.js?v=20261025-movil-ventanas";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-movil-ventanas";
+import { returnsRepository } from "./returns-repository.js?v=20261025-movil-ventanas";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-movil-ventanas";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-movil-ventanas";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

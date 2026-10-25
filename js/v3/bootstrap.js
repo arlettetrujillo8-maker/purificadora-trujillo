@@ -6,23 +6,23 @@ import {
   getDeviceName,
   setRememberDevicePreference,
   REMEMBERED_EMAIL_KEY,
-} from "../data/supabase-client.js?v=20261025-backend-test";
-import { OperationalStore } from "../data/operational-store.js?v=20261025-backend-test";
-import { profilesRepository } from "../data/profiles-repository.js?v=20261025-backend-test";
-import { clientsRepository } from "../data/clients-repository.js?v=20261025-backend-test";
-import { salesRepository } from "../data/sales-repository.js?v=20261025-backend-test";
-import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-backend-test";
-import { cashRepository } from "../data/cash-repository.js?v=20261025-backend-test";
-import { roundsRepository } from "../data/rounds-repository.js?v=20261025-backend-test";
-import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-backend-test";
-import { returnsRepository } from "../data/returns-repository.js?v=20261025-backend-test";
-import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-backend-test";
-import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-backend-test";
-import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-backend-test";
-import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-backend-test";
-import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-backend-test";
+} from "../data/supabase-client.js?v=20261025-movil-ventanas";
+import { OperationalStore } from "../data/operational-store.js?v=20261025-movil-ventanas";
+import { profilesRepository } from "../data/profiles-repository.js?v=20261025-movil-ventanas";
+import { clientsRepository } from "../data/clients-repository.js?v=20261025-movil-ventanas";
+import { salesRepository } from "../data/sales-repository.js?v=20261025-movil-ventanas";
+import { ledgerRepository } from "../data/ledger-repository.js?v=20261025-movil-ventanas";
+import { cashRepository } from "../data/cash-repository.js?v=20261025-movil-ventanas";
+import { roundsRepository } from "../data/rounds-repository.js?v=20261025-movil-ventanas";
+import { inventoryRepository } from "../data/inventory-repository.js?v=20261025-movil-ventanas";
+import { returnsRepository } from "../data/returns-repository.js?v=20261025-movil-ventanas";
+import { correctionsRepository } from "../data/corrections-repository.js?v=20261025-movil-ventanas";
+import { suppliesRepository } from "../data/supplies-repository.js?v=20261025-movil-ventanas";
+import { maintenanceRepository } from "../data/maintenance-repository.js?v=20261025-movil-ventanas";
+import { workDaysRepository } from "../data/work-days-repository.js?v=20261025-movil-ventanas";
+import { toCents, fromCents, formatMoney } from "./money.js?v=20261025-movil-ventanas";
 
-const BOOTSTRAP_BUILD = "20261025-backend-test";
+const BOOTSTRAP_BUILD = "20261025-movil-ventanas";
 const APP_BUILD =
   document.querySelector('meta[name="app-build"]')?.content || "No disponible";
 const APP_SCRIPT_BUILD = window.PurificadoraAppScriptBuild || "No cargado";

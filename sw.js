@@ -1,4 +1,4 @@
-const BUILD = "20261025-backend-test";
+const BUILD = "20261025-movil-ventanas";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",

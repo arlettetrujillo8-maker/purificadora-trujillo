@@ -2733,6 +2733,34 @@ details.full summary {
   #paymentAmount { font-size: 24px; font-weight: 700; min-height: 48px; }
   .payment-amount-actions { margin-block: 6px 10px; }
   .payment-notes summary { font-size: 14px; }
+  /* Ventanas genericas moviles: el cuerpo desplaza y la accion principal queda
+     siempre alcanzable, aunque el teclado reduzca el area visible. */
+  dialog[open]:not(#paymentDialog) {
+    overflow: hidden;
+  }
+  dialog[open]:not(#paymentDialog) > form,
+  dialog[open]:not(#paymentDialog) > .dialog-form {
+    max-height: calc(var(--visible-height, 100dvh) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-bottom: 12px;
+  }
+  dialog[open]:not(#paymentDialog) > form > button.primary-btn,
+  dialog[open]:not(#paymentDialog) > form > button.danger-btn,
+  dialog[open]:not(#paymentDialog) > .dialog-form > button.primary-btn,
+  dialog[open]:not(#paymentDialog) > .dialog-form > button.danger-btn,
+  dialog[open]:not(#paymentDialog) > form > .dialog-actions,
+  dialog[open]:not(#paymentDialog) > .dialog-form > .dialog-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--surface, #fff);
+    box-shadow: 0 -10px 16px -14px rgba(15, 23, 42, 0.5);
+  }
+  dialog[open]:not(#paymentDialog) > form > .dialog-actions,
+  dialog[open]:not(#paymentDialog) > .dialog-form > .dialog-actions {
+    padding-block: 8px;
+  }
   #view-ventas.active #saleForm { padding-bottom: 12px; }
   #view-ventas.active .sale-checkout {
     position: fixed;
