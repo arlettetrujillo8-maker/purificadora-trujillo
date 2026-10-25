@@ -1,5 +1,5 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-offline-estable";
-import { supabase } from "./supabase-client.js?v=20261025-offline-estable";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-inicio-accionable";
+import { supabase } from "./supabase-client.js?v=20261025-inicio-accionable";
 
 export const salesRepository = {
   list: () =>

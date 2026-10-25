@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-offline-estable";
-import { clientsRepository } from "./clients-repository.js?v=20261025-offline-estable";
-import { salesRepository } from "./sales-repository.js?v=20261025-offline-estable";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-offline-estable";
-import { cashRepository } from "./cash-repository.js?v=20261025-offline-estable";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-offline-estable";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-offline-estable";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-offline-estable";
-import { settingsRepository } from "./settings-repository.js?v=20261025-offline-estable";
-import { reportsRepository } from "./reports-repository.js?v=20261025-offline-estable";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-offline-estable";
-import { returnsRepository } from "./returns-repository.js?v=20261025-offline-estable";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-offline-estable";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-offline-estable";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-inicio-accionable";
+import { clientsRepository } from "./clients-repository.js?v=20261025-inicio-accionable";
+import { salesRepository } from "./sales-repository.js?v=20261025-inicio-accionable";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-inicio-accionable";
+import { cashRepository } from "./cash-repository.js?v=20261025-inicio-accionable";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-inicio-accionable";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-inicio-accionable";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-inicio-accionable";
+import { settingsRepository } from "./settings-repository.js?v=20261025-inicio-accionable";
+import { reportsRepository } from "./reports-repository.js?v=20261025-inicio-accionable";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-inicio-accionable";
+import { returnsRepository } from "./returns-repository.js?v=20261025-inicio-accionable";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-inicio-accionable";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-inicio-accionable";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

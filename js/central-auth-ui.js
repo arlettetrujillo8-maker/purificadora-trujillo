@@ -1,7 +1,7 @@
 (function exposeCentralAuthUi(globalScope) {
   "use strict";
 
-  const BUILD = "20261025-offline-estable";
+  const BUILD = "20261025-inicio-accionable";
   const TRIGGER_SELECTOR =
     "#v3OpenAuthBtn, #v3BackendBadge, [data-central-auth-trigger]";
   const bindings = new WeakMap();

@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-offline-estable";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-inicio-accionable";
 
 export const returnsRepository = {
   list: async () => {

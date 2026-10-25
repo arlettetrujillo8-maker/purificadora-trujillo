@@ -1,4 +1,4 @@
-const BUILD = "20261025-offline-estable";
+const BUILD = "20261025-inicio-accionable";
 const CACHE = `purificadora-trujillo-${BUILD}`;
 const ASSETS = [
   "./",

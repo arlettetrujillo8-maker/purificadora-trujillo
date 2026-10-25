@@ -6,7 +6,7 @@ const { safeRandomUUID } = require("../js/safe-uuid.js");
 const root = path.resolve(__dirname, "..");
 const clientPath = path.join(root, "js/data/supabase-client.js");
 const source = fs.readFileSync(clientPath, "utf8");
-const build = "20261025-offline-estable";
+const build = "20261025-inicio-accionable";
 
 assert.doesNotMatch(source, /crypto\.randomUUID\s*\(/);
 assert.doesNotMatch(source, /\.randomUUID\s*\(/);

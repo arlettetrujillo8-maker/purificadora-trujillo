@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_SCRIPT_BUILD = "20261025-offline-estable";
+  const APP_SCRIPT_BUILD = "20261025-inicio-accionable";
   window.PurificadoraAppScriptBuild = APP_SCRIPT_BUILD;
 
   const LEGACY_STORAGE_KEY = "purificadora_trujillo_v1";
@@ -2088,6 +2088,20 @@
     bindGeneral();
     setupLogoGestures();
     updateOnlineStatus();
+    window.addEventListener("purificadora:queue-changed", () => refreshOfflineBanner());
+    $("offlineBannerSync")?.addEventListener("click", async () => {
+      try {
+        await window.PurificadoraV3?.syncNow?.();
+        toast("Sincronización solicitada");
+      } catch (error) {
+        toast(error?.message || "No se pudo sincronizar.", "error");
+      }
+      refreshOfflineBanner();
+    });
+    $("dashboardToday")?.addEventListener("click", (event) => {
+      const deliver = event.target.closest("[data-deliver-order]");
+      if (deliver) deliverOrder(deliver.dataset.deliverOrder);
+    });
     window.addEventListener("online", updateOnlineStatus);
     window.addEventListener("offline", updateOnlineStatus);
     window.addEventListener("storage", handleExternalStorageChange);
@@ -2686,6 +2700,9 @@
     offlineMode = !on;
     $("onlineBadge").textContent = on ? "En línea" : "Sin conexión";
     $("onlineBadge").classList.toggle("offline", !on);
+    renderOfflineBanner(0, on);
+    refreshOfflineBanner();
+    if (currentView === "dashboard") renderDashboard();
     if (!on && state.central) {
       // Al caer la conexion con datos centrales cargados, se conserva el
       // estado en memoria y el siguiente commit seguira el camino offline.
@@ -3131,6 +3148,37 @@
   function metric(label, value, hint = "") {
     return `<div class="metric-card"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`;
   }
+  function statCard({ label, value, hint, view, channel = "", tone = "" }) {
+    return `<button type="button" class="stat-card ${tone}" data-go="${esc(view)}"${channel ? ` data-channel="${esc(channel)}"` : ""}>
+      <span class="label">${esc(label)}</span>
+      <strong>${value}</strong>
+      <small>${esc(hint)}</small>
+    </button>`;
+  }
+  function renderOfflineBanner(pending = 0, online = navigator.onLine) {
+    const banner = $("offlineBanner"),
+      text = $("offlineBannerText"),
+      sync = $("offlineBannerSync");
+    if (!banner) return;
+    banner.classList.toggle("hidden", online && pending === 0);
+    banner.classList.toggle("is-sync", online && pending > 0);
+    if (text)
+      text.textContent = !online
+        ? "Sin conexión · operando con datos locales"
+        : `${int(pending)} operación(es) pendientes de sincronizar`;
+    if (sync) sync.hidden = !online;
+  }
+  async function refreshOfflineBanner() {
+    let pending = 0;
+    try {
+      const summary = await window.PurificadoraV3?.queueSummary?.();
+      pending = Number(summary?.pending || 0);
+    } catch (error) {
+      console.warn("No se pudo leer la cola offline", error);
+    }
+    renderOfflineBanner(pending);
+  }
+
   function renderDashboard() {
     const u = activeUser(),
       allSales = todaySales(),
@@ -3172,6 +3220,112 @@
       );
     const ownRound =
       u?.role === "repartidor" ? activeRound(u.center) : null;
+    const orderEngine = orderApi(),
+      todayKeyStr = orderEngine?.todayKey?.() || new Date().toISOString().slice(0, 10),
+      scoped = scopedOrders(),
+      dueOrders = (orderEngine ? orderEngine.dueToday(scoped) : scoped)
+        .filter((order) => order.status === "pendiente"),
+      dueUnits = dueOrders.reduce((total, order) => total + order.qty, 0),
+      dueTotal = dueOrders.reduce((total, order) => total + order.qty * order.price, 0),
+      overdueOrders = dueOrders.filter((order) => order.date < todayKeyStr),
+      debtClientCount = state.clients.filter((c) => clientBalance(c.id) > 0.009).length,
+      lowSupplies = state.supplies.filter(
+        (supply) =>
+          supply.active !== false &&
+          Number(supply.currentStock) <= Number(supply.minimumStock || 0),
+      );
+    const kpiHost = $("dashboardKpis");
+    if (kpiHost)
+      kpiHost.innerHTML = [
+        statCard({
+          label: "Vendido hoy",
+          value: money(revenue),
+          hint: `${int(units)} garrafones`,
+          view: "ultimas",
+        }),
+        statCard({
+          label: "Por cobrar",
+          value: money(pending),
+          hint: debtClientCount
+            ? `${int(debtClientCount)} cliente(s) con saldo`
+            : "Sin deuda pendiente",
+          view: "fiado",
+          tone: pending > 0.009 ? "is-alert" : "",
+        }),
+        statCard({
+          label: "Por entregar",
+          value: int(dueOrders.length),
+          hint: dueOrders.length
+            ? `${int(dueUnits)} garrafones · ${money(dueTotal)}`
+            : "Sin pedidos para hoy",
+          view: "pedidos",
+          tone: overdueOrders.length ? "is-danger" : "",
+        }),
+      ].join("");
+    const quickHost = $("dashboardQuickActions");
+    if (quickHost)
+      quickHost.innerHTML = [
+        '<button class="primary-btn" data-go="ventas">+ Nueva venta</button>',
+        `<button class="secondary-btn" data-go="fiado">Cobrar fiado${pending > 0.009 ? ` · ${money(pending)}` : ""}</button>`,
+        `<button class="secondary-btn" data-go="pedidos"${dueOrders.length ? "" : " disabled"}>Entregar pedido${dueOrders.length ? ` · ${int(dueOrders.length)}` : ""}</button>`,
+      ].join("");
+    const todayHost = $("dashboardToday");
+    if (todayHost) {
+      const rows = dueOrders.slice(0, 6).map(
+        (order) => `<div class="list-row"><div class="list-main"><strong>${esc(orderClientName(order))}</strong><small>${esc(routeLabel(order.route))} · ${int(order.qty)} garrafones · ${money(order.qty * order.price)}${order.date < todayKeyStr ? " · atrasado" : ""}</small></div><button class="primary-btn" data-deliver-order="${order.id}">Entregar</button></div>`,
+      );
+      routeCodes().forEach((route) => {
+        const round = activeRound(route);
+        if (!round || round.status === "regresada") return;
+        rows.push(
+          `<div class="list-row"><div class="list-main"><strong>${esc(routeLabel(route))}</strong><small>Ronda activa · ${int(state.inventory[route] || 0)} llenos · ${int(state.inventory[`empty_${route}`] || 0)} vacíos</small></div><button class="secondary-btn" data-go="rutas">Ver</button></div>`,
+        );
+      });
+      todayHost.innerHTML = rows.length
+        ? rows.join("")
+        : '<div class="empty">Sin pedidos pendientes ni rondas activas. Buen momento para vender.</div>';
+    }
+    const attentionHost = $("dashboardAttention");
+    if (attentionHost) {
+      const alerts = [];
+      if (!open && can("view_own_cash"))
+        alerts.push(
+          '<div class="list-row"><div class="list-main"><strong>Caja cerrada</strong><small>Ábrela para registrar cobros</small></div><button class="secondary-btn" data-go="caja">Abrir</button></div>',
+        );
+      if (lowSupplies.length)
+        alerts.push(
+          `<div class="list-row"><div class="list-main"><strong>${int(lowSupplies.length)} insumo(s) bajo mínimo</strong><small>${esc(lowSupplies.slice(0, 3).map((s) => s.name).join(", "))}</small></div><button class="secondary-btn" data-go="insumos">Ver</button></div>`,
+        );
+      if (overdueOrders.length)
+        alerts.push(
+          `<div class="list-row"><div class="list-main"><strong>${int(overdueOrders.length)} pedido(s) atrasados</strong><small>Revisa la fecha de entrega</small></div><button class="secondary-btn" data-go="pedidos">Ver</button></div>`,
+        );
+      if (!navigator.onLine)
+        alerts.push(
+          '<div class="list-row"><div class="list-main"><strong>Sin conexión</strong><small>Operando con datos locales</small></div><button class="secondary-btn" id="dashboardSyncBtn">Sincronizar</button></div>',
+        );
+      alerts.push(
+        '<div class="list-row"><div class="list-main"><strong>Datos</strong><small id="dashboardSyncNote">Comprobando pendientes de sincronizar…</small></div><button class="secondary-btn" data-go="diagnostico">Diagnóstico</button></div>',
+      );
+      attentionHost.innerHTML = alerts.join("");
+      const syncBtn = $("dashboardSyncBtn");
+      if (syncBtn)
+        syncBtn.addEventListener("click", () => {
+          window.PurificadoraV3?.syncNow?.().catch((error) =>
+            toast(error?.message || "No se pudo sincronizar.", "error"),
+          );
+          refreshOfflineBanner();
+        });
+      window.PurificadoraV3?.queueSummary?.()
+        .then((summary) => {
+          const note = $("dashboardSyncNote");
+          if (!note) return;
+          note.textContent = summary?.pending
+            ? `${int(summary.pending)} operación(es) pendientes`
+            : "Todo sincronizado con la central";
+        })
+        .catch(() => {});
+    }
     const dashboardCards = [];
     if (can("view_own_cash")) {
       const expected = open ? cashMovementsForSession(open).expected : 0;

@@ -3947,3 +3947,124 @@ input[type="search"] {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ---- Fase 1 UX: Inicio accionable y banner offline ---- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.stat-card {
+  appearance: none;
+  display: grid;
+  gap: 4px;
+  min-height: 92px;
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-rest);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.stat-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-lift);
+}
+.stat-card:active {
+  transform: translateY(1px);
+}
+.stat-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stat-card strong {
+  font-size: 24px;
+  line-height: 1.15;
+}
+.stat-card small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.stat-card.is-alert {
+  border-left: 3px solid var(--primary);
+}
+.stat-card.is-danger {
+  border-left: 3px solid #c42b1c;
+}
+.quick-action-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.quick-action-row .primary-btn,
+.quick-action-row .secondary-btn {
+  width: 100%;
+  min-height: 48px;
+}
+.dashboard-focus {
+  margin-bottom: var(--space-3);
+}
+.offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5c3a00;
+  background: #fff4ce;
+  border-bottom: 1px solid #e8c56a;
+}
+.offline-banner.hidden {
+  display: none;
+}
+.offline-banner.is-sync {
+  color: #004377;
+  background: #e5f1fb;
+  border-bottom-color: #9cc9ea;
+}
+.offline-banner .text-btn {
+  color: inherit;
+  text-decoration: underline;
+  min-height: 32px;
+}
+@media (max-width: 900px) {
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat-grid .stat-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+  .stat-card {
+    min-height: 84px;
+    padding: 12px;
+  }
+  .stat-card strong {
+    font-size: 20px;
+  }
+  .quick-action-row {
+    grid-template-columns: 1fr;
+  }
+  .quick-action-row .primary-btn,
+  .quick-action-row .secondary-btn {
+    min-height: 44px;
+  }
+}

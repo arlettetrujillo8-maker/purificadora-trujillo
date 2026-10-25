@@ -1,4 +1,4 @@
-import { selectAll } from "./repository-utils.js?v=20261025-offline-estable";
+import { selectAll } from "./repository-utils.js?v=20261025-inicio-accionable";
 
 // Catalogo de rutas de reparto. La tabla `routes` es la fuente de verdad; si la
 // migracion aun no esta aplicada, el cliente cae a las rutas por defecto.
