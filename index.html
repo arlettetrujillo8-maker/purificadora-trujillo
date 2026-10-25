@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="app-build" content="20261025-venta-efectivo" />
+    <meta name="app-build" content="20261025-offline-estable" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
@@ -15,7 +15,7 @@
       href="assets/logo/logo-trujillo.svg"
       type="image/svg+xml"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261025-venta-efectivo" />
+    <link rel="stylesheet" href="css/styles.css?v=20261025-offline-estable" />
   </head>
   <body>
     <div class="app-shell">
@@ -2729,16 +2729,44 @@
         }, 1200);
       })();
     </script>
-    <script src="js/central-auth-ui.js?v=20261025-venta-efectivo"></script>
-    <script src="js/safe-uuid.js?v=20261025-venta-efectivo"></script>
-    <script src="js/presentation-labels.js?v=20261025-venta-efectivo"></script>
-    <script src="js/user-display.js?v=20261025-venta-efectivo"></script>
-    <script src="js/empty-reconcile.js?v=20261025-venta-efectivo"></script>
-    <script src="js/sale-client-selection.js?v=20261025-venta-efectivo"></script>
-    <script src="js/data/offline-store.js?v=20261025-venta-efectivo"></script>
-    <script src="js/v3/costs.js?v=20261025-venta-efectivo"></script>
-    <script src="js/v3/orders.js?v=20261025-venta-efectivo"></script>
-    <script src="js/app.js?v=20261025-venta-efectivo"></script>
-    <script type="module" src="js/v3/bootstrap.js?v=20261025-venta-efectivo"></script>
+    <script src="js/central-auth-ui.js?v=20261025-offline-estable"></script>
+    <script src="js/safe-uuid.js?v=20261025-offline-estable"></script>
+    <script src="js/presentation-labels.js?v=20261025-offline-estable"></script>
+    <script src="js/user-display.js?v=20261025-offline-estable"></script>
+    <script src="js/empty-reconcile.js?v=20261025-offline-estable"></script>
+    <script src="js/sale-client-selection.js?v=20261025-offline-estable"></script>
+    <script src="js/data/offline-store.js?v=20261025-offline-estable"></script>
+    <script src="js/v3/costs.js?v=20261025-offline-estable"></script>
+    <script src="js/v3/orders.js?v=20261025-offline-estable"></script>
+    <script src="js/app.js?v=20261025-offline-estable"></script>
+    <script type="module" src="js/v3/bootstrap.js?v=20261025-offline-estable"></script>
+    <script>
+      // Si el arranque falla (sin conexión o caché incompleta), muestra un
+      // aviso con reintento en lugar de dejar la pantalla en blanco.
+      (function () {
+        var timer = setTimeout(function () {
+          if (window.PurificadoraV3) return;
+          if (document.getElementById("bootFallback")) return;
+          var box = document.createElement("div");
+          box.id = "bootFallback";
+          box.className = "boot-fallback";
+          box.setAttribute("role", "alert");
+          box.innerHTML =
+            "<strong>No se pudo iniciar la app</strong>" +
+            "<p>Revisa tu conexión a internet. Tus datos guardados en este dispositivo están a salvo; la app vuelve a funcionar al reconectarse.</p>" +
+            '<button type="button">Reintentar</button>';
+          box.querySelector("button").addEventListener("click", function () {
+            location.reload();
+          });
+          document.body.appendChild(box);
+        }, 9000);
+        var watch = setInterval(function () {
+          if (!window.PurificadoraV3) return;
+          clearTimeout(timer);
+          clearInterval(watch);
+          document.getElementById("bootFallback")?.remove();
+        }, 2000);
+      })();
+    </script>
   </body>
 </html>

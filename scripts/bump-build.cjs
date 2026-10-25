@@ -41,6 +41,10 @@ if (!/^\d{8}-[a-z][a-z0-9-]*$/.test(arg)) {
   process.exit(1);
 }
 
+// La lista ASSETS del service worker se regenera antes de cambiar el build,
+// asi ningun archivo nuevo queda fuera del cache offline.
+require("./sync-sw-assets.cjs").syncSwAssets();
+
 const anterior = readCanonicalBuild(root);
 if (anterior === arg) {
   console.error(`El build ya es ${arg}; nada que cambiar.`);

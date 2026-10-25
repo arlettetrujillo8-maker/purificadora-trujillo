@@ -3911,3 +3911,39 @@ input[type="search"] {
     min-width: 0;
   }
 }
+
+/* ---- Aviso de arranque fallido (sin conexion / cache incompleta) ---- */
+.boot-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  max-width: 420px;
+  margin: auto;
+  padding: 24px;
+  text-align: center;
+  background: var(--surface, #fff);
+  color: var(--text, #201f1e);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+.boot-fallback strong {
+  font-size: 18px;
+}
+.boot-fallback p {
+  margin: 0;
+  color: var(--muted, #5c5c5c);
+  line-height: 1.5;
+}
+.boot-fallback button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary, #005fb8);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}

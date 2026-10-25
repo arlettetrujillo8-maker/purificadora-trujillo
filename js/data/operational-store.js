@@ -1,17 +1,17 @@
-import { profilesRepository } from "./profiles-repository.js?v=20261025-venta-efectivo";
-import { clientsRepository } from "./clients-repository.js?v=20261025-venta-efectivo";
-import { salesRepository } from "./sales-repository.js?v=20261025-venta-efectivo";
-import { ledgerRepository } from "./ledger-repository.js?v=20261025-venta-efectivo";
-import { cashRepository } from "./cash-repository.js?v=20261025-venta-efectivo";
-import { inventoryRepository } from "./inventory-repository.js?v=20261025-venta-efectivo";
-import { roundsRepository } from "./rounds-repository.js?v=20261025-venta-efectivo";
-import { suppliesRepository } from "./supplies-repository.js?v=20261025-venta-efectivo";
-import { settingsRepository } from "./settings-repository.js?v=20261025-venta-efectivo";
-import { reportsRepository } from "./reports-repository.js?v=20261025-venta-efectivo";
-import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-venta-efectivo";
-import { returnsRepository } from "./returns-repository.js?v=20261025-venta-efectivo";
-import { correctionsRepository } from "./corrections-repository.js?v=20261025-venta-efectivo";
-import { workDaysRepository } from "./work-days-repository.js?v=20261025-venta-efectivo";
+import { profilesRepository } from "./profiles-repository.js?v=20261025-offline-estable";
+import { clientsRepository } from "./clients-repository.js?v=20261025-offline-estable";
+import { salesRepository } from "./sales-repository.js?v=20261025-offline-estable";
+import { ledgerRepository } from "./ledger-repository.js?v=20261025-offline-estable";
+import { cashRepository } from "./cash-repository.js?v=20261025-offline-estable";
+import { inventoryRepository } from "./inventory-repository.js?v=20261025-offline-estable";
+import { roundsRepository } from "./rounds-repository.js?v=20261025-offline-estable";
+import { suppliesRepository } from "./supplies-repository.js?v=20261025-offline-estable";
+import { settingsRepository } from "./settings-repository.js?v=20261025-offline-estable";
+import { reportsRepository } from "./reports-repository.js?v=20261025-offline-estable";
+import { maintenanceRepository } from "./maintenance-repository.js?v=20261025-offline-estable";
+import { returnsRepository } from "./returns-repository.js?v=20261025-offline-estable";
+import { correctionsRepository } from "./corrections-repository.js?v=20261025-offline-estable";
+import { workDaysRepository } from "./work-days-repository.js?v=20261025-offline-estable";
 
 const fromCents = (value) => Number(value || 0) / 100;
 const locationKey = (row) =>

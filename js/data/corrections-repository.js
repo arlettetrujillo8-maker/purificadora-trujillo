@@ -1,4 +1,4 @@
-import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-venta-efectivo";
+import { selectAll, rpc, commandArgs, entityId } from "./repository-utils.js?v=20261025-offline-estable";
 
 const uuid = (value) => /^[0-9a-f-]{36}$/i.test(value || "") ? value : entityId();
 
