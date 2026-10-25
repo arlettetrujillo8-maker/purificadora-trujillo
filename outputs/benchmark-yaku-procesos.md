@@ -118,3 +118,12 @@ Hoy `ruta1/ruta2` están fijos en 8 restricciones SQL y ~65 referencias en el cl
 - ¿Geotracking/GPS del repartidor (privacidad + batería) o solo dirección del cliente?
 - ¿Vehículos por ruta fijos o rotativos?
 - ¿Producción se registra por lote o por turno?
+
+## Estado de avance
+
+- **F1 ✅** Ventanas móviles: cuerpo desplazable y acción siempre visible (37 diálogos, 0 defectos).
+- **F2 ✅** Alta de cliente unificada con modo rápido; aviso de duplicados y listeners consolidados.
+- **F3 ✅ v1** Rutas expandibles: tabla `routes` como fuente de verdad, selects dinámicos y validaciones
+  por patrón (`rutaN`). Sin la migración aplicada el cliente usa ruta1/ruta2 (fallback). Añadir Ruta 3 =
+  insertar en `routes` + sus filas en `inventory_locations`, sin tocar código.
+- **Pendiente de aplicar** `supabase/migrations/20261025_routes_expandible.sql` en el SQL Editor.
